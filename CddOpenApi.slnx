@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj" />
+    <Project Path="src/Cdd.OpenApi/Cdd.OpenApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cdd.OpenApi.Tests/Cdd.OpenApi.Tests.csproj" />
+  </Folder>
+</Solution>
