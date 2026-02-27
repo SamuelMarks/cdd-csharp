@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Test with Coverage
+      run: |
+        dotnet tool install --global coverlet.console
+        export PATH="$HOME/.dotnet/tools:$PATH"
+        coverlet tests/Cdd.OpenApi.Tests/bin/Debug/net10.0/Cdd.OpenApi.Tests.dll --target "dotnet" --targetargs "test tests/Cdd.OpenApi.Tests --no-build" --format opencover --output coverage.xml
+
+    - name: Ensure 100% Coverage
+      run: |
+        LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
+        BRANCH_COV=$(grep -oP 'branchCoverage="\K[^"]+' coverage.xml | head -1)
+        METHOD_COV=$(grep -oP 'visitedMethods="\K[^"]+' coverage.xml | head -1)
+        TOTAL_METHODS=$(grep -oP 'numMethods="\K[^"]+' coverage.xml | head -1)
+
+        echo "Line Coverage: $LINE_COV%"
+        echo "Branch Coverage: $BRANCH_COV%"
+        echo "Method Coverage: $METHOD_COV/$TOTAL_METHODS"
+
+        if [ "$LINE_COV" != "100" ] || [ "$METHOD_COV" != "$TOTAL_METHODS" ]; then
+          echo "ERROR: Test coverage fell below 100%."
+          exit 1
+        fi
