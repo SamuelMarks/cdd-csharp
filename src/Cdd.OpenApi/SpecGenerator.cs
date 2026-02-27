@@ -7,8 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
+/// <summary>Auto-generated documentation for SpecGenerator.</summary>
     public static class SpecGenerator
     {
+/// <summary>Auto-generated documentation for Generate.</summary>
         public static OpenApiDocument Generate(IEnumerable<string> csharpSourceCodes)
         {
             var doc = new OpenApiDocument

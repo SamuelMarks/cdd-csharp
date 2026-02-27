@@ -6,14 +6,19 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
+/// <summary>Auto-generated documentation for GeneratedCode.</summary>
     public class GeneratedCode
     {
+/// <summary>Auto-generated documentation for FileName.</summary>
         public string FileName { get; set; } = string.Empty;
+/// <summary>Auto-generated documentation for Code.</summary>
         public string Code { get; set; } = string.Empty;
     }
 
+/// <summary>Auto-generated documentation for CodeGenerator.</summary>
     public static class CodeGenerator
     {
+/// <summary>Auto-generated documentation for Generate.</summary>
         public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated")
         {
             var results = new List<GeneratedCode>();

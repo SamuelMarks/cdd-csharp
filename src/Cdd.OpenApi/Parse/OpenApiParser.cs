@@ -4,10 +4,12 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Parse
 {
+/// <summary>Auto-generated documentation for OpenApiParser.</summary>
     public class OpenApiParser
     {
         private readonly JsonSerializerOptions _jsonOptions;
 
+/// <summary>Auto-generated documentation for OpenApiParser.</summary>
         public OpenApiParser()
         {
             _jsonOptions = new JsonSerializerOptions
@@ -17,6 +19,7 @@ namespace Cdd.OpenApi.Parse
             };
         }
 
+/// <summary>Auto-generated documentation for ParseJson.</summary>
         public OpenApiDocument ParseJson(string jsonContent)
         {
             if (string.IsNullOrWhiteSpace(jsonContent))

@@ -5,8 +5,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Docstrings
 {
+/// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
+/// <summary>Auto-generated documentation for GetSummary.</summary>
         public static string? GetSummary(SyntaxNode node)
         {
             var trivia = node.GetLeadingTrivia()

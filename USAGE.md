@@ -1,6 +1,6 @@
 # Usage Guide
 
-The `cdd-openapi` tool can be used either as a command-line interface or as a C# class library.
+The `cdd_csharp` tool can be used either as a command-line interface or as a C# class library.
 
 ## Command Line Interface (CLI)
 
@@ -11,7 +11,7 @@ Ensure the CLI is installed or run it directly via `dotnet run`.
 If you have a folder of C# models and controllers, you can generate an `openapi.json` from them:
 
 ```bash
-cdd-openapi to_openapi -i ./src/MyBackend/Controllers/ -o api-spec.json
+cdd_csharp to_openapi -i ./src/MyBackend/Controllers/ -o api-spec.json
 ```
 
 **What it does:**
@@ -25,7 +25,7 @@ cdd-openapi to_openapi -i ./src/MyBackend/Controllers/ -o api-spec.json
 If you have a design-first `openapi.json`, you can scaffold your backend or create a client SDK:
 
 ```bash
-cdd-openapi from_openapi -i api-spec.json -o ./src/MyClient/Generated/
+cdd_csharp from_openapi -i api-spec.json -o ./src/MyClient/Generated/
 ```
 
 **What it does:**
@@ -37,7 +37,7 @@ cdd-openapi from_openapi -i api-spec.json -o ./src/MyClient/Generated/
 To parse a spec and emit it back out cleanly formatted:
 
 ```bash
-cdd-openapi emit old-spec.json new-spec.json
+cdd_csharp emit old-spec.json new-spec.json
 ```
 
 ---

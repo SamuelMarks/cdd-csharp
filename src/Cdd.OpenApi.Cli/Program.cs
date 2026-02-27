@@ -31,6 +31,10 @@ namespace Cdd.OpenApi.Cli
                 {
                     return HandleToOpenApi(args);
                 }
+                else if (command == "to_docs_json")
+                {
+                    return HandleToDocsJson(args);
+                }
                 
                 // Legacy / Additional subcommands
                 var inputPath = args.Length > 1 ? args[1] : string.Empty;
@@ -92,7 +96,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd-openapi from_openapi -i <spec.json> [-o <output-dir>]");
+                return Error("Usage: cdd_csharp from_openapi -i <spec.json> [-o <output-dir>]");
             }
 
             return RunFromOpenApi(inputPath, outputPath);
@@ -117,10 +121,55 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd-openapi to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
+                return Error("Usage: cdd_csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
             }
 
             return RunToOpenApi(inputPath, outputPath);
+        }
+
+        private static int HandleToDocsJson(string[] args)
+        {
+            string inputPath = string.Empty;
+            bool noImports = false;
+            bool noWrapping = false;
+
+            for (int i = 1; i < args.Length; i++)
+            {
+                if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
+                {
+                    inputPath = args[++i];
+                }
+                else if (args[i] == "--no-imports")
+                {
+                    noImports = true;
+                }
+                else if (args[i] == "--no-wrapping")
+                {
+                    noWrapping = true;
+                }
+            }
+
+            if (string.IsNullOrEmpty(inputPath))
+            {
+                return Error("Usage: cdd_csharp to_docs_json -i <spec.json> [--no-imports] [--no-wrapping]");
+            }
+
+            string jsonContent;
+            if (inputPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || inputPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                using var client = new System.Net.Http.HttpClient();
+                jsonContent = client.GetStringAsync(inputPath).GetAwaiter().GetResult();
+            }
+            else
+            {
+                if (!File.Exists(inputPath)) return Error($"Error: Input '{inputPath}' not found.");
+                jsonContent = File.ReadAllText(inputPath);
+            }
+
+            var doc = new OpenApiParser().ParseJson(jsonContent);
+            var outputJson = Cdd.OpenApi.DocsJson.DocsJsonGenerator.Generate(doc, noImports, noWrapping);
+            Console.WriteLine(outputJson);
+            return 0;
         }
 
         private static int RunFromOpenApi(string inputPath, string outputDir)
@@ -167,12 +216,12 @@ namespace Cdd.OpenApi.Cli
         private static void PrintUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("  cdd-openapi from_openapi -i <spec.json> [-o <output-dir>]");
-            Console.WriteLine("  cdd-openapi to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
+            Console.WriteLine("  cdd_csharp from_openapi -i <spec.json> [-o <output-dir>]");
+            Console.WriteLine("  cdd_csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
             Console.WriteLine("");
             Console.WriteLine("Additional Commands:");
-            Console.WriteLine("  cdd-openapi parse <file.json>");
-            Console.WriteLine("  cdd-openapi emit <file.json> <output.json>");
+            Console.WriteLine("  cdd_csharp parse <file.json>");
+            Console.WriteLine("  cdd_csharp emit <file.json> <output.json>");
         }
 
         private static int Error(string message)

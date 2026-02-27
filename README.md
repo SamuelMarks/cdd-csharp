@@ -1,50 +1,109 @@
-# CDD C# OpenAPI Tools
+# cdd-csharp
 
-[![NuGet](https://img.shields.io/nuget/v/Cdd.OpenApi.svg)](https://www.nuget.org/packages/Cdd.OpenApi/)
-[![Test Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
-[![Doc Coverage](https://img.shields.io/badge/Docs-10%25-red.svg)]()
+<!-- BADGES_START -->
+[![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI/CD](https://github.com/offscale/cdd-csharp/workflows/CI/badge.svg)](https://github.com/offscale/cdd-csharp/actions)
+[![Coverage](https://codecov.io/gh/offscale/cdd-csharp/branch/master/graph/badge.svg)](https://codecov.io/gh/offscale/cdd-csharp)
+<!-- BADGES_END -->
 
-This repository contains a C# library and CLI for parsing and emitting OpenAPI 3.2.0 definitions, mapping them bidirectionally to strongly typed C# syntax using the Roslyn compiler platform.
+OpenAPI ↔ C#. Welcome to **cdd-csharp**, a code-generation and compilation tool bridging the gap between OpenAPI specifications and native `C#` source code. 
 
-## Why CDD OpenAPI?
-"Contract-Driven Development" ensures your API specs and code never drift apart. This tool enables two workflows seamlessly:
-1.  **Code-First**: Write standard C# classes and ASP.NET Core controllers, and generate a flawless OpenAPI JSON specification automatically.
-2.  **API-First**: Author an `openapi.json` spec, and generate abstract C# Interfaces and POCO Models to build your backend or client SDK around.
+This toolset allows you to fluidly convert between your language's native constructs (like classes, structs, functions, routing, clients, and ORM models) and OpenAPI specifications, ensuring a single source of truth without sacrificing developer ergonomics.
 
-## Standard Commands (CLI)
+## 🚀 Capabilities
 
-The CLI implements the standard bidirectional interface:
+The `cdd-csharp` compiler leverages a unified architecture to support various facets of API and code lifecycle management.
 
-Generate C# code (Interfaces & Models) from an OpenAPI JSON document:
+* **Compilation**:
+  * **OpenAPI → `C#`**: Generate idiomatic native models, network routes, client SDKs, database schemas, and boilerplate directly from OpenAPI (`.json` / `.yaml`) specifications.
+  * **`C#` → OpenAPI**: Statically parse existing `C#` source code and emit compliant OpenAPI specifications.
+* **AST-Driven & Safe**: Employs static analysis (Abstract Syntax Trees) instead of unsafe dynamic execution or reflection, allowing it to safely parse and emit code even for incomplete or un-compilable project states.
+* **Seamless Sync**: Keep your docs, tests, database, clients, and routing in perfect harmony. Update your code, and generate the docs; or update the docs, and generate the code.
+
+## 📦 Installation
+
+Since `cdd-csharp` is distributed as a global .NET tool, you can easily install it using the .NET CLI.
+
+Requires **.NET 10.0 SDK**.
+
 ```bash
-cdd-openapi from_openapi -i spec.json -o ./src/MyClient
+dotnet tool install --global cdd_csharp
+```
+*(Ensure that your global tools path is added to your environment variables)*
+
+You can also use it as a package dependency for programmatic usage:
+```bash
+dotnet add package Cdd.OpenApi
 ```
 
-Generate an OpenAPI JSON document from C# source files/directories:
+## 🛠 Usage
+
+### Command Line Interface
+
+Generate C# models and routes from an OpenAPI specification:
 ```bash
-cdd-openapi to_openapi -i ./src/Controllers -o generated-spec.json
+cdd_csharp from_openapi -i openapi.json -o ./src/Generated
 ```
 
-See [USAGE.md](USAGE.md) for more details.
+Parse existing C# code and generate an OpenAPI specification:
+```bash
+cdd_csharp to_openapi -i ./src/Controllers -o openapi.json
+```
 
-## Features Supported (OpenAPI 3.2.0)
+### Programmatic SDK / Library
 
-- Basic structure (Info, Paths, Components, Servers)
-- Schemas (from C# Classes and Properties)
-- Content/Media Types
-- Operations (GET, POST, PUT, DELETE, etc., mapped to `[HttpGet]` etc.)
-- Parameters (Path, Query)
-- XML Docstrings mapping to OpenApi Descriptions and Summaries
-- Nullability mapping to OpenAPI `required` arrays.
+```cs
+using System.IO;
+using Cdd.OpenApi.Parse;
+using Cdd.OpenApi.Emit;
+using Cdd.OpenApi.Models;
 
-## Project Structure
+// 1. Parse an OpenAPI specification
+var jsonContent = File.ReadAllText("openapi.json");
+OpenApiDocument doc = new OpenApiParser().ParseJson(jsonContent);
 
-- `src/Cdd.OpenApi`: Class library containing the models, Roslyn-powered code parsers/emitters, and JSON handlers.
-- `src/Cdd.OpenApi.Cli`: Command-line interface for the library.
-- `tests/Cdd.OpenApi.Tests`: Unit and integration tests.
+// 2. Or, Parse C# code to an OpenApiDocument
+// var doc = SpecGenerator.Generate(new[] { "public class Pet { public string Name { get; set; } }" });
 
-For architectural details see [ARCHITECTURE.md](ARCHITECTURE.md).
+// 3. Emit C# code
+var generatedCodeFiles = CodeGenerator.Generate(doc);
+foreach (var file in generatedCodeFiles)
+{
+    File.WriteAllText(file.FileName, file.Code);
+}
 
-For development details see [DEVELOPING.md](DEVELOPING.md).
+// 4. Emit OpenAPI specification
+var newOpenApiJson = new OpenApiEmitter().EmitJson(doc);
+File.WriteAllText("new_openapi.json", newOpenApiJson);
+```
 
-For compliance to the spec see [COMPLIANCE.md](COMPLIANCE.md).
+## 🏗 Supported Conversions for C#
+
+*(The boxes below reflect the features supported by this specific `cdd-csharp` implementation)*
+
+| Concept | Parse (From) | Emit (To) |
+|---------|--------------|-----------|
+| OpenAPI (JSON/YAML) | ✅ | ✅ |
+| `C#` Models / Structs / Types | ✅ | ✅ |
+| `C#` Server Routes / Endpoints | ✅ | ✅ |
+| `C#` API Clients / SDKs | [ ] | [ ] |
+| `C#` ORM / DB Schemas | [ ] | [ ] |
+| `C#` CLI Argument Parsers | [ ] | [ ] |
+| `C#` Docstrings / Comments | ✅ | ✅ |
+
+---
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <https://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+
+at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

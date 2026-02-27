@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
+/// <summary>Auto-generated documentation for OpenApiHeader.</summary>
     public class OpenApiHeader : OpenApiParameter
     {
         // Headers are basically parameters without the 'name' and 'in' properties

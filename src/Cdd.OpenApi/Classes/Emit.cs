@@ -7,8 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
+/// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
+/// <summary>Auto-generated documentation for ToClass.</summary>
         public static ClassDeclarationSyntax ToClass(string className, OpenApiSchema schema)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Cdd.OpenApi\Cdd.OpenApi.csproj" />
@@ -6,6 +6,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <AssemblyName>cdd_csharp</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>cdd_csharp</ToolCommandName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
