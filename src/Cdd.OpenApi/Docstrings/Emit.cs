@@ -3,8 +3,10 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace Cdd.OpenApi.Docstrings
 {
+/// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
+/// <summary>Auto-generated documentation for CreateSummary.</summary>
         public static SyntaxTriviaList CreateSummary(string summaryText)
         {
             if (string.IsNullOrWhiteSpace(summaryText)) return SyntaxFactory.TriviaList();
@@ -13,6 +15,7 @@ namespace Cdd.OpenApi.Docstrings
             return SyntaxFactory.ParseLeadingTrivia(xml);
         }
 
+/// <summary>Auto-generated documentation for WithSummary.</summary>
         public static TNode WithSummary<TNode>(TNode node, string summaryText) where TNode : SyntaxNode
         {
             var summaryTrivia = CreateSummary(summaryText);

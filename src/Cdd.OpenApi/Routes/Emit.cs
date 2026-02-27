@@ -7,8 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
+/// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
+/// <summary>Auto-generated documentation for ToInterface.</summary>
         public static InterfaceDeclarationSyntax ToInterface(string interfaceName, OpenApiPaths paths)
         {
             var interfaceNode = SyntaxFactory.InterfaceDeclaration(interfaceName)

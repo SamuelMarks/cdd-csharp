@@ -5,8 +5,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
+/// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
+/// <summary>Auto-generated documentation for ToSchema.</summary>
         public static OpenApiSchema ToSchema(ClassDeclarationSyntax classNode)
         {
             var schema = new OpenApiSchema

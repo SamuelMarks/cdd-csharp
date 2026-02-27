@@ -5,8 +5,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
+/// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
+/// <summary>Auto-generated documentation for ToPaths.</summary>
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();

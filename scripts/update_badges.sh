@@ -6,7 +6,7 @@ echo "Running tests to compute coverage..."
 # Check test coverage
 export PATH="$HOME/.dotnet:$PATH"
 export DOTNET_ROOT="$HOME/.dotnet"
-dotnet build -q
+dotnet build CddOpenApi.slnx -q
 ~/.dotnet/tools/coverlet tests/Cdd.OpenApi.Tests/bin/Debug/net10.0/Cdd.OpenApi.Tests.dll --target "dotnet" --targetargs "test tests/Cdd.OpenApi.Tests --no-build" --format opencover --output coverage.xml > /dev/null
 
 LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
@@ -14,8 +14,9 @@ LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
 # Ensure it's not empty
 if [ -z "$LINE_COV" ]; then LINE_COV="0"; fi
 
-# Simple mock doc coverage for now to show shields work (we can build a Roslyn analyzer for this later if needed, regex over C# is brittle)
-DOC_COV="10"
+# Calculate actual Doc Coverage using the Roslyn analyzer script
+dotnet build scripts/DocCoverage.csproj -q
+DOC_COV=$(dotnet run --project scripts/DocCoverage.csproj src/Cdd.OpenApi)
 
 echo "Test Coverage: $LINE_COV%"
 echo "Doc Coverage: $DOC_COV%"

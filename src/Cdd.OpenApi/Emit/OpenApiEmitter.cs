@@ -4,10 +4,12 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Emit
 {
+/// <summary>Auto-generated documentation for OpenApiEmitter.</summary>
     public class OpenApiEmitter
     {
         private readonly JsonSerializerOptions _jsonOptions;
 
+/// <summary>Auto-generated documentation for OpenApiEmitter.</summary>
         public OpenApiEmitter()
         {
             _jsonOptions = new JsonSerializerOptions
@@ -17,6 +19,7 @@ namespace Cdd.OpenApi.Emit
             };
         }
 
+/// <summary>Auto-generated documentation for EmitJson.</summary>
         public string EmitJson(OpenApiDocument document)
         {
             if (document == null)
