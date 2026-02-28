@@ -6,7 +6,7 @@ echo "Running tests to compute coverage..."
 # Check test coverage
 export PATH="$HOME/.dotnet:$PATH"
 export DOTNET_ROOT="$HOME/.dotnet"
-dotnet build CddOpenApi.slnx -q
+dotnet build CddOpenApi.slnx
 ~/.dotnet/tools/coverlet tests/Cdd.OpenApi.Tests/bin/Debug/net10.0/Cdd.OpenApi.Tests.dll --target "dotnet" --targetargs "test tests/Cdd.OpenApi.Tests --no-build" --format opencover --output coverage.xml > /dev/null
 
 LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
@@ -15,7 +15,7 @@ LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
 if [ -z "$LINE_COV" ]; then LINE_COV="0"; fi
 
 # Calculate actual Doc Coverage using the Roslyn analyzer script
-dotnet build scripts/DocCoverage.csproj -q
+dotnet build scripts/DocCoverage.csproj
 DOC_COV=$(dotnet run --project scripts/DocCoverage.csproj src/Cdd.OpenApi)
 
 echo "Test Coverage: $LINE_COV%"

@@ -28,6 +28,16 @@ namespace Cdd.OpenApi.Tests
                 /// </summary>
                 [HttpGet(""/users/{id}"")]
                 public void GetUser(int id) {}
+            }
+            
+            public class UserClient
+            {
+                private HttpClient _client;
+                public async Task<string> PostUserAsync()
+                {
+                    await _client.PostAsync(""/users"");
+                    return """";
+                }
             }";
 
             // AST -> Spec
@@ -41,7 +51,7 @@ namespace Cdd.OpenApi.Tests
             // Spec -> AST
             var generatedFiles = CodeGenerator.Generate(doc);
 
-            Assert.Equal(2, generatedFiles.Count);
+            Assert.Equal(3, generatedFiles.Count);
             
             var userClass = generatedFiles.Find(f => f.FileName == "Models/User.cs");
             Assert.NotNull(userClass);
@@ -52,6 +62,11 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(interfaceFile);
             Assert.Contains("interface IApi", interfaceFile.Code);
             Assert.Contains("GetUser", interfaceFile.Code);
+
+            var clientFile = generatedFiles.Find(f => f.FileName == "ApiClient.cs");
+            Assert.NotNull(clientFile);
+            Assert.Contains("class ApiClient", clientFile.Code);
+            Assert.Contains("GetUserAsync", clientFile.Code);
         }
     }
 }
