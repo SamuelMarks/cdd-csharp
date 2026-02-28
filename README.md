@@ -86,7 +86,7 @@ File.WriteAllText("new_openapi.json", newOpenApiJson);
 | OpenAPI (JSON/YAML) | ✅ | ✅ |
 | `C#` Models / Structs / Types | ✅ | ✅ |
 | `C#` Server Routes / Endpoints | ✅ | ✅ |
-| `C#` API Clients / SDKs | [ ] | [ ] |
+| `C#` API Clients / SDKs | ✅ | ✅ |
 | `C#` ORM / DB Schemas | [ ] | [ ] |
 | `C#` CLI Argument Parsers | [ ] | [ ] |
 | `C#` Docstrings / Comments | ✅ | ✅ |

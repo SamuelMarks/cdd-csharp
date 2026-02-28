@@ -53,6 +53,17 @@ namespace Cdd.OpenApi
                     FileName = "IApi.cs", 
                     Code = nsNode.ToFullString() 
                 });
+
+                var clientNode = Cdd.OpenApi.Clients.Emit.ToClient("ApiClient", doc.Paths);
+                
+                var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
+                    .AddMembers(clientNode).NormalizeWhitespace();
+
+                results.Add(new GeneratedCode 
+                { 
+                    FileName = "ApiClient.cs", 
+                    Code = clientNsNode.ToFullString() 
+                });
             }
 
             return results;

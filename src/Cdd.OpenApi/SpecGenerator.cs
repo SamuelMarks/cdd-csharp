@@ -29,10 +29,26 @@ namespace Cdd.OpenApi
                 {
                     var hasRoutes = classNode.DescendantNodes().OfType<MethodDeclarationSyntax>()
                         .Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().StartsWith("Http")));
+                        
+                    var hasClientMethods = classNode.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                        .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
+                                    memberAccess.Name.Identifier.Text.EndsWith("Async") &&
+                                    (memberAccess.Name.Identifier.Text.StartsWith("Get") ||
+                                     memberAccess.Name.Identifier.Text.StartsWith("Post") ||
+                                     memberAccess.Name.Identifier.Text.StartsWith("Put") ||
+                                     memberAccess.Name.Identifier.Text.StartsWith("Delete")));
 
                     if (hasRoutes)
                     {
                         var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
+                        foreach (var p in paths)
+                        {
+                            doc.Paths![p.Key] = p.Value;
+                        }
+                    }
+                    else if (hasClientMethods)
+                    {
+                        var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
                         foreach (var p in paths)
                         {
                             doc.Paths![p.Key] = p.Value;
