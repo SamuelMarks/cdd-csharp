@@ -6,9 +6,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>cdd_csharp</AssemblyName>
+    <AssemblyName>cdd_sharp</AssemblyName>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>cdd_csharp</ToolCommandName>
+    <ToolCommandName>cdd_sharp</ToolCommandName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

@@ -22,6 +22,17 @@ namespace Cdd.OpenApi.Cli
 
             try
             {
+                if (command == "--help" || command == "-h" || command == "help")
+                {
+                    PrintUsage();
+                    return 0;
+                }
+                else if (command == "--version" || command == "-v" || command == "version")
+                {
+                    Console.WriteLine("1.0.0"); // Or use reflection to get version
+                    return 0;
+                }
+
                 // Standardized required subcommands
                 if (command == "from_openapi")
                 {
@@ -96,7 +107,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_csharp from_openapi -i <spec.json> [-o <output-dir>]");
+                return Error("Usage: cdd_sharp from_openapi -i <spec.json> [-o <output-dir>]");
             }
 
             return RunFromOpenApi(inputPath, outputPath);
@@ -109,7 +120,7 @@ namespace Cdd.OpenApi.Cli
 
             for (int i = 1; i < args.Length; i++)
             {
-                if (args[i] == "-i" && i + 1 < args.Length)
+                if ((args[i] == "-i" || args[i] == "-f") && i + 1 < args.Length)
                 {
                     inputPath = args[++i];
                 }
@@ -121,7 +132,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
+                return Error("Usage: cdd_sharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
             }
 
             return RunToOpenApi(inputPath, outputPath);
@@ -151,7 +162,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_csharp to_docs_json -i <spec.json> [--no-imports] [--no-wrapping]");
+                return Error("Usage: cdd_sharp to_docs_json -i <spec.json> [--no-imports] [--no-wrapping]");
             }
 
             string jsonContent;
@@ -216,12 +227,12 @@ namespace Cdd.OpenApi.Cli
         private static void PrintUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("  cdd_csharp from_openapi -i <spec.json> [-o <output-dir>]");
-            Console.WriteLine("  cdd_csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
+            Console.WriteLine("  cdd_sharp from_openapi -i <spec.json> [-o <output-dir>]");
+            Console.WriteLine("  cdd_sharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
             Console.WriteLine("");
             Console.WriteLine("Additional Commands:");
-            Console.WriteLine("  cdd_csharp parse <file.json>");
-            Console.WriteLine("  cdd_csharp emit <file.json> <output.json>");
+            Console.WriteLine("  cdd_sharp parse <file.json>");
+            Console.WriteLine("  cdd_sharp emit <file.json> <output.json>");
         }
 
         private static int Error(string message)

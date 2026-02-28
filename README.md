@@ -6,13 +6,13 @@
 [![Coverage](https://codecov.io/gh/offscale/cdd-csharp/branch/master/graph/badge.svg)](https://codecov.io/gh/offscale/cdd-csharp)
 <!-- BADGES_END -->
 
-OpenAPI ↔ C#. Welcome to **cdd-csharp**, a code-generation and compilation tool bridging the gap between OpenAPI specifications and native `C#` source code. 
+OpenAPI ↔ C#. Welcome to **cdd_sharp**, a code-generation and compilation tool bridging the gap between OpenAPI specifications and native `C#` source code. 
 
 This toolset allows you to fluidly convert between your language's native constructs (like classes, structs, functions, routing, clients, and ORM models) and OpenAPI specifications, ensuring a single source of truth without sacrificing developer ergonomics.
 
 ## 🚀 Capabilities
 
-The `cdd-csharp` compiler leverages a unified architecture to support various facets of API and code lifecycle management.
+The `cdd_sharp` compiler leverages a unified architecture to support various facets of API and code lifecycle management.
 
 * **Compilation**:
   * **OpenAPI → `C#`**: Generate idiomatic native models, network routes, client SDKs, database schemas, and boilerplate directly from OpenAPI (`.json` / `.yaml`) specifications.
@@ -22,12 +22,12 @@ The `cdd-csharp` compiler leverages a unified architecture to support various fa
 
 ## 📦 Installation
 
-Since `cdd-csharp` is distributed as a global .NET tool, you can easily install it using the .NET CLI.
+Since `cdd_sharp` is distributed as a global .NET tool, you can easily install it using the .NET CLI.
 
 Requires **.NET 10.0 SDK**.
 
 ```bash
-dotnet tool install --global cdd_csharp
+dotnet tool install --global cdd_sharp
 ```
 *(Ensure that your global tools path is added to your environment variables)*
 
@@ -42,12 +42,12 @@ dotnet add package Cdd.OpenApi
 
 Generate C# models and routes from an OpenAPI specification:
 ```bash
-cdd_csharp from_openapi -i openapi.json -o ./src/Generated
+cdd_sharp from_openapi -i openapi.json -o ./src/Generated
 ```
 
 Parse existing C# code and generate an OpenAPI specification:
 ```bash
-cdd_csharp to_openapi -i ./src/Controllers -o openapi.json
+cdd_sharp to_openapi -i ./src/Controllers -o openapi.json
 ```
 
 ### Programmatic SDK / Library
@@ -79,7 +79,7 @@ File.WriteAllText("new_openapi.json", newOpenApiJson);
 
 ## 🏗 Supported Conversions for C#
 
-*(The boxes below reflect the features supported by this specific `cdd-csharp` implementation)*
+*(The boxes below reflect the features supported by this specific `cdd_sharp` implementation)*
 
 | Concept | Parse (From) | Emit (To) |
 |---------|--------------|-----------|
