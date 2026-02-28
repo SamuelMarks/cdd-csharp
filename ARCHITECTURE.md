@@ -6,7 +6,7 @@
 [![Coverage](https://codecov.io/gh/offscale/cdd-csharp/branch/master/graph/badge.svg)](https://codecov.io/gh/offscale/cdd-csharp)
 <!-- BADGES_END -->
 
-The **cdd-csharp** tool acts as a dedicated compiler and transpiler. Its fundamental architecture follows standard compiler design principles, divided into three distinct phases: **Frontend (Parsing)**, **Intermediate Representation (IR)**, and **Backend (Emitting)**.
+The **cdd_sharp** tool acts as a dedicated compiler and transpiler. Its fundamental architecture follows standard compiler design principles, divided into three distinct phases: **Frontend (Parsing)**, **Intermediate Representation (IR)**, and **Backend (Emitting)**.
 
 This decoupled design ensures that any format capable of being parsed into the IR can subsequently be emitted into any supported output format, whether that is a server-side route, a client-side SDK, a database ORM, or an OpenAPI specification.
 
