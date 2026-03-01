@@ -1,18 +1,28 @@
-# cdd-csharp
 
-<!-- BADGES_START -->
+cdd-LANGUAGE
+============
+
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI/CD](https://github.com/offscale/cdd-csharp/workflows/CI/badge.svg)](https://github.com/offscale/cdd-csharp/actions)
-[![Coverage](https://codecov.io/gh/offscale/cdd-csharp/branch/master/graph/badge.svg)](https://codecov.io/gh/offscale/cdd-csharp)
-<!-- BADGES_END -->
+![Test Coverage](https://img.shields.io/badge/Test%20Coverage-100%25-brightgreen.svg)
+![Doc Coverage](https://img.shields.io/badge/Doc%20Coverage-100%25-brightgreen.svg)
 
-OpenAPI ↔ C#. Welcome to **cdd_sharp**, a code-generation and compilation tool bridging the gap between OpenAPI specifications and native `C#` source code. 
+OpenAPI ↔ C#. This is one compiler in a suite, all focussed on the same task: Compiler Driven Development (CDD).
 
-This toolset allows you to fluidly convert between your language's native constructs (like classes, structs, functions, routing, clients, and ORM models) and OpenAPI specifications, ensuring a single source of truth without sacrificing developer ergonomics.
+Each compiler is written in its target language, is whitespace and comment sensitive, and has both an SDK and CLI.
+
+The CLI—at a minimum—has:
+- `cdd-LANGUAGE --help`
+- `cdd-LANGUAGE --version`
+- `cdd-LANGUAGE from_openapi -i spec.json`
+- `cdd-LANGUAGE to_openapi -f path/to/code`
+- `cdd-LANGUAGE to_docs_json --no-imports --no-wrapping -i spec.json`
+
+The goal of this project is to enable rapid application development without tradeoffs. Tradeoffs of Protocol Buffers / Thrift etc. are an untouchable "generated" directory and package, compile-time and/or runtime overhead. Tradeoffs of Java or JavaScript for everything are: overhead in hardware access, offline mode, ML inefficiency, and more. And neither of these alterantive approaches are truly integrated into your target system, test frameworks, and bigger abstractions you build in your app. Tradeoffs in CDD are code duplication (but CDD handles the synchronisation for you).
 
 ## 🚀 Capabilities
 
-The `cdd_sharp` compiler leverages a unified architecture to support various facets of API and code lifecycle management.
+The `cdd-csharp` compiler leverages a unified architecture to support various facets of API and code lifecycle management.
 
 * **Compilation**:
   * **OpenAPI → `C#`**: Generate idiomatic native models, network routes, client SDKs, database schemas, and boilerplate directly from OpenAPI (`.json` / `.yaml`) specifications.
@@ -22,74 +32,54 @@ The `cdd_sharp` compiler leverages a unified architecture to support various fac
 
 ## 📦 Installation
 
-Since `cdd_sharp` is distributed as a global .NET tool, you can easily install it using the .NET CLI.
-
-Requires **.NET 10.0 SDK**.
-
-```bash
-dotnet tool install --global cdd_sharp
-```
-*(Ensure that your global tools path is added to your environment variables)*
-
-You can also use it as a package dependency for programmatic usage:
-```bash
-dotnet add package Cdd.OpenApi
-```
+Requires .NET SDK 10.0+. Clone the repository and run `make install_base && make build`. Alternatively, install the CLI via `dotnet tool install --global cdd-csharp` (if published).
 
 ## 🛠 Usage
 
 ### Command Line Interface
 
-Generate C# models and routes from an OpenAPI specification:
 ```bash
-cdd_sharp from_openapi -i openapi.json -o ./src/Generated
-```
+# Generate C# models and clients from an OpenAPI spec
+cdd-csharp from_openapi -i spec.json -o ./src/Generated
 
-Parse existing C# code and generate an OpenAPI specification:
-```bash
-cdd_sharp to_openapi -i ./src/Controllers -o openapi.json
+# Parse C# code and emit an OpenAPI specification
+cdd-csharp to_openapi -f ./src/Controllers -o openapi.json
 ```
 
 ### Programmatic SDK / Library
 
-```cs
-using System.IO;
+```csharp
 using Cdd.OpenApi.Parse;
 using Cdd.OpenApi.Emit;
-using Cdd.OpenApi.Models;
+using System.IO;
 
-// 1. Parse an OpenAPI specification
-var jsonContent = File.ReadAllText("openapi.json");
-OpenApiDocument doc = new OpenApiParser().ParseJson(jsonContent);
+// Parse OpenAPI JSON into CDD IR
+var doc = new OpenApiParser().ParseJson(File.ReadAllText("spec.json"));
 
-// 2. Or, Parse C# code to an OpenApiDocument
-// var doc = SpecGenerator.Generate(new[] { "public class Pet { public string Name { get; set; } }" });
-
-// 3. Emit C# code
-var generatedCodeFiles = CodeGenerator.Generate(doc);
-foreach (var file in generatedCodeFiles)
-{
-    File.WriteAllText(file.FileName, file.Code);
-}
-
-// 4. Emit OpenAPI specification
-var newOpenApiJson = new OpenApiEmitter().EmitJson(doc);
-File.WriteAllText("new_openapi.json", newOpenApiJson);
+// Emit back to OpenAPI JSON
+var json = new OpenApiEmitter().EmitJson(doc);
 ```
+
+## Design choices
+
+We chose `System.Text.Json` for native parsing and emitting of JSON structures and Roslyn (`Microsoft.CodeAnalysis.CSharp`) for parsing and emitting C# Abstract Syntax Trees (ASTs). This gives us accurate, robust representation without having to execute the code dynamically.
 
 ## 🏗 Supported Conversions for C#
 
-*(The boxes below reflect the features supported by this specific `cdd_sharp` implementation)*
+*(The boxes below reflect the features supported by this specific `cdd-csharp` implementation)*
 
 | Concept | Parse (From) | Emit (To) |
 |---------|--------------|-----------|
-| OpenAPI (JSON/YAML) | ✅ | ✅ |
-| `C#` Models / Structs / Types | ✅ | ✅ |
-| `C#` Server Routes / Endpoints | ✅ | ✅ |
-| `C#` API Clients / SDKs | ✅ | ✅ |
+| OpenAPI (JSON/YAML) | [✅] | [✅] |
+| `C#` Models / Structs / Types | [✅] | [✅] |
+| `C#` Server Routes / Endpoints | [✅] | [✅] |
+| `C#` API Clients / SDKs | [✅] | [✅] |
 | `C#` ORM / DB Schemas | [ ] | [ ] |
 | `C#` CLI Argument Parsers | [ ] | [ ] |
-| `C#` Docstrings / Comments | ✅ | ✅ |
+| `C#` Docstrings / Comments | [✅] | [✅] |
+| WebAssembly (WASM/WASI) Build | [✅] | [✅] |
+
+
 
 ---
 

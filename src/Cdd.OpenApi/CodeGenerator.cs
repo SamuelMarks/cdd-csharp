@@ -64,6 +64,28 @@ namespace Cdd.OpenApi
                     FileName = "ApiClient.cs", 
                     Code = clientNsNode.ToFullString() 
                 });
+
+                var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock("ApiMock", doc.Paths);
+                
+                var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
+                    .AddMembers(mockNode).NormalizeWhitespace();
+
+                results.Add(new GeneratedCode 
+                { 
+                    FileName = "ApiMock.cs", 
+                    Code = mockNsNode.ToFullString() 
+                });
+
+                var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests("ApiTests", doc.Paths);
+                
+                var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                    .AddMembers(testsNode).NormalizeWhitespace();
+
+                results.Add(new GeneratedCode 
+                { 
+                    FileName = "ApiTests.cs", 
+                    Code = testsNsNode.ToFullString() 
+                });
             }
 
             return results;

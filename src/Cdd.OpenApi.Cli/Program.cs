@@ -107,7 +107,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_sharp from_openapi -i <spec.json> [-o <output-dir>]");
+                return Error("Usage: cdd-csharp from_openapi -i <spec.json> [-o <output-dir>]");
             }
 
             return RunFromOpenApi(inputPath, outputPath);
@@ -132,7 +132,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_sharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
+                return Error("Usage: cdd-csharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
             }
 
             return RunToOpenApi(inputPath, outputPath);
@@ -162,7 +162,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd_sharp to_docs_json -i <spec.json> [--no-imports] [--no-wrapping]");
+                return Error("Usage: cdd-csharp to_docs_json -i <spec.json> [--no-imports] [--no-wrapping]");
             }
 
             string jsonContent;
@@ -227,12 +227,15 @@ namespace Cdd.OpenApi.Cli
         private static void PrintUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine("  cdd_sharp from_openapi -i <spec.json> [-o <output-dir>]");
-            Console.WriteLine("  cdd_sharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
+            Console.WriteLine("  cdd-csharp --help");
+            Console.WriteLine("  cdd-csharp --version");
+            Console.WriteLine("  cdd-csharp from_openapi -i <spec.json> [-o <output-dir>]");
+            Console.WriteLine("  cdd-csharp to_openapi -f <csharp-dir-or-file> [-o <output.json>]");
+            Console.WriteLine("  cdd-csharp to_docs_json --no-imports --no-wrapping -i <spec.json>");
             Console.WriteLine("");
             Console.WriteLine("Additional Commands:");
-            Console.WriteLine("  cdd_sharp parse <file.json>");
-            Console.WriteLine("  cdd_sharp emit <file.json> <output.json>");
+            Console.WriteLine("  cdd-csharp parse <file.json>");
+            Console.WriteLine("  cdd-csharp emit <file.json> <output.json>");
         }
 
         private static int Error(string message)

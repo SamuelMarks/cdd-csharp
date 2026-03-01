@@ -1,0 +1,9 @@
+ifeq (run,$(firstword $(MAKECMDGOALS)))
+  RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifneq ($(RUN_ARGS),)
+    $(foreach arg,$(RUN_ARGS),$(eval .PHONY: $(arg)))
+    $(foreach arg,$(RUN_ARGS),$(eval $(arg):;@:))
+  endif
+endif
+run:
+	@echo "Running: $(RUN_ARGS)"
