@@ -1,4 +1,3 @@
-
 # cdd-csharp Architecture
 
 <!-- BADGES_START -->
@@ -24,7 +23,7 @@ graph TD
 
     subgraph Frontend [Parsers]
         A[OpenAPI .yaml/.json]:::endpoint --> P1(OpenAPI Parser):::frontend
-        B[LANGUAGE Models / Source]:::endpoint --> P2(LANGUAGE Parser):::frontend
+        B[C# Models / Source]:::endpoint --> P2(C# Parser):::frontend
         C[Server Routes / Frameworks]:::endpoint --> P3(Framework Parser):::frontend
         D[Client SDKs / ORMs]:::endpoint --> P4(Ext Parser):::frontend
     end
@@ -35,7 +34,7 @@ graph TD
 
     subgraph Backend [Emitters]
         E1(OpenAPI Emitter):::backend --> X[OpenAPI .yaml/.json]:::endpoint
-        E2(LANGUAGE Emitter):::backend --> Y[LANGUAGE Models / Structs]:::endpoint
+        E2(C# Emitter):::backend --> Y[C# Models / Structs]:::endpoint
         E3(Server Emitter):::backend --> Z[Server Routes / Controllers]:::endpoint
         E4(Client Emitter):::backend --> W[Client SDKs / API Calls]:::endpoint
         E5(Data Emitter):::backend --> V[ORM Models / CLI Parsers]:::endpoint
@@ -53,15 +52,13 @@ graph TD
     IR --> E5
 ```
 
-
-
 ## 🧩 Core Components
 
 ### 1. The Frontend (Parsers)
 
 The Frontend's responsibility is to read an input source and translate it into the universal CDD Intermediate Representation (IR).
 
-* **Static Analysis (AST-Driven)**: For `C#` source code, the tool **does not** use dynamic reflection or execute the code. Instead, it reads the source files, generates an Abstract Syntax Tree (AST), and navigates the tree to extract classes, structs, functions, type signatures, API client definitions, server routes, and docstrings.
+* **Static Analysis (AST-Driven)**: For `C#` source code, the tool **does not** use dynamic reflection or execute the code. Instead, it reads the source files using the Roslyn compiler, generates an Abstract Syntax Tree (AST), and navigates the tree to extract classes, structs, functions, type signatures, API client definitions, server routes, and docstrings.
 * **OpenAPI Parsing**: For OpenAPI and JSON Schema inputs, the parser normalizes the structure, resolving internal `$ref`s and extracting properties, endpoints (client or server perspectives), and metadata into the IR.
 
 ### 2. Intermediate Representation (IR)

@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <Version>0.0.1</Version>
     <OutputType>Exe</OutputType>
     <AssemblyName>cdd-csharp</AssemblyName>
     <PackAsTool>true</PackAsTool>

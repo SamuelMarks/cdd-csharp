@@ -1,13 +1,12 @@
-# Publishing the Generated Client
+# Publishing Output SDKs
 
-When you use `cdd-csharp` to generate an API client library from an OpenAPI spec, you'll want to publish it to NuGet to share it with your organization or the public.
+When generating C# SDKs from an OpenAPI specification, you may want to automatically update your SDK package when the server specification changes.
 
-## Continuous Delivery via GitHub Actions
-
-You can set up a GitHub Action cron job to periodically fetch the latest OpenAPI spec, generate the client, and publish it if there are changes:
+## Automated Updates via GitHub Actions
+Create a `.github/workflows/update-sdk.yml` file in your client SDK repository:
 
 ```yaml
-name: Generate and Publish Client
+name: Update API SDK
 
 on:
   schedule:
@@ -15,32 +14,42 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-client:
+  update-sdk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '9.0.x'
+
       - name: Install cdd-csharp
-        run: make build
-      - name: Download Spec and Generate
+        run: dotnet tool install -g cdd-csharp
+
+      - name: Download latest OpenAPI Spec
+        run: curl -sL "https://api.yourdomain.com/openapi.json" -o openapi.json
+
+      - name: Generate SDK
+        run: cdd-csharp from_openapi to_sdk -i openapi.json -o ./src
+
+      - name: Check for changes
+        id: git-check
         run: |
-          curl -s https://api.example.com/openapi.json -o spec.json
-          ./bin/cdd-csharp from_openapi -i spec.json -o ./GeneratedClient
-      - name: Check for Changes
+          git diff --exit-code || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and Create PR
+        if: steps.git-check.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update SDK to match latest OpenAPI spec"
+          title: "Automated SDK Update"
+          branch: "update-sdk"
+
+      - name: Build & Publish Package
+        if: steps.git-check.outputs.changes == 'true'
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config --global user.name "Bot"
-            git config --global user.email "bot@example.com"
-            git add .
-            git commit -m "Update API Client"
-            git push
-            cd GeneratedClient
-            dotnet pack -c Release
-            dotnet nuget push bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-          else
-            echo "No changes in API."
-          fi
+          dotnet pack src/YourClient.csproj -c Release
+          dotnet nuget push src/bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 ```

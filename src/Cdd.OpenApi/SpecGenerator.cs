@@ -15,7 +15,7 @@ namespace Cdd.OpenApi
         {
             var doc = new OpenApiDocument
             {
-                Info = new OpenApiInfo { Title = "Generated API", Version = "1.0.0" },
+                Info = new OpenApiInfo { Title = "Generated API", Version = "3.2.0" },
                 Paths = new OpenApiPaths(),
                 Components = new OpenApiComponents { Schemas = new Dictionary<string, OpenApiSchema>() }
             };
@@ -39,6 +39,7 @@ namespace Cdd.OpenApi
                                      memberAccess.Name.Identifier.Text.StartsWith("Delete")));
 
                     var isMock = classNode.Identifier.Text.EndsWith("Mock");
+                    var isCli = classNode.Identifier.Text.EndsWith("Cli");
                     var isTest = classNode.Identifier.Text.EndsWith("Tests");
 
                     if (hasRoutes)
@@ -60,6 +61,14 @@ namespace Cdd.OpenApi
                     else if (isMock)
                     {
                         var paths = Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
+                        foreach (var p in paths)
+                        {
+                            doc.Paths![p.Key] = p.Value;
+                        }
+                    }
+                    else if (isCli)
+                    {
+                        var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
                         foreach (var p in paths)
                         {
                             doc.Paths![p.Key] = p.Value;
