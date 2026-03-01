@@ -38,6 +38,16 @@ namespace Cdd.OpenApi.Tests
                     await _client.PostAsync(""/users"");
                     return """";
                 }
+            }
+            
+            public class UsersMock
+            {
+                public void MockGetUser() {}
+            }
+            
+            public class UsersTests
+            {
+                public void GetUserTest() {}
             }";
 
             // AST -> Spec
@@ -51,7 +61,7 @@ namespace Cdd.OpenApi.Tests
             // Spec -> AST
             var generatedFiles = CodeGenerator.Generate(doc);
 
-            Assert.Equal(3, generatedFiles.Count);
+            Assert.Equal(5, generatedFiles.Count);
             
             var userClass = generatedFiles.Find(f => f.FileName == "Models/User.cs");
             Assert.NotNull(userClass);

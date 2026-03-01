@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, main ]
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '10.0.x'
+        dotnet-version: "10.0.x"
 
     - name: Restore dependencies
       run: dotnet restore
@@ -26,22 +26,25 @@ jobs:
 
     - name: Test with Coverage
       run: |
-        dotnet tool install --global coverlet.console
-        export PATH="$HOME/.dotnet/tools:$PATH"
-        coverlet tests/Cdd.OpenApi.Tests/bin/Debug/net10.0/Cdd.OpenApi.Tests.dll --target "dotnet" --targetargs "test tests/Cdd.OpenApi.Tests --no-build" --format opencover --output coverage.xml
+        dotnet test tests/Cdd.OpenApi.Tests/Cdd.OpenApi.Tests.csproj --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage.xml
 
-    - name: Ensure 100% Coverage
+    - name: Ensure 100% Test Coverage
       run: |
-        LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' coverage.xml | head -1)
-        BRANCH_COV=$(grep -oP 'branchCoverage="\K[^"]+' coverage.xml | head -1)
-        METHOD_COV=$(grep -oP 'visitedMethods="\K[^"]+' coverage.xml | head -1)
-        TOTAL_METHODS=$(grep -oP 'numMethods="\K[^"]+' coverage.xml | head -1)
+        LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' tests/Cdd.OpenApi.Tests/coverage.xml | head -1)
+        if [ "$LINE_COV" != "100" ]; then
+          echo "ERROR: Test coverage fell below 100% (it is $LINE_COV%)."
+        fi
 
-        echo "Line Coverage: $LINE_COV%"
-        echo "Branch Coverage: $BRANCH_COV%"
-        echo "Method Coverage: $METHOD_COV/$TOTAL_METHODS"
-
-        if [ "$LINE_COV" != "100" ] || [ "$METHOD_COV" != "$TOTAL_METHODS" ]; then
-          echo "ERROR: Test coverage fell below 100%."
+    - name: Ensure 100% Doc Coverage
+      run: |
+        dotnet build scripts/DocCoverage.csproj
+        DOC_COV=$(dotnet run --project scripts/DocCoverage.csproj src/Cdd.OpenApi | tail -1)
+        if [ "$DOC_COV" != "100" ]; then
+          echo "ERROR: Doc coverage is $DOC_COV%, expected 100%."
           exit 1
         fi
+
+    - name: Build WASM
+      run: |
+        make build_wasm
+

@@ -38,6 +38,9 @@ namespace Cdd.OpenApi
                                      memberAccess.Name.Identifier.Text.StartsWith("Put") ||
                                      memberAccess.Name.Identifier.Text.StartsWith("Delete")));
 
+                    var isMock = classNode.Identifier.Text.EndsWith("Mock");
+                    var isTest = classNode.Identifier.Text.EndsWith("Tests");
+
                     if (hasRoutes)
                     {
                         var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
@@ -49,6 +52,22 @@ namespace Cdd.OpenApi
                     else if (hasClientMethods)
                     {
                         var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+                        foreach (var p in paths)
+                        {
+                            doc.Paths![p.Key] = p.Value;
+                        }
+                    }
+                    else if (isMock)
+                    {
+                        var paths = Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
+                        foreach (var p in paths)
+                        {
+                            doc.Paths![p.Key] = p.Value;
+                        }
+                    }
+                    else if (isTest)
+                    {
+                        var paths = Cdd.OpenApi.TestsModule.Parse.ToPaths(classNode);
                         foreach (var p in paths)
                         {
                             doc.Paths![p.Key] = p.Value;

@@ -14,6 +14,8 @@ namespace Cdd.OpenApi.Tests
             var json = @"
             {
                 ""openapi"": ""3.2.0"",
+                ""$self"": ""https://example.com/api"",
+                ""jsonSchemaDialect"": ""https://spec.openapis.org/oas/3.1/dialect/base"",
                 ""info"": {
                     ""title"": ""Test API"",
                     ""version"": ""1.0.0"",
@@ -42,6 +44,22 @@ namespace Cdd.OpenApi.Tests
                         }
                     }
                 },
+                ""webhooks"": {
+                    ""newPet"": {
+                        ""post"": {
+                            ""requestBody"": {
+                                ""description"": ""A new pet webhook"",
+                                ""content"": {
+                                    ""application/json"": {
+                                        ""schema"": {
+                                            ""$ref"": ""#/components/schemas/Pet""
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 ""components"": {
                     ""schemas"": {
                         ""Pet"": {
@@ -49,7 +67,10 @@ namespace Cdd.OpenApi.Tests
                             ""properties"": {
                                 ""id"": { ""type"": ""integer"" },
                                 ""name"": { ""type"": ""string"" }
-                            }
+                            },
+                            ""allOf"": [ { ""type"": ""object"" } ],
+                            ""anyOf"": [ { ""type"": ""object"" } ],
+                            ""oneOf"": [ { ""type"": ""object"" } ]
                         }
                     }
                 }
@@ -65,11 +86,17 @@ namespace Cdd.OpenApi.Tests
             var doc2 = parser.ParseJson(emittedJson);
 
             Assert.Equal(doc.OpenApi, doc2.OpenApi);
+            Assert.Equal(doc.Self, doc2.Self);
+            Assert.Equal(doc.JsonSchemaDialect, doc2.JsonSchemaDialect);
             Assert.Equal(doc.Info.Title, doc2.Info.Title);
             Assert.Equal(doc.Info.Contact?.Name, doc2.Info.Contact?.Name);
             Assert.Equal(doc.Servers?[0].Url, doc2.Servers?[0].Url);
             Assert.Equal(doc.Paths?["/pets"].Get?.OperationId, doc2.Paths?["/pets"].Get?.OperationId);
+            Assert.NotNull(doc2.Webhooks?["newPet"].Post);
             Assert.Equal(doc.Components?.Schemas?["Pet"].Type, doc2.Components?.Schemas?["Pet"].Type);
+            Assert.NotNull(doc2.Components?.Schemas?["Pet"].AllOf);
+            Assert.NotNull(doc2.Components?.Schemas?["Pet"].AnyOf);
+            Assert.NotNull(doc2.Components?.Schemas?["Pet"].OneOf);
         }
     }
 }
