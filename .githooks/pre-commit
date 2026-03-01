@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+make test
+bash scripts/update_badges.sh
+git add README.md

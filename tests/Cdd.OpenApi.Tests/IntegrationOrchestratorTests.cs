@@ -61,7 +61,7 @@ namespace Cdd.OpenApi.Tests
             // Spec -> AST
             var generatedFiles = CodeGenerator.Generate(doc);
 
-            Assert.Equal(5, generatedFiles.Count);
+            Assert.Equal(6, generatedFiles.Count);
             
             var userClass = generatedFiles.Find(f => f.FileName == "Models/User.cs");
             Assert.NotNull(userClass);

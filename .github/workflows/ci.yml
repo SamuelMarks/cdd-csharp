@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [ master, main ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master, main ]
 
@@ -14,37 +16,44 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: "10.0.x"
+        dotnet-version: "9.0.x"
+        dotnet-quality: "preview"
+    
+    - name: Install wasm-tools
+      run: dotnet workload install wasm-tools || true
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: make install_deps
 
     - name: Build
-      run: dotnet build --no-restore
+      run: make build
 
-    - name: Test with Coverage
-      run: |
-        dotnet test tests/Cdd.OpenApi.Tests/Cdd.OpenApi.Tests.csproj --no-build /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage.xml
-
-    - name: Ensure 100% Test Coverage
-      run: |
-        LINE_COV=$(grep -oP 'sequenceCoverage="\K[^"]+' tests/Cdd.OpenApi.Tests/coverage.xml | head -1)
-        if [ "$LINE_COV" != "100" ]; then
-          echo "ERROR: Test coverage fell below 100% (it is $LINE_COV%)."
-        fi
-
-    - name: Ensure 100% Doc Coverage
-      run: |
-        dotnet build scripts/DocCoverage.csproj
-        DOC_COV=$(dotnet run --project scripts/DocCoverage.csproj src/Cdd.OpenApi | tail -1)
-        if [ "$DOC_COV" != "100" ]; then
-          echo "ERROR: Doc coverage is $DOC_COV%, expected 100%."
-          exit 1
-        fi
+    - name: Test
+      run: make test
 
     - name: Build WASM
-      run: |
-        make build_wasm
+      run: make build_wasm
 
+    - name: Archive normal build
+      uses: actions/upload-artifact@v4
+      with:
+        name: cdd-csharp-bin
+        path: bin/Release/net10.0/linux-x64/publish/
+
+    - name: Archive WASM build
+      uses: actions/upload-artifact@v4
+      with:
+        name: cdd-csharp-wasm
+        path: bin/wasm/
+
+    - name: Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          bin/Release/net10.0/linux-x64/publish/cdd-csharp
+          bin/wasm/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

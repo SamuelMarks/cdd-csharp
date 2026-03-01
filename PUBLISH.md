@@ -1,25 +1,24 @@
 # Publishing cdd-csharp
 
-## Publishing to NuGet
+## Publishing the C# Tool to NuGet
+To publish the `cdd-csharp` CLI tool as a global tool on NuGet:
 
-To publish the library and the CLI to NuGet (`nuget.org`):
-
-1. **Build and Pack**:
+1. Ensure your `.csproj` file for the CLI has `PackAsTool` set to true.
+2. Build the package:
    ```bash
-   dotnet pack src/Cdd.OpenApi/Cdd.OpenApi.csproj -c Release -o ./artifacts
-   dotnet pack src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -o ./artifacts
+   dotnet pack src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release
    ```
-
-2. **Push to NuGet**:
+3. Publish to NuGet.org:
    ```bash
-   dotnet nuget push ./artifacts/*.nupkg -k YOUR_NUGET_API_KEY -s https://api.nuget.org/v3/index.json
+   dotnet nuget push src/Cdd.OpenApi.Cli/bin/Release/*.nupkg -k YOUR_NUGET_API_KEY -s https://api.nuget.org/v3/index.json
    ```
 
 ## Publishing Documentation
-
-You can generate the documentation locally:
-```bash
-make build_docs
-```
-
-This places XML documentation in the `docs/` directory, which can be served statically using tools like DocFX or standard web servers.
+1. **Local Serving**:
+   Build docs using DocFX (via `make build_docs`) and serve locally:
+   ```bash
+   dotnet tool install -g docfx
+   docfx serve docs
+   ```
+2. **Publishing to GitHub Pages**:
+   You can use a GitHub Action to deploy the `docs` directory output from DocFX to GitHub Pages.

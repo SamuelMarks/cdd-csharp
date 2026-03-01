@@ -1,17 +1,20 @@
-# WebAssembly (WASM) Support
+# cdd-csharp WASM Support
 
-`cdd-csharp` supports being compiled to WebAssembly (WASM/WASI) using the experimental .NET 10 WASI workload.
+The `cdd-csharp` CLI tool is compatible with WebAssembly (WASM).
 
-This enables you to:
-- Run the CLI in constrained environments without .NET installed.
-- Integrate the CDD toolchain into web browsers or unified cdd-* CLI binaries via tools like Wasmtime or Wasmer.
+By using the `.NET` SDK's built-in `browser-wasm` runtime support, this CLI can be fully compiled and distributed as a WASM package.
 
 ## Building for WASM
-Run the provided make target:
+
+Ensure you have the `wasm-tools` workload installed:
 ```bash
-make build_wasm
-# or
-make.bat build_wasm
+dotnet workload install wasm-tools
 ```
 
-This will output WASM binaries in `bin/wasm/`.
+Then run the provided Make task:
+```bash
+make build_wasm
+```
+
+The output will be placed in `bin/wasm/`. This output includes `.wasm` files and necessary JavaScript glue code allowing it to run entirely in the browser.
+This enables `cdd-csharp` to be used in a unified CLI of all `cdd-*` projects without requiring `dotnet` to be installed on the host, or integrated into a web-based IDE entirely client-side.
