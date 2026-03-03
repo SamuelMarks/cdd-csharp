@@ -16,7 +16,6 @@ The CLI—at a minimum—has:
 - `cdd-csharp from_openapi -i spec.json`
 - `cdd-csharp to_openapi -f path/to/code`
 - `cdd-csharp to_docs_json --no-imports --no-wrapping -i spec.json`
-- `cdd-csharp serve_json_rpc --port 8082 --listen 0.0.0.0`
 
 The goal of this project is to enable rapid application development without tradeoffs. Tradeoffs of Protocol Buffers / Thrift etc. are an untouchable "generated" directory and package, compile-time and/or runtime overhead. Tradeoffs of Java or JavaScript for everything are: overhead in hardware access, offline mode, ML inefficiency, and more. And neither of these alterantive approaches are truly integrated into your target system, test frameworks, and bigger abstractions you build in your app. Tradeoffs in CDD are code duplication (but CDD handles the synchronisation for you).
 
@@ -32,7 +31,7 @@ The `cdd-csharp` compiler leverages a unified architecture to support various fa
 
 ## 📦 Installation
 
-Requires .NET 9.0/10.0 runtime.
+Requires .NET 10.0 runtime.
 
 Install as a global tool:
 ```bash
@@ -84,7 +83,7 @@ File.WriteAllText("re-parsed.json", emitter.EmitJson(reParsedDoc));
 
 ## Design choices
 
-`cdd-csharp` uses the powerful Roslyn compiler (Microsoft.CodeAnalysis) for parsing and generating C# code without relying on potentially slow and unsafe reflection. It performs syntactic parsing and analysis natively.
+`cdd-csharp` uses the powerful Roslyn compiler (`Microsoft.CodeAnalysis`) for parsing and generating C# code without relying on potentially slow and unsafe reflection. It performs syntactic parsing and analysis natively. C# features like AST mutation support make lossless transformation robust and seamless. 
 
 ## 🏗 Supported Conversions for C#
 
@@ -96,10 +95,9 @@ File.WriteAllText("re-parsed.json", emitter.EmitJson(reParsedDoc));
 | `C#` Models / Structs / Types | [✅] | [✅] |
 | `C#` Server Routes / Endpoints | [✅] | [✅] |
 | `C#` API Clients / SDKs | [✅] | [✅] |
-| `C#` ORM / DB Schemas | [ ] | [ ] |
+| `C#` ORM / DB Schemas | [ ] | [✅] |
 | `C#` CLI Argument Parsers | [✅] | [✅] |
 | `C#` Docstrings / Comments | [✅] | [✅] |
-
 
 ---
 

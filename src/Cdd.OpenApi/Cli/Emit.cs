@@ -22,7 +22,7 @@ namespace Cdd.OpenApi.CliModule
 
             var bodyStatements = new List<StatementSyntax>();
 
-            var helpCheck = SyntaxFactory.ParseStatement("if (args.Length == 0 || args[0] == \"--help\") { System.Console.WriteLine(\"Usage: " + className + " <command>\"); return 0; }");
+            var helpCheck = SyntaxFactory.ParseStatement("if (args.Length == 0 || args[0] == \"--help\") { System.Console.WriteLine(\"Usage: \" + nameof(" + className + ") + \" <command> [options]\"); return 0; }");
             bodyStatements.Add(helpCheck);
 
             var switchStatement = SyntaxFactory.SwitchStatement(SyntaxFactory.ParseExpression("args[0]"));
@@ -31,21 +31,44 @@ namespace Cdd.OpenApi.CliModule
             {
                 var routePath = pathKvp.Key;
                 var pathItem = pathKvp.Value;
-                var ops = new[] { pathItem.Get, pathItem.Post, pathItem.Put, pathItem.Delete }.Where(x => x != null);
-
-                foreach (var op in ops)
+                
+                var ops = new Dictionary<string, OpenApiOperation?>
                 {
+                    { "get", pathItem.Get },
+                    { "post", pathItem.Post },
+                    { "put", pathItem.Put },
+                    { "delete", pathItem.Delete }
+                };
+
+                foreach (var opKvp in ops)
+                {
+                    var op = opKvp.Value;
                     if (op == null) continue;
-                    var operationId = op.OperationId ?? routePath.Replace("/", "").Replace("{", "").Replace("}", "");
+                    var operationId = op.OperationId ?? (opKvp.Key + routePath.Replace("/", "").Replace("{", "").Replace("}", ""));
                     var commandName = operationId.ToLower();
                     
                     var description = op.Summary ?? "No description";
                     
                     var caseLabel = SyntaxFactory.CaseSwitchLabel(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(commandName)));
                     
-                    var caseStatements = new SyntaxList<StatementSyntax>()
-                        .Add(SyntaxFactory.ParseStatement($"System.Console.WriteLine(\"{description}\");"))
-                        .Add(SyntaxFactory.BreakStatement());
+                    var caseStatements = new SyntaxList<StatementSyntax>();
+
+                    string helpStr = $"System.Console.WriteLine(\"{description}\");";
+                    
+                    if (op.Parameters != null && op.Parameters.Any())
+                    {
+                        helpStr += " System.Console.WriteLine(\"Options:\");";
+                        foreach (var p in op.Parameters)
+                        {
+                            helpStr += $" System.Console.WriteLine(\"  --{p.Name.ToLower()} <{p.Schema?.Type ?? "string"}> : {p.Description ?? "No description"}\");";
+                        }
+                    }
+
+                    var cmdHelpCheck = SyntaxFactory.ParseStatement($"if (args.Length > 1 && args[1] == \"--help\") {{ {helpStr} return 0; }}");
+                    caseStatements = caseStatements.Add(cmdHelpCheck);
+                    
+                    caseStatements = caseStatements.Add(SyntaxFactory.ParseStatement($"System.Console.WriteLine(\"Executing {commandName}...\");"));
+                    caseStatements = caseStatements.Add(SyntaxFactory.BreakStatement());
 
                     switchStatement = switchStatement.AddSections(SyntaxFactory.SwitchSection(new SyntaxList<SwitchLabelSyntax>().Add(caseLabel), caseStatements));
                 }

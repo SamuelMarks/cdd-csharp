@@ -7,10 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
-/// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
-/// <summary>Auto-generated documentation for ToClass.</summary>
+        /// <summary>Auto-generated documentation for ToClass.</summary>
         public static ClassDeclarationSyntax ToClass(string className, OpenApiSchema schema)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)
@@ -29,6 +29,8 @@ namespace Cdd.OpenApi.Classes
                     var propSchema = prop.Value;
                     
                     var isRequired = schema.Required != null && schema.Required.Contains(propName);
+                    var isKey = propName.Equals("id", System.StringComparison.OrdinalIgnoreCase);
+                    
                     var csharpType = MapTypeToCSharp(propSchema.Type);
                     
                     if (!isRequired && csharpType != "object" && csharpType != "string")
@@ -46,6 +48,23 @@ namespace Cdd.OpenApi.Classes
                             SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
                             SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
                         );
+
+                    var attributes = new List<AttributeSyntax>();
+
+                    if (isKey)
+                    {
+                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Key")));
+                    }
+                    if (isRequired)
+                    {
+                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Required")));
+                    }
+
+                    if (attributes.Any())
+                    {
+                        var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributes));
+                        propNode = propNode.AddAttributeLists(attributeList);
+                    }
 
                     if (!string.IsNullOrWhiteSpace(propSchema.Description))
                     {

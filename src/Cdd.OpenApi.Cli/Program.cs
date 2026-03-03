@@ -234,7 +234,13 @@ namespace Cdd.OpenApi.Cli
                 }
                 if (!noInstallablePackage)
                 {
-                    File.WriteAllText(Path.Combine(outputPath, "GeneratedProject.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>");
+                    var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n";
+                    if (type == GenerateType.All || type == GenerateType.Server)
+                    {
+                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n";
+                    }
+                    projContent += "</Project>";
+                    File.WriteAllText(Path.Combine(outputPath, "GeneratedProject.csproj"), projContent);
                 }
             }
             return res;
