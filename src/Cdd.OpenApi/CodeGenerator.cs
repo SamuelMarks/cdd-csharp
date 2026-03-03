@@ -43,6 +43,7 @@ namespace Cdd.OpenApi
                     var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
                     
                     var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")))
                         .AddMembers(classNode).NormalizeWhitespace();
                     
                     results.Add(new GeneratedCode 
@@ -50,6 +51,15 @@ namespace Cdd.OpenApi
                         FileName = $"Models/{schemaKvp.Key}.cs", 
                         Code = nsNode.ToFullString() 
                     });
+                }
+
+                if (type == GenerateType.All || type == GenerateType.Server)
+                {
+                    var dbContextNode = Cdd.OpenApi.Orm.Emit.ToDbContext("AppDbContext", doc.Components.Schemas);
+                    var dbContextNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
+                        .AddMembers(dbContextNode).NormalizeWhitespace();
+                    results.Add(new GeneratedCode { FileName = "Models/AppDbContext.cs", Code = dbContextNsNode.ToFullString() });
                 }
             }
 
