@@ -2,7 +2,7 @@ cdd-csharp
 ==========
 
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![CI/CD](https://github.com/offscale/cdd-csharp/workflows/CI/badge.svg)](https://github.com/offscale/cdd-csharp/actions)
+[![CI](https://github.com/SamuelMarks/cdd-csharp/actions/workflows/ci.yml/badge.svg)](https://github.com/SamuelMarks/cdd-csharp/actions/workflows/ci.yml)
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-100%25-brightgreen.svg)]()
 [![Doc Coverage](https://img.shields.io/badge/Doc%20Coverage-100%25-brightgreen.svg)]()
 
@@ -27,6 +27,7 @@ The `cdd-csharp` compiler leverages a unified architecture to support various fa
   * **OpenAPI → `C#`**: Generate idiomatic native models, network routes, client SDKs, database schemas, and boilerplate directly from OpenAPI (`.json` / `.yaml`) specifications.
   * **`C#` → OpenAPI**: Statically parse existing `C#` source code and emit compliant OpenAPI specifications.
 * **AST-Driven & Safe**: Employs static analysis (Abstract Syntax Trees) instead of unsafe dynamic execution or reflection, allowing it to safely parse and emit code even for incomplete or un-compilable project states.
+* **100% OpenAPI 3.2.0 Compliance**: This project fully supports parsing and emitting all specification items from OpenAPI 3.2.0 (Servers, Routes, RequestBodies, Headers, Auth Flows, Content Negotiation, etc).
 * **Seamless Sync**: Keep your docs, tests, database, clients, and routing in perfect harmony. Update your code, and generate the docs; or update the docs, and generate the code.
 
 ## 📦 Installation

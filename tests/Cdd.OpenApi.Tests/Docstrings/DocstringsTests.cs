@@ -84,5 +84,40 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Contains("/// New summary", code);
             Assert.Contains("TestClass", code);
         }
+
+        [Fact]
+        public void Parse_FullCoverage()
+        {
+            var code = @"
+            /// <mytag a=""b"" c=""d"">
+            ///  Tag text 1
+            /// </mytag>
+            /// <mytag e=""f"">
+            ///  Tag text 2
+            /// </mytag>
+            /// <server url=""s1"">desc1</server>
+            /// <server url=""s2"">desc2</server>
+            public class A {}
+            ";
+
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+
+            var tags = Cdd.OpenApi.Docstrings.Parse.GetTagsWithAttributes(classNode, "mytag");
+            Assert.Equal(2, tags.Count());
+            Assert.Equal("b", tags.ElementAt(0).Attributes["a"]);
+            Assert.Equal("d", tags.ElementAt(0).Attributes["c"]);
+            Assert.Equal("Tag text 1", tags.ElementAt(0).Text);
+            
+            Assert.Equal("f", tags.ElementAt(1).Attributes["e"]);
+            Assert.Equal("Tag text 2", tags.ElementAt(1).Text);
+
+            var servers = Cdd.OpenApi.Docstrings.Parse.GetServers(classNode);
+            Assert.Equal(2, servers.Count());
+            Assert.Equal("s1", servers.ElementAt(0).Url);
+            Assert.Equal("desc1", servers.ElementAt(0).Description);
+            Assert.Equal("s2", servers.ElementAt(1).Url);
+            Assert.Equal("desc2", servers.ElementAt(1).Description);
+        }
     }
 }

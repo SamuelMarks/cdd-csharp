@@ -167,7 +167,9 @@ namespace Cdd.OpenApi.Tests.Models
                 Name = "Authorization",
                 In = "header",
                 Scheme = "basic",
-                BearerFormat = "JWT"
+                BearerFormat = "JWT",
+                Oauth2MetadataUrl = "https://example.com/oauth2/metadata",
+                Deprecated = true
             };
 
             Assert.Equal("http", scheme.Type);
@@ -176,6 +178,8 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("header", scheme.In);
             Assert.Equal("basic", scheme.Scheme);
             Assert.Equal("JWT", scheme.BearerFormat);
+            Assert.Equal("https://example.com/oauth2/metadata", scheme.Oauth2MetadataUrl);
+            Assert.True(scheme.Deprecated);
         }
 
         [Fact]
