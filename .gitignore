@@ -396,3 +396,12 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Temporary testing directories and scripts
+coveragereport/
+tmp_test/
+tmp_test2/
+*.py
+*.sh
+*.patch
+
