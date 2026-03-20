@@ -116,3 +116,37 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
+
+## CLI Help
+
+```
+$ src/Cdd.OpenApi.Cli/bin/Debug/net10.0/cdd-csharp.dll --help
+Usage:
+  cdd-csharp --help
+  cdd-csharp --version
+  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <spec.json> | --input-dir <dir> [-o <output-dir>]
+  cdd-csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]
+  cdd-csharp to_docs_json --no-imports --no-wrapping -i <spec.json> [-o docs.json]
+  cdd-csharp serve_json_rpc --port <port> --listen <ip>
+```
+
+### `from_openapi`
+
+```
+$ src/Cdd.OpenApi.Cli/bin/Debug/net10.0/cdd-csharp.dll from_openapi --help
+Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <spec.json> | --input-dir <dir> [-o <output-dir>]
+```
+
+### `to_openapi`
+
+```
+$ src/Cdd.OpenApi.Cli/bin/Debug/net10.0/cdd-csharp.dll to_openapi --help
+Usage: cdd-csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]
+```
+
+### `to_docs_json`
+
+```
+$ src/Cdd.OpenApi.Cli/bin/Debug/net10.0/cdd-csharp.dll to_docs_json --help
+Usage: cdd-csharp to_docs_json -i <spec.json> [-o docs.json] [--no-imports] [--no-wrapping]
+```
