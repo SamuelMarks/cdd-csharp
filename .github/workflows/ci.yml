@@ -51,12 +51,16 @@ jobs:
         name: cdd-csharp-wasm
         path: bin/wasm/
 
+    - name: Zip WASM
+      if: startsWith(github.ref, 'refs/tags/')
+      run: cd bin && zip -r cdd-csharp-wasm.zip wasm/
+
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         files: |
           bin/Release/net10.0/linux-x64/publish/cdd-csharp
-          bin/wasm/*
+          bin/cdd-csharp-wasm.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
