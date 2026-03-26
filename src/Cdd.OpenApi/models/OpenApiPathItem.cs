@@ -69,13 +69,11 @@ namespace Cdd.OpenApi.Models
 /// <summary>Auto-generated documentation for Servers.</summary>
         [JsonPropertyName("servers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Servers.</summary>
         public IList<OpenApiServer>? Servers { get; set; }
 
 /// <summary>Auto-generated documentation for Parameters.</summary>
         [JsonPropertyName("parameters")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Parameters.</summary>
         public IList<OpenApiParameter>? Parameters { get; set; }
 
         // additionalOperations is a Map, but its key can be dynamic HTTP verbs. We might need a custom JsonConverter later.

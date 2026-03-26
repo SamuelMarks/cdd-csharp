@@ -12,7 +12,6 @@ namespace Cdd.OpenApi.Models
         /// The semantic version number of the OpenAPI Specification version that the OpenAPI document uses.
         /// </summary>
         [JsonPropertyName("openapi")]
-/// <summary>Auto-generated documentation for OpenApi.</summary>
         public string OpenApi { get; set; } = "3.2.0";
 
         /// <summary>
@@ -40,7 +39,6 @@ namespace Cdd.OpenApi.Models
         /// </summary>
         [JsonPropertyName("servers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Servers.</summary>
         public IList<OpenApiServer>? Servers { get; set; }
 
         /// <summary>
@@ -76,7 +74,6 @@ namespace Cdd.OpenApi.Models
         /// </summary>
         [JsonPropertyName("tags")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Tags.</summary>
         public IList<OpenApiTag>? Tags { get; set; }
 
         /// <summary>

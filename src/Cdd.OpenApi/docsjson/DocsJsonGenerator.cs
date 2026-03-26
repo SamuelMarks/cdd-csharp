@@ -7,11 +7,17 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.DocsJson
 {
+    /// <summary>Generates JSON documentation.</summary>
     public static class DocsJsonGenerator
     {
+        /// <summary>Generates the documentation JSON string.</summary>
         public static string Generate(OpenApiDocument doc, bool noImports, bool noWrapping)
         {
-            var endpoints = new Dictionary<string, Dictionary<string, string>>();
+            var output = new DocsJsonOutput
+            {
+                Language = "csharp",
+                Operations = new List<DocsJsonOperation>()
+            };
 
             if (doc.Paths != null)
             {
@@ -32,8 +38,6 @@ namespace Cdd.OpenApi.DocsJson
                         { "trace", pathItem.Trace }
                     };
 
-                    var pathMap = new Dictionary<string, string>();
-
                     foreach (var opKvp in operations)
                     {
                         var method = opKvp.Key;
@@ -41,27 +45,48 @@ namespace Cdd.OpenApi.DocsJson
                         if (operation == null) continue;
 
                         var operationId = operation.OperationId;
-                        var methodName = operationId ?? $"{method}{routePath.Replace("/", "").Replace("{", "").Replace("}", "")}";
+                        var methodName = operationId ?? $"{method.ToUpperInvariant()}{routePath.Replace("/", "").Replace("{", "").Replace("}", "")}";
 
-                        var snippetLines = new List<string>();
-                        
+                        var opOut = new DocsJsonOperation
+                        {
+                            Method = method.ToUpperInvariant(),
+                            Path = routePath,
+                            OperationId = operation.OperationId,
+                            Code = new DocsJsonCode()
+                        };
+
                         if (!noImports)
                         {
-                            snippetLines.Add("using System;");
-                            snippetLines.Add("using System.Threading.Tasks;");
-                            snippetLines.Add("using Generated.Api;");
-                            snippetLines.Add("using Generated.Models;");
-                            snippetLines.Add("");
+                            var importsLines = new List<string>
+                            {
+                                "using System;",
+                                "using System.Threading.Tasks;",
+                                "using Generated.Api;",
+                                "using Generated.Models;"
+                            };
+                            opOut.Code.Imports = string.Join("\n", importsLines);
                         }
 
                         if (!noWrapping)
                         {
-                            snippetLines.Add("public class Example");
-                            snippetLines.Add("{");
-                            snippetLines.Add("    public static async Task Main()");
-                            snippetLines.Add("    {");
+                            var wrapStart = new List<string>
+                            {
+                                "public class Example",
+                                "{",
+                                "    public static async Task Main()",
+                                "    {"
+                            };
+                            opOut.Code.WrapperStart = string.Join("\n", wrapStart);
+
+                            var wrapEnd = new List<string>
+                            {
+                                "    }",
+                                "}"
+                            };
+                            opOut.Code.WrapperEnd = string.Join("\n", wrapEnd);
                         }
 
+                        var snippetLines = new List<string>();
                         string indent = noWrapping ? "" : "        ";
 
                         snippetLines.Add($"{indent}// Initialize the API client");
@@ -92,33 +117,20 @@ namespace Cdd.OpenApi.DocsJson
                         var paramsString = string.Join(", ", parameters);
                         snippetLines.Add($"{indent}await client.{methodName}Async({paramsString});");
 
-                        if (!noWrapping)
-                        {
-                            snippetLines.Add("    }");
-                            snippetLines.Add("}");
-                        }
+                        opOut.Code.Snippet = string.Join("\n", snippetLines);
 
-                        pathMap[method] = string.Join("\n", snippetLines);
-                    }
-
-                    if (pathMap.Count > 0)
-                    {
-                        endpoints[routePath] = pathMap;
+                        output.Operations.Add(opOut);
                     }
                 }
             }
 
-            var root = new Dictionary<string, object>
-            {
-                { "endpoints", endpoints }
-            };
-
+            var resultList = new List<DocsJsonOutput> { output };
             var options = new JsonSerializerOptions 
             { 
                 WriteIndented = true,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
-            return JsonSerializer.Serialize(root, options);
+            return JsonSerializer.Serialize(resultList, options);
         }
 
         private static string MapTypeToCSharp(string? openApiType)

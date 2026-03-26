@@ -8,7 +8,6 @@ namespace Cdd.OpenApi.DocsJson
     {
         /// <summary>Language</summary>
         [JsonPropertyName("language")]
-/// <summary>Auto-generated documentation for Language.</summary>
         public string Language { get; set; } = "csharp";
 
         /// <summary>Operations</summary>
@@ -21,12 +20,10 @@ namespace Cdd.OpenApi.DocsJson
     {
         /// <summary>Method</summary>
         [JsonPropertyName("method")]
-/// <summary>Auto-generated documentation for Method.</summary>
         public string Method { get; set; } = string.Empty;
 
         /// <summary>Path</summary>
         [JsonPropertyName("path")]
-/// <summary>Auto-generated documentation for Path.</summary>
         public string Path { get; set; } = string.Empty;
 
         /// <summary>OperationId</summary>
@@ -54,7 +51,6 @@ namespace Cdd.OpenApi.DocsJson
 
         /// <summary>Snippet</summary>
         [JsonPropertyName("snippet")]
-/// <summary>Auto-generated documentation for Snippet.</summary>
         public string Snippet { get; set; } = string.Empty;
 
         /// <summary>WrapperEnd</summary>

@@ -7,7 +7,6 @@ namespace Cdd.OpenApi.Models
     {
 /// <summary>Auto-generated documentation for Ref.</summary>
         [JsonPropertyName("$ref")]
-/// <summary>Auto-generated documentation for Ref.</summary>
         public string Ref { get; set; } = string.Empty;
 
 /// <summary>Auto-generated documentation for Summary.</summary>

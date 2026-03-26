@@ -12,7 +12,6 @@ namespace Cdd.OpenApi.Models
         /// The name of the property in the payload that will hold the discriminator value.
         /// </summary>
         [JsonPropertyName("propertyName")]
-/// <summary>Auto-generated documentation for PropertyName.</summary>
         public string PropertyName { get; set; } = string.Empty;
 
         /// <summary>
