@@ -34,7 +34,6 @@ namespace Cdd.OpenApi.Models
         /// <summary>Auto-generated documentation for Required.</summary>
         [JsonPropertyName("required")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Required.</summary>
         public IList<string>? Required { get; set; }
 
         /// <summary>Auto-generated documentation for Description.</summary>
@@ -65,19 +64,16 @@ namespace Cdd.OpenApi.Models
         /// <summary>Auto-generated documentation for AllOf.</summary>
         [JsonPropertyName("allOf")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for AllOf.</summary>
         public IList<OpenApiSchema>? AllOf { get; set; }
 
         /// <summary>Auto-generated documentation for AnyOf.</summary>
         [JsonPropertyName("anyOf")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for AnyOf.</summary>
         public IList<OpenApiSchema>? AnyOf { get; set; }
 
         /// <summary>Auto-generated documentation for OneOf.</summary>
         [JsonPropertyName("oneOf")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for OneOf.</summary>
         public IList<OpenApiSchema>? OneOf { get; set; }
 
         /// <summary>Auto-generated documentation for Not.</summary>
@@ -128,7 +124,6 @@ namespace Cdd.OpenApi.Models
         /// <summary>Auto-generated documentation for Examples.</summary>
         [JsonPropertyName("examples")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Examples.</summary>
         public IList<object>? Examples { get; set; }
 
         /// <summary>Auto-generated documentation for ReadOnly.</summary>
@@ -144,7 +139,6 @@ namespace Cdd.OpenApi.Models
         /// <summary>Auto-generated documentation for Enum.</summary>
         [JsonPropertyName("enum")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Enum.</summary>
         public IList<object>? Enum { get; set; }
 
         /// <summary>Auto-generated documentation for MaxLength.</summary>

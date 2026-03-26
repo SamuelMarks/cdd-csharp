@@ -9,7 +9,6 @@ namespace Cdd.OpenApi.Models
 /// <summary>Auto-generated documentation for Tags.</summary>
         [JsonPropertyName("tags")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Tags.</summary>
         public IList<string>? Tags { get; set; }
 
 /// <summary>Auto-generated documentation for Summary.</summary>
@@ -35,7 +34,6 @@ namespace Cdd.OpenApi.Models
 /// <summary>Auto-generated documentation for Parameters.</summary>
         [JsonPropertyName("parameters")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Parameters.</summary>
         public IList<OpenApiParameter>? Parameters { get; set; }
 
 /// <summary>Auto-generated documentation for RequestBody.</summary>
@@ -66,7 +64,6 @@ namespace Cdd.OpenApi.Models
 /// <summary>Auto-generated documentation for Servers.</summary>
         [JsonPropertyName("servers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for Servers.</summary>
         public IList<OpenApiServer>? Servers { get; set; }
     }
 }

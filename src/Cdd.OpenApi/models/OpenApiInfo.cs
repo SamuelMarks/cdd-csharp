@@ -7,7 +7,6 @@ namespace Cdd.OpenApi.Models
     {
 /// <summary>Auto-generated documentation for Title.</summary>
         [JsonPropertyName("title")]
-/// <summary>Auto-generated documentation for Title.</summary>
         public string Title { get; set; } = string.Empty;
 
 /// <summary>Auto-generated documentation for Summary.</summary>
@@ -37,7 +36,6 @@ namespace Cdd.OpenApi.Models
 
 /// <summary>Auto-generated documentation for Version.</summary>
         [JsonPropertyName("version")]
-/// <summary>Auto-generated documentation for Version.</summary>
         public string Version { get; set; } = string.Empty;
     }
 }

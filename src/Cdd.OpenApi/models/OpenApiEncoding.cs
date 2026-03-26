@@ -40,7 +40,6 @@ namespace Cdd.OpenApi.Models
 /// <summary>Auto-generated documentation for PrefixEncoding.</summary>
         [JsonPropertyName("prefixEncoding")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-/// <summary>Auto-generated documentation for PrefixEncoding.</summary>
         public IList<OpenApiEncoding>? PrefixEncoding { get; set; }
 
 /// <summary>Auto-generated documentation for ItemEncoding.</summary>

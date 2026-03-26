@@ -108,7 +108,7 @@ namespace Cdd.OpenApi.Tests.Clients
             
             var parameters = paths["/users/{id}"].Post?.Parameters;
             Assert.NotNull(parameters);
-            Assert.Equal(1, parameters.Count);
+            Assert.Single(parameters);
             Assert.Equal("id", parameters[0].Name);
             Assert.Equal("path", parameters[0].In);
             Assert.Equal("integer", parameters[0].Schema?.Type);

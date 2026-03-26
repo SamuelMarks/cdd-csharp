@@ -41,7 +41,7 @@ namespace Cdd.OpenApi.CliModule
                                     var name = variable.Identifier.Text;
                                     var paramName = name.Replace("_", "-");
                                     var initializer = variable.Initializer?.Value;
-                                    object example = null;
+                                    object? example = null;
                                     if (initializer is LiteralExpressionSyntax lit)
                                     {
                                         if (lit.Token.IsKind(SyntaxKind.NumericLiteralToken))

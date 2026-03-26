@@ -179,10 +179,10 @@ namespace Cdd.OpenApi.Cli
             bool noGithubActions = Environment.GetEnvironmentVariable("NO_GITHUB_ACTIONS") == "true";
             bool noInstallablePackage = Environment.GetEnvironmentVariable("NO_INSTALLABLE_PACKAGE") == "true";
 
-            string inputEnv = Environment.GetEnvironmentVariable("INPUT");
+            string? inputEnv = Environment.GetEnvironmentVariable("INPUT");
             if (!string.IsNullOrEmpty(inputEnv)) inputPaths.Add(inputEnv);
             
-            string inputDirEnv = Environment.GetEnvironmentVariable("INPUT_DIR");
+            string? inputDirEnv = Environment.GetEnvironmentVariable("INPUT_DIR");
             if (!string.IsNullOrEmpty(inputDirEnv) && Directory.Exists(inputDirEnv))
             {
                 inputPaths.AddRange(Directory.GetFiles(inputDirEnv, "*.json", SearchOption.AllDirectories));
