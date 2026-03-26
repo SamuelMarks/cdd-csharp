@@ -7,17 +7,11 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.DocsJson
 {
-    /// <summary>DocsJsonGenerator</summary>
     public static class DocsJsonGenerator
     {
-        /// <summary>Generate</summary>
         public static string Generate(OpenApiDocument doc, bool noImports, bool noWrapping)
         {
-            var output = new DocsJsonOutput
-            {
-                Language = "csharp",
-                Operations = new List<DocsJsonOperation>()
-            };
+            var endpoints = new Dictionary<string, Dictionary<string, string>>();
 
             if (doc.Paths != null)
             {
@@ -28,15 +22,17 @@ namespace Cdd.OpenApi.DocsJson
 
                     var operations = new Dictionary<string, OpenApiOperation?>
                     {
-                        { "GET", pathItem.Get },
-                        { "PUT", pathItem.Put },
-                        { "POST", pathItem.Post },
-                        { "DELETE", pathItem.Delete },
-                        { "OPTIONS", pathItem.Options },
-                        { "HEAD", pathItem.Head },
-                        { "PATCH", pathItem.Patch },
-                        { "TRACE", pathItem.Trace }
+                        { "get", pathItem.Get },
+                        { "put", pathItem.Put },
+                        { "post", pathItem.Post },
+                        { "delete", pathItem.Delete },
+                        { "options", pathItem.Options },
+                        { "head", pathItem.Head },
+                        { "patch", pathItem.Patch },
+                        { "trace", pathItem.Trace }
                     };
+
+                    var pathMap = new Dictionary<string, string>();
 
                     foreach (var opKvp in operations)
                     {
@@ -47,26 +43,25 @@ namespace Cdd.OpenApi.DocsJson
                         var operationId = operation.OperationId;
                         var methodName = operationId ?? $"{method}{routePath.Replace("/", "").Replace("{", "").Replace("}", "")}";
 
-                        var docsOp = new DocsJsonOperation
-                        {
-                            Method = method,
-                            Path = routePath,
-                            OperationId = operationId
-                        };
-
+                        var snippetLines = new List<string>();
+                        
                         if (!noImports)
                         {
-                            docsOp.Code.Imports = "using System;\nusing System.Threading.Tasks;\nusing Generated.Api;\nusing Generated.Models;";
+                            snippetLines.Add("using System;");
+                            snippetLines.Add("using System.Threading.Tasks;");
+                            snippetLines.Add("using Generated.Api;");
+                            snippetLines.Add("using Generated.Models;");
+                            snippetLines.Add("");
                         }
 
                         if (!noWrapping)
                         {
-/// <summary>Auto-generated documentation for Example.</summary>
-                            docsOp.Code.WrapperStart = "public class Example\n{\n    public static async Task Main()\n    {";
-                            docsOp.Code.WrapperEnd = "    }\n}";
+                            snippetLines.Add("public class Example");
+                            snippetLines.Add("{");
+                            snippetLines.Add("    public static async Task Main()");
+                            snippetLines.Add("    {");
                         }
 
-                        var snippetLines = new List<string>();
                         string indent = noWrapping ? "" : "        ";
 
                         snippetLines.Add($"{indent}// Initialize the API client");
@@ -88,7 +83,6 @@ namespace Cdd.OpenApi.DocsJson
                             }
                         }
 
-                        // We can also have a request body (but we'll keep it simple if it's not well supported in the generator)
                         if (operation.RequestBody != null)
                         {
                             snippetLines.Add($"{indent}var requestBody = new object(); // TODO: Initialize request body");
@@ -98,20 +92,33 @@ namespace Cdd.OpenApi.DocsJson
                         var paramsString = string.Join(", ", parameters);
                         snippetLines.Add($"{indent}await client.{methodName}Async({paramsString});");
 
-                        docsOp.Code.Snippet = string.Join("\n", snippetLines);
+                        if (!noWrapping)
+                        {
+                            snippetLines.Add("    }");
+                            snippetLines.Add("}");
+                        }
 
-                        output.Operations.Add(docsOp);
+                        pathMap[method] = string.Join("\n", snippetLines);
+                    }
+
+                    if (pathMap.Count > 0)
+                    {
+                        endpoints[routePath] = pathMap;
                     }
                 }
             }
 
-            var jsonArray = new List<DocsJsonOutput> { output };
+            var root = new Dictionary<string, object>
+            {
+                { "endpoints", endpoints }
+            };
+
             var options = new JsonSerializerOptions 
             { 
                 WriteIndented = true,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
-            return JsonSerializer.Serialize(jsonArray, options);
+            return JsonSerializer.Serialize(root, options);
         }
 
         private static string MapTypeToCSharp(string? openApiType)
