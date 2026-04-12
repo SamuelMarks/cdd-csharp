@@ -29,7 +29,7 @@ build_docs:
 
 BIN_DIR ?= bin/Release/net10.0/linux-x64/publish
 build:
-	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -r linux-x64 --self-contained -o $(BIN_DIR)
+	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net10.0 -r linux-x64 --self-contained -o $(BIN_DIR)
 
 test:
 	dotnet test CddOpenApi.slnx
@@ -45,8 +45,9 @@ run: build
 	$(BIN_DIR)/cdd-csharp $(RUN_ARGS)
 
 build_wasm:
-	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -r browser-wasm -o bin/wasm/
-
+	dotnet build src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -p:UseWasiSdk=true
+	mkdir -p bin
+	cp src/Cdd.OpenApi.Cli/bin/Release/net8.0/cdd-csharp.wasm bin/cdd-csharp.wasm
 build_docker:
 	docker build -t cdd-csharp-alpine -f alpine.Dockerfile .
 	docker build -t cdd-csharp-debian -f debian.Dockerfile .

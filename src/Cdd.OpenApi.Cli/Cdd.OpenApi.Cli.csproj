@@ -4,15 +4,19 @@
     <ProjectReference Include="..\Cdd.OpenApi\Cdd.OpenApi.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(UseWasiSdk)' == 'true'">
+    <PackageReference Include="Wasi.Sdk" Version="0.1.4-preview.10020" />
+  </ItemGroup>
   <PropertyGroup>
     <Version>0.0.1</Version>
     <OutputType>Exe</OutputType>
     <AssemblyName>cdd-csharp</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cdd-csharp</ToolCommandName>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PublishAot Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">true</PublishAot>
   </PropertyGroup>
 
 </Project>
