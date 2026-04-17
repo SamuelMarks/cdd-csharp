@@ -5,6 +5,7 @@ on:
     branches: [ master, main ]
     tags:
       - 'v*'
+      - 'latest'
   pull_request:
     branches: [ master, main ]
 
@@ -64,5 +65,6 @@ jobs:
         files: |
           bin/Release/net10.0/linux-x64/publish/cdd-csharp
           bin/cdd-csharp-wasm.zip
+          bin/cdd-csharp.wasm
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
