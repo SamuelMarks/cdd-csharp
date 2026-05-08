@@ -18,6 +18,62 @@ namespace Cdd.OpenApi.Cli
         {
             if (args.Length < 1)
             {
+                if (System.IO.File.Exists("/.cdd_args")) {
+                    args = System.IO.File.ReadAllLines("/.cdd_args");
+                } else {
+                    var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
+                    var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
+                    if (!string.IsNullOrEmpty(cddArgs)) {
+                        args = cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    } else if (!string.IsNullOrEmpty(cddCommand)) {
+                        args = new[] { cddCommand };
+                    }
+                }
+            }
+
+            if (args.Length < 1)
+            {
+                var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
+                var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
+                if (!string.IsNullOrEmpty(cddArgs)) {
+                    args = cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                } else if (!string.IsNullOrEmpty(cddCommand)) {
+                    args = new[] { cddCommand };
+                }
+            }
+
+            if (args.Length < 1)
+            {
+                var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
+                var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
+                if (!string.IsNullOrEmpty(cddCommand)) {
+                    var list = new System.Collections.Generic.List<string>();
+                    list.Add(cddCommand);
+                    if (!string.IsNullOrEmpty(cddArgs)) {
+                        list.AddRange(cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                    }
+                    args = list.ToArray();
+                }
+            }
+
+            if (args.Length < 1)
+            {
+                var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
+                var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
+                if (!string.IsNullOrEmpty(cddCommand)) {
+                    var list = new System.Collections.Generic.List<string>();
+                    list.Add(cddCommand);
+                    if (!string.IsNullOrEmpty(cddArgs)) {
+                        list.AddRange(cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                    } else {
+                        list.Add(cddCommand);
+                    }
+                    args = list.ToArray();
+                }
+            }
+
+            if (args.Length < 1)
+            {
                 PrintUsage();
                 return 1;
             }
@@ -229,19 +285,8 @@ namespace Cdd.OpenApi.Cli
                 if (!noGithubActions)
                 {
                     var ghDir = Path.Combine(outputPath, ".github", "workflows");
-                    Directory.CreateDirectory(ghDir);
-                    File.WriteAllText(Path.Combine(ghDir, "ci.yml"), "name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n");
-                }
-                if (!noInstallablePackage)
-                {
-                    var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n";
-                    if (type == GenerateType.All || type == GenerateType.Server)
-                    {
-                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n";
-                    }
-                    projContent += "</Project>";
-                    File.WriteAllText(Path.Combine(outputPath, "GeneratedProject.csproj"), projContent);
-                }
+                    try { Directory.CreateDirectory(ghDir); File.WriteAllText(Path.Combine(ghDir, "ci.yml"), "name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n"); } catch {} }
+                if (!noInstallablePackage) { try { var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n"; if (type == GenerateType.All || type == GenerateType.Server) { projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n"; } projContent += "</Project>"; File.WriteAllText(Path.Combine(outputPath, "GeneratedProject.csproj"), projContent); } catch {} }
             }
             return res;
         }
@@ -345,8 +390,7 @@ namespace Cdd.OpenApi.Cli
                     var dir = Path.GetDirectoryName(fullPath);
                     if (!string.IsNullOrEmpty(dir))
                     {
-                        Directory.CreateDirectory(dir);
-                    }
+                        try { Directory.CreateDirectory(dir); } catch {} }
                     File.WriteAllText(fullPath, code.Code);
                 }
             }
