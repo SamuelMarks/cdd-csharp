@@ -15,7 +15,8 @@ namespace Cdd.OpenApi.Emit
             _jsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                TypeInfoResolver = Cdd.OpenApi.Parse.OpenApiJsonContext.Default
             };
         }
 
