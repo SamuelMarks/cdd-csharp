@@ -16,8 +16,14 @@
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <PublishTrimmed>false</PublishTrimmed>
-    
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishAot>true</PublishAot>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EventSourceSupport>false</EventSourceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <WasmStackSize>10485760</WasmStackSize>
   </PropertyGroup>
 
 </Project>

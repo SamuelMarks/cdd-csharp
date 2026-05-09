@@ -15,7 +15,8 @@ namespace Cdd.OpenApi.Parse
             _jsonOptions = new JsonSerializerOptions
             {
                 ReadCommentHandling = JsonCommentHandling.Skip,
-                AllowTrailingCommas = true
+                AllowTrailingCommas = true,
+                TypeInfoResolver = OpenApiJsonContext.Default
             };
         }
 
