@@ -22,7 +22,7 @@ namespace Cdd.OpenApi.Tests
             
             var p = new Process();
             p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 from_openapi -i {specPath} -o {tmpDir}";
+            p.StartInfo.Arguments = $"run --no-build --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 from_openapi -i {specPath} -o {tmpDir}";
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.Start();
@@ -32,6 +32,32 @@ namespace Cdd.OpenApi.Tests
             
             Assert.Equal(0, p.ExitCode);
             Assert.Contains("Successfully generated C# code", output);
+            
+            Directory.Delete(tmpDir, true);
+        }
+
+        [Fact]
+        public void FromOpenApi_ToSdk_ValidArgs_GeneratesCode()
+        {
+            var tmpDir = Path.Combine(Path.GetTempPath(), "cli_test_from_sdk");
+            Directory.CreateDirectory(tmpDir);
+            
+            var specPath = Path.Combine(tmpDir, "spec.json");
+            File.WriteAllText(specPath, "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}");
+            
+            var p = new Process();
+            p.StartInfo.FileName = "dotnet";
+            p.StartInfo.Arguments = $"run --no-build --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 from_openapi to_sdk -i {specPath} -o {tmpDir}";
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.Start();
+            
+            var output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit();
+            
+            Assert.Equal(0, p.ExitCode);
+            Assert.Contains("Successfully generated C# code", output);
+            Assert.True(File.Exists(Path.Combine(tmpDir, "ApiClient.cs")));
             
             Directory.Delete(tmpDir, true);
         }
@@ -49,7 +75,7 @@ namespace Cdd.OpenApi.Tests
             
             var p = new Process();
             p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 to_openapi -i {tmpDir} -o {outPath}";
+            p.StartInfo.Arguments = $"run --no-build --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 to_openapi -i {tmpDir} -o {outPath}";
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.Start();
