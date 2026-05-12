@@ -140,11 +140,12 @@ namespace Cdd.OpenApi.Tests.Clients
                 private HttpClient _client;
                 
                 /// <response code=""200"">OK response</response>
-                /// <response code=""204"" header=""X-Limit"" link=""OtherOp"">No Content</response>
-                public async Task<string> GetUserAsync()
+                /// <response code=""204"" header=""X-Limit"" link=""OtherOp"" header-examples=""ex1:100,ex2:200"" header-content=""application/json:integer"">No Content</response>
+                /// <server url=""http://s1"">S1</server>
+                public async System.Threading.Tasks.Task<int> GetUserAsync()
                 {
                     await _client.GetAsync(""/user"");
-                    return """";
+                    return 0;
                 }
             }";
             
@@ -162,6 +163,11 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("No Content", op.Responses["204"].Description);
             Assert.True(op.Responses["204"].Headers?.ContainsKey("X-Limit"));
             Assert.True(op.Responses["204"].Links?.ContainsKey("OtherOp"));
+            Assert.Equal("application/json", op.Responses["204"].Headers["X-Limit"].Content.First().Key);
+            
+            Assert.NotNull(op.Servers);
+            Assert.Single(op.Servers);
+            Assert.Equal("http://s1", op.Servers[0].Url);
         }
         [Fact]
         public void Parse_ToPaths_ExtractsParameterAttributes()
@@ -316,8 +322,18 @@ namespace Cdd.OpenApi.Tests.Clients
             {
                 private HttpClient _client;
                 
+                /// <param name=""id"">The id</param>
                 public async Task GetItAsync(
-                    [Examples(""ex1"", ""one"", ""ex2"", ""two"")] string id)
+                    [Examples(""ex1"", ""one"", ""ex2"", ""two"")]
+                    [Explode]
+                    [Explode(true)]
+                    [Explode(false)]
+                    [Style(""form"")]
+                    [AllowReserved]
+                    [Content(""application/json"", ""integer"")]
+                    [Encoding(""profileImage"", ""image/png"", Style=""form"", Explode=true, AllowReserved=true)]
+                    [Encoding(""otherImage"", ""image/jpeg"", Explode=false, AllowReserved=false)]
+                    string id)
                 {
                     await _client.GetAsync($""/it/{id}"");
                 }
@@ -337,6 +353,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal(2, p.Examples.Count);
             Assert.Equal("one", p.Examples["ex1"].Value);
             Assert.Equal("two", p.Examples["ex2"].Value);
+            Assert.Equal("The id", p.Description);
         }
 
         [Fact]

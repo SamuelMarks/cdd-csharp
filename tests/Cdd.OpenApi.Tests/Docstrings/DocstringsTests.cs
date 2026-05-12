@@ -89,14 +89,16 @@ namespace Cdd.OpenApi.Tests.Docstrings
         public void Parse_FullCoverage()
         {
             var code = @"
-            /// <mytag a=""b"" c=""d"">
+            /// <mytag a=""b c"" c=""123"" unquoted=""abc"">
             ///  Tag text 1
             /// </mytag>
-            /// <mytag e=""f"">
+            /// <mytag e=""f! "">
             ///  Tag text 2
             /// </mytag>
-            /// <server url=""s1"">desc1</server>
+            /// <server url=""s1/test"">desc1</server>
             /// <server url=""s2"">desc2</server>
+            /// <server url=""s3"" unquoted=""xyz""><variable name=""var"" default=""def"" a=""text val"" unquotedvar=""qwe"">Some text<enum>1</enum><enum>2</enum></variable></server>
+            /// <param name=""myParam"">Param desc</param>
             public class A {}
             ";
 
@@ -104,20 +106,26 @@ namespace Cdd.OpenApi.Tests.Docstrings
             var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
 
             var tags = Cdd.OpenApi.Docstrings.Parse.GetTagsWithAttributes(classNode, "mytag");
+            var paramTags = Cdd.OpenApi.Docstrings.Parse.GetTagsWithAttributes(classNode, "param");
+            Assert.Equal("myParam", paramTags.First().Attributes["name"]);
+            Assert.Equal("Param desc", paramTags.First().Text);
             Assert.Equal(2, tags.Count());
-            Assert.Equal("b", tags.ElementAt(0).Attributes["a"]);
-            Assert.Equal("d", tags.ElementAt(0).Attributes["c"]);
+            Assert.Equal("b c", tags.ElementAt(0).Attributes["a"]);
+            Assert.Equal("123", tags.ElementAt(0).Attributes["c"]);
+            Assert.Equal("abc", tags.ElementAt(0).Attributes["unquoted"]);
             Assert.Equal("Tag text 1", tags.ElementAt(0).Text);
             
-            Assert.Equal("f", tags.ElementAt(1).Attributes["e"]);
+            Assert.Equal("f! ", tags.ElementAt(1).Attributes["e"]);
             Assert.Equal("Tag text 2", tags.ElementAt(1).Text);
 
             var servers = Cdd.OpenApi.Docstrings.Parse.GetServers(classNode);
-            Assert.Equal(2, servers.Count());
-            Assert.Equal("s1", servers.ElementAt(0).Url);
+            Assert.Equal(3, servers.Count());
+            Assert.Equal("s1/test", servers.ElementAt(0).Url);
             Assert.Equal("desc1", servers.ElementAt(0).Description);
             Assert.Equal("s2", servers.ElementAt(1).Url);
             Assert.Equal("desc2", servers.ElementAt(1).Description);
+            Assert.Equal("s3", servers.ElementAt(2).Url);
+            Assert.Single(servers.ElementAt(2).Variables);
         }
     }
 }
