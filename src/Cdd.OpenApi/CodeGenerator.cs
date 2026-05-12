@@ -50,20 +50,20 @@ namespace Cdd.OpenApi
 
             if (doc.Components?.Schemas != null)
             {
+                var modelsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
+                    .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")));
+                    
                 foreach (var schemaKvp in doc.Components.Schemas)
                 {
                     var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
-                    
-                    var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
-                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")))
-                        .AddMembers(classNode).NormalizeWhitespace();
-                    
-                    results.Add(new GeneratedCode 
-                    { 
-                        FileName = $"Models/{schemaKvp.Key}.cs", 
-                        Code = nsNode.ToFullString() 
-                    });
+                    modelsNsNode = modelsNsNode.AddMembers(classNode);
                 }
+                
+                results.Add(new GeneratedCode 
+                { 
+                    FileName = "Models.cs", 
+                    Code = modelsNsNode.NormalizeWhitespace().ToFullString() 
+                });
 
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
@@ -71,7 +71,7 @@ namespace Cdd.OpenApi
                     var dbContextNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
                         .AddMembers(dbContextNode).NormalizeWhitespace();
-                    results.Add(new GeneratedCode { FileName = "Models/AppDbContext.cs", Code = dbContextNsNode.ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "AppDbContext.cs", Code = dbContextNsNode.ToFullString() });
                 }
             }
 
@@ -93,7 +93,7 @@ namespace Cdd.OpenApi
                     clientNode = AddDocTags(clientNode, doc);
                     var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
                         .AddMembers(clientNode).NormalizeWhitespace();
-                    results.Add(new GeneratedCode { FileName = "ApiClient.cs", Code = clientNsNode.ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "Client.cs", Code = clientNsNode.ToFullString() });
                 }
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli)

@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);CS8602;CS8604</NoWarn>
-
+    <ExcludeByFile>**/*.g.cs</ExcludeByFile>
   </PropertyGroup>
 
   <ItemGroup>

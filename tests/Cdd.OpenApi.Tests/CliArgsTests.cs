@@ -57,7 +57,7 @@ namespace Cdd.OpenApi.Tests
             
             Assert.Equal(0, p.ExitCode);
             Assert.Contains("Successfully generated C# code", output);
-            Assert.True(File.Exists(Path.Combine(tmpDir, "ApiClient.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "Client.cs")));
             
             Directory.Delete(tmpDir, true);
         }

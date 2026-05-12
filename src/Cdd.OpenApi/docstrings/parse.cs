@@ -93,10 +93,6 @@ namespace Cdd.OpenApi.Docstrings
             foreach (var element in elements)
             {
                 var attrs = new Dictionary<string, string>();
-                foreach (var attr in element.StartTag.Attributes.OfType<XmlNameAttributeSyntax>())
-                {
-                    attrs[attr.Name.ToString()] = attr.Identifier.Identifier.ValueText;
-                }
                 foreach (var attr in element.StartTag.Attributes.OfType<XmlTextAttributeSyntax>())
                 {
                     attrs[attr.Name.ToString()] = string.Join("", attr.TextTokens.Select(t => t.ValueText));
@@ -121,10 +117,6 @@ namespace Cdd.OpenApi.Docstrings
                 foreach (var varElem in varElements)
                 {
                     var varAttrs = new Dictionary<string, string>();
-                    foreach (var attr in varElem.StartTag.Attributes.OfType<XmlNameAttributeSyntax>())
-                    {
-                        varAttrs[attr.Name.ToString()] = attr.Identifier.Identifier.ValueText;
-                    }
                     foreach (var attr in varElem.StartTag.Attributes.OfType<XmlTextAttributeSyntax>())
                     {
                         varAttrs[attr.Name.ToString()] = string.Join("", attr.TextTokens.Select(t => t.ValueText));

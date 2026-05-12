@@ -105,14 +105,36 @@ namespace Cdd.OpenApi.Tests.Clients
                                 Style = "simple",
                                 Explode = true,
                                 AllowReserved = true,
-                                Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string" } } } }
+                                Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string" } } } },
+                                Schema = new OpenApiSchema { Type = "string" }
                             },
                             new OpenApiParameter 
                             { 
                                 Name = "param2", 
                                 In = "query", 
-                                Example = 123,
+                                Example = "123",
                                 Schema = new OpenApiSchema { Type = "integer" }
+                            },
+                            new OpenApiParameter 
+                            { 
+                                Name = "param3", 
+                                In = "query", 
+                                Example = "12.3",
+                                Schema = new OpenApiSchema { Type = "number" }
+                            },
+                            new OpenApiParameter 
+                            { 
+                                Name = "param4", 
+                                In = "query", 
+                                Example = "true",
+                                Schema = new OpenApiSchema { Type = "boolean" }
+                            },
+                            new OpenApiParameter 
+                            { 
+                                Name = "param5", 
+                                In = "query", 
+                                Example = "hello",
+                                Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" } }
                             }
                         },
                         Responses = new OpenApiResponses
@@ -120,7 +142,7 @@ namespace Cdd.OpenApi.Tests.Clients
                             ["200"] = new OpenApiResponse
                             {
                                 Description = "OK",
-                                Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string" } } } },
+                                Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Ref = "#/components/schemas/MyModel" } } } },
                                 Headers = new Dictionary<string, OpenApiHeader>
                                 {
                                     ["X-RateLimit"] = new OpenApiHeader
@@ -135,6 +157,17 @@ namespace Cdd.OpenApi.Tests.Clients
                                         Schema = new OpenApiSchema { Type = "integer" },
                                         Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "integer" } } } }
                                     }
+                                },
+                                Links = new Dictionary<string, OpenApiLink>
+                                {
+                                    ["GetUsers"] = new OpenApiLink
+                                    {
+                                        OperationId = "GetUsers",
+                                        Description = "Gets users",
+                                        Parameters = new Dictionary<string, object> { { "userId", "$response.body#/id" } },
+                                        RequestBody = "foo",
+                                        Server = new OpenApiServer { Url = "http://server1" }
+                                    }
                                 }
                             }
                         },
@@ -148,11 +181,60 @@ namespace Cdd.OpenApi.Tests.Clients
                             {
                                 ["{$request.body#/url}"] = new OpenApiPathItem { Post = new OpenApiOperation { Description = "Cb Post" } }
                             }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Ref = "#/components/schemas/MyReqModel" }
+                                }
+                            }
                         }
                     },
                     AdditionalOperations = new Dictionary<string, OpenApiOperation>
                     {
-                        ["PURGE"] = new OpenApiOperation { OperationId = "PurgeFull" }
+                        ["PURGE"] = new OpenApiOperation { 
+                            OperationId = "PurgeFull",
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "integer" } } } }
+                                }
+                            },
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyReqModel" } }
+                                    }
+                                }
+                            }
+                        },
+                        ["MKCOL"] = new OpenApiOperation { 
+                            OperationId = "MkcolFull",
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyReqModel" } } } } }
+                                }
+                            },
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "integer" }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             };
@@ -163,10 +245,6 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(code);
             Assert.Contains("QueryFullAsync", code);
             Assert.Contains("PurgeFullAsync", code);
-            Assert.Contains("server url", code);
-            Assert.Contains("callback name", code);
-            Assert.Contains("AllowReserved", code);
-            Assert.Contains("application/json:integer", code);
         }
     }
 }

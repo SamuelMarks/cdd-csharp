@@ -88,9 +88,20 @@ namespace Cdd.OpenApi.Clients
                         if (successResponse.Value?.Content?.TryGetValue("application/json", out var mediaType) == true)
                         {
                             var schema = mediaType.Schema;
-                            if (schema != null && schema.Type != null)
+                            if (schema != null)
                             {
-                                returnTypeName = MapTypeToCSharp(schema.Type);
+                                if (!string.IsNullOrEmpty(schema.Ref))
+                                {
+                                    returnTypeName = schema.Ref.Split('/').Last();
+                                }
+                                else if (schema.Type != null)
+                                {
+                                    returnTypeName = MapTypeToCSharp(schema.Type);
+                                }
+                                else if (schema.Items?.Ref != null)
+                                {
+                                    returnTypeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+                                }
                             }
                         }
                     }
@@ -103,8 +114,16 @@ namespace Cdd.OpenApi.Clients
                     {
                         foreach (var p in operation.Parameters)
                         {
+                            string paramType = "string";
+                            if (p.Schema != null)
+                            {
+                                if (!string.IsNullOrEmpty(p.Schema.Ref)) paramType = p.Schema.Ref.Split('/').Last();
+                                else if (p.Schema.Type != null) paramType = MapTypeToCSharp(p.Schema.Type);
+                                else if (p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
+                            }
+                            
                             var pNode = SyntaxFactory.Parameter(SyntaxFactory.Identifier(p.Name))
-                                .WithType(SyntaxFactory.ParseTypeName(MapTypeToCSharp(p.Schema?.Type)));
+                                .WithType(SyntaxFactory.ParseTypeName(paramType));
 
                             if (p.Deprecated == true)
                             {
@@ -212,9 +231,13 @@ namespace Cdd.OpenApi.Clients
                             if (contentDict.TryGetValue("application/json", out var mediaType))
                             {
                                 var schema = mediaType.Schema;
-                                if (schema != null && schema.Type != null)
+                                if (schema != null)
                                 {
-                                    var typeName = MapTypeToCSharp(schema.Type);
+                                    string typeName = "string";
+                                    if (!string.IsNullOrEmpty(schema.Ref)) typeName = schema.Ref.Split('/').Last();
+                                    else if (schema.Type != null) typeName = MapTypeToCSharp(schema.Type);
+                                    else if (schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+                                    
                                     parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body"))
                                         .WithType(SyntaxFactory.ParseTypeName(typeName)));
                                 }
@@ -300,9 +323,46 @@ namespace Cdd.OpenApi.Clients
                         )
                     );
 
-                    var statement3 = SyntaxFactory.ReturnStatement(
-                        SyntaxFactory.AwaitExpression(readAsStringCall)
-                    );
+                    StatementSyntax statement3;
+                    if (returnTypeName == "string")
+                    {
+                        statement3 = SyntaxFactory.ReturnStatement(
+                            SyntaxFactory.AwaitExpression(readAsStringCall)
+                        );
+                    }
+                    else
+                    {
+                        var jsonDeserializeCall = SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("System.Text.Json.JsonSerializer"),
+                                SyntaxFactory.GenericName("Deserialize")
+                                .WithTypeArgumentList(
+                                    SyntaxFactory.TypeArgumentList(
+                                        SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                            SyntaxFactory.ParseTypeName(returnTypeName)
+                                        )
+                                    )
+                                )
+                            )
+                        ).AddArgumentListArguments(
+                            SyntaxFactory.Argument(SyntaxFactory.AwaitExpression(readAsStringCall)),
+                            SyntaxFactory.Argument(
+                                SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Text.Json.JsonSerializerOptions"))
+                                .WithInitializer(
+                                    SyntaxFactory.InitializerExpression(SyntaxKind.ObjectInitializerExpression)
+                                    .AddExpressions(
+                                        SyntaxFactory.AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            SyntaxFactory.IdentifierName("PropertyNameCaseInsensitive"),
+                                            SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                        statement3 = SyntaxFactory.ReturnStatement(jsonDeserializeCall);
+                    }
 
                     methodNode = methodNode.WithBody(SyntaxFactory.Block(statement1, statement2, statement3));
 

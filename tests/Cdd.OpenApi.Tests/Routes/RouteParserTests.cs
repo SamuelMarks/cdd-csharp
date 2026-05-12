@@ -138,10 +138,10 @@ namespace Cdd.OpenApi.Tests.Routes
             public class UserApi
             {
                 /// <summary>Delete</summary>
-                /// <response code=""204"" header=""X-RateLimit"" link=""GetUsers"">Success with header</response>
+                /// <response code=""204"" header=""X-RateLimit"" header-examples=""ex1:100,ex2:200"" header-content=""application/json:integer"" link=""GetUsers"">Success with header</response>
                 /// <response code=""404"">Not Found</response>
                 [HttpDelete(""/users/{id}"")]
-                public Task DeleteUser(int id) { return Task.CompletedTask; }
+                public System.Threading.Tasks.Task<string> DeleteUser(int id) { return null; }
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -422,9 +422,20 @@ namespace Cdd.OpenApi.Tests.Routes
                 /// <externalDocs>https://docs.api.com</externalDocs>
                 /// <tags>users,admin</tags>
                 /// <security name=""OAuth2"" scopes=""read:users"">Auth</security>
+                /// <param name=""q1"">The q1 desc</param>
                 [Obsolete]
                 [HttpGet(""/meta"")]
-                public void Get() {}
+                public float Get(
+                    [FromQuery, Explode] string q1, 
+                    [FromQuery, Explode(true)] string q2,
+                    [FromQuery, Explode(false)] string q3,
+                    [FromQuery, Style(""form"")] string q4,
+                    [FromQuery, AllowReserved] string q5,
+                    [FromQuery, AllowEmptyValue] string q6,
+                    [FromQuery, Example(""123"")] string q7,
+                    [FromQuery, Content(""application/json"", ""integer"")] string q8,
+                    [FromQuery] bool b
+                ) { return 0f; }
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -445,6 +456,8 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Single(op.Security);
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
             Assert.Contains("read:users", op.Security[0]["OAuth2"]);
+            
+            Assert.Equal(9, op.Parameters.Count);
         }
         [Fact]
         public void ToPaths_WithParameterExamples_ParsesThem()
@@ -479,7 +492,9 @@ namespace Cdd.OpenApi.Tests.Routes
             public class EncodeApi
             {
                 [HttpPost(""/enc"")]
-                public void Post([FromBody] [Encoding(""profileImage"", ""image/png"", Style=""form"", Explode=true, AllowReserved=true)] object body) {}
+                public void Post([FromBody] 
+                    [Encoding(""profileImage"", ""image/png"", Style=""form"", Explode=false, AllowReserved=false)] 
+                    object body) {}
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
@@ -499,8 +514,8 @@ namespace Cdd.OpenApi.Tests.Routes
             var e = encs["profileImage"];
             Assert.Equal("image/png", e.ContentType);
             Assert.Equal("form", e.Style);
-            Assert.True(e.Explode);
-            Assert.True(e.AllowReserved);
+            Assert.False(e.Explode);
+            Assert.False(e.AllowReserved);
         }
 
         [Fact]

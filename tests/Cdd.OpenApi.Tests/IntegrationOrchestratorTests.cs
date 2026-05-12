@@ -63,7 +63,7 @@ namespace Cdd.OpenApi.Tests
 
             Assert.Equal(7, generatedFiles.Count);
             
-            var userClass = generatedFiles.Find(f => f.FileName == "Models/User.cs");
+            var userClass = generatedFiles.Find(f => f.FileName == "Models.cs");
             Assert.NotNull(userClass);
             Assert.Contains("public class User", userClass.Code);
             Assert.Contains("int Id", userClass.Code);
@@ -73,7 +73,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("interface IApi", interfaceFile.Code);
             Assert.Contains("GetUser", interfaceFile.Code);
 
-            var clientFile = generatedFiles.Find(f => f.FileName == "ApiClient.cs");
+            var clientFile = generatedFiles.Find(f => f.FileName == "Client.cs");
             Assert.NotNull(clientFile);
             Assert.Contains("class ApiClient", clientFile.Code);
             Assert.Contains("GetUserAsync", clientFile.Code);

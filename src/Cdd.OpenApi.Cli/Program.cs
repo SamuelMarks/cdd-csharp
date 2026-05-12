@@ -376,21 +376,6 @@ namespace Cdd.OpenApi.Cli
 
         private static int RunFromOpenApi(IEnumerable<string> inputPaths, string outputDir, GenerateType type)
         {
-            if (type == GenerateType.Sdk)
-            {
-                foreach (var inputPath in inputPaths)
-                {
-                    if (!File.Exists(inputPath)) return Error($"Error: Input '{inputPath}' not found.");
-                    string json = File.ReadAllText(inputPath);
-                    string code = GenerateSdkFast(json);
-                    string fullPath = Path.Combine(outputDir, "ApiClient.cs");
-                    var dir = Path.GetDirectoryName(fullPath);
-                    if (!string.IsNullOrEmpty(dir)) { try { Directory.CreateDirectory(dir); } catch {} }
-                    File.WriteAllText(fullPath, code);
-                }
-                Console.WriteLine($"Successfully generated C# code in '{outputDir}'.");
-                return 0;
-            }
 
             var parser = new OpenApiParser();
             foreach (var inputPath in inputPaths)
@@ -451,63 +436,5 @@ namespace Cdd.OpenApi.Cli
             return 1;
         }
 
-        private static string GenerateSdkFast(string json)
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("// C# SDK generated natively");
-            sb.AppendLine("namespace Generated.Client");
-            sb.AppendLine("{");
-            sb.AppendLine("    public class ApiClient");
-            sb.AppendLine("    {");
-            sb.AppendLine("        private readonly System.Net.Http.HttpClient _httpClient;");
-            sb.AppendLine("        public ApiClient(System.Net.Http.HttpClient httpClient)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            _httpClient = httpClient;");
-            sb.AppendLine("        }");
-
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("paths", out var paths) && paths.ValueKind == System.Text.Json.JsonValueKind.Object)
-                {
-                    foreach (var pathProp in paths.EnumerateObject())
-                    {
-                        var route = pathProp.Name;
-                        if (pathProp.Value.ValueKind == System.Text.Json.JsonValueKind.Object)
-                        {
-                            foreach (var opProp in pathProp.Value.EnumerateObject())
-                            {
-                                var method = opProp.Name;
-                                if (method == "parameters" || method == "summary" || method == "description" || method == "servers") continue;
-                                
-                                var opObj = opProp.Value;
-                                string opId = null;
-                                if (opObj.TryGetProperty("operationId", out var idProp) && idProp.ValueKind == System.Text.Json.JsonValueKind.String)
-                                {
-                                    opId = idProp.GetString();
-                                }
-
-                                string methodName = opId ?? $"{method.Substring(0,1).ToUpper()}{method.Substring(1).ToLower()}{route.Replace("/","").Replace("{","").Replace("}","")}Async";
-                                if (!methodName.EndsWith("Async")) methodName += "Async";
-
-                                string returnType = "string";
-                                sb.AppendLine();
-                                sb.AppendLine($"        public async System.Threading.Tasks.Task<{returnType}> {methodName}()");
-                                sb.AppendLine("        {");
-                                sb.AppendLine($"            var response = await _httpClient.{method.Substring(0,1).ToUpper()}{method.Substring(1).ToLower()}Async(\"{route}\");");
-                                sb.AppendLine("            response.EnsureSuccessStatusCode();");
-                                sb.AppendLine("            return await response.Content.ReadAsStringAsync();");
-                                sb.AppendLine("        }");
-                            }
-                        }
-                    }
-                }
-            }
-            catch {}
-
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            return sb.ToString();
-        }
     }
 }

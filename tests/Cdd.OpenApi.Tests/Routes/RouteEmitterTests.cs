@@ -44,6 +44,107 @@ namespace Cdd.OpenApi.Tests.Routes
         }
 
         [Fact]
+        public void ToInterface_WithRequestBodyAndEmptySchema_GeneratesIActionResult()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/upload"] = new OpenApiPathItem
+                {
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "UploadData",
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Ref = "#/components/schemas/MyModel" }
+                                }
+                            }
+                        },
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType { Schema = new OpenApiSchema() } // empty schema
+                                }
+                            },
+                            ["201"] = new OpenApiResponse
+                            {
+                                Description = "Created" // no content
+                            }
+                        }
+                    }
+                }
+            };
+
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IUploadApi", paths);
+            var code = interfaceNode.ToFullString();
+
+            Assert.Contains("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadData([FromBody] object body);", code);
+        }
+
+        [Fact]
+        public void ToInterface_WithResponseNoContent_GeneratesIActionResult()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/nocontent"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetNoContent",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Description = "OK"
+                            }
+                        }
+                    }
+                }
+            };
+
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("INoContentApi", paths);
+            var code = interfaceNode.ToFullString();
+
+            Assert.Contains("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetNoContent();", code);
+        }
+
+        [Fact]
+        public void ToInterface_WithRequestBodyAndNoType_GeneratesObject()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/upload"] = new OpenApiPathItem
+                {
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "UploadDataObj",
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema()
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IUploadApi2", paths);
+            var code = interfaceNode.ToFullString();
+
+            Assert.Contains("void UploadDataObj([FromBody] object body);", code);
+        }
+
+        [Fact]
         public void ToInterface_GeneratesMethodNameWhenOperationIdMissing()
         {
             var paths = new OpenApiPaths

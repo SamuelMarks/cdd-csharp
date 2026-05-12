@@ -239,11 +239,17 @@ namespace Cdd.OpenApi.Routes
                                     else if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) encObj.AllowReserved = false;
                                 }
 
-                                reqBody.Content["application/x-www-form-urlencoded"] = new OpenApiMediaType
+                                if (!reqBody.Content.TryGetValue("application/x-www-form-urlencoded", out var urlEncoded))
                                 {
-                                    Schema = new OpenApiSchema { Type = "object" },
-                                    Encoding = new Dictionary<string, OpenApiEncoding> { { propName, encObj } }
-                                };
+                                    urlEncoded = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "object" },
+                                        Encoding = new Dictionary<string, OpenApiEncoding>()
+                                    };
+                                    reqBody.Content["application/x-www-form-urlencoded"] = urlEncoded;
+                                }
+                                if (urlEncoded.Encoding == null) urlEncoded.Encoding = new Dictionary<string, OpenApiEncoding>();
+                                urlEncoded.Encoding[propName] = encObj;
                             }
                         }
 
@@ -298,8 +304,6 @@ namespace Cdd.OpenApi.Routes
                             {
                                 var arg = explodeAttr.ArgumentList.Arguments.First().Expression;
                                 if (arg is LiteralExpressionSyntax lit) paramObj.Explode = lit.Token.ValueText.ToLower() == "true";
-                                else if (arg.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) paramObj.Explode = true;
-                                else if (arg.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) paramObj.Explode = false;
                             }
                             else
                             {

@@ -196,13 +196,19 @@ namespace Cdd.OpenApi.Tests
         public void Generate_DbContext_ReturnsSchemas()
         {
             var code = @"
+            using Microsoft.EntityFrameworkCore;
+            public class User { public int Id { get; set; } }
             public class MyDbContext : DbContext
             {
+                public DbSet<User> Users { get; set; }
             }
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.NotNull(doc.Components);
+            Assert.NotNull(doc.Components.Schemas);
+            Assert.True(doc.Components.Schemas.ContainsKey("User"));
         }
 
         [Fact]
@@ -211,11 +217,18 @@ namespace Cdd.OpenApi.Tests
             var code = @"
             public class MyCli
             {
+                public void Run() {
+                    switch (args[0]) {
+                        case ""test"": break;
+                    }
+                }
             }
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.NotNull(doc.Paths);
+            Assert.True(doc.Paths.ContainsKey("/test"));
         }
 
         [Fact]
@@ -224,11 +237,14 @@ namespace Cdd.OpenApi.Tests
             var code = @"
             public class MyTests
             {
+                public void Test1() {}
             }
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.NotNull(doc.Paths);
+            Assert.True(doc.Paths.ContainsKey("/test1"));
         }
         
         [Fact]
@@ -237,11 +253,14 @@ namespace Cdd.OpenApi.Tests
             var code = @"
             public class MyMock
             {
+                public void MockMethod() {}
             }
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.NotNull(doc.Paths);
+            Assert.True(doc.Paths.ContainsKey("/mockmethod"));
         }
 
         [Fact]
