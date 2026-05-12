@@ -15,7 +15,7 @@
     <ToolCommandName>cdd-csharp</ToolCommandName>
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <PublishTrimmed>true</PublishTrimmed>
     <PublishAot>true</PublishAot>
     <RunAOTCompilation>true</RunAOTCompilation>

@@ -44,7 +44,7 @@ namespace Cdd.OpenApi
         }
 
 /// <summary>Auto-generated documentation for Generate.</summary>
-        public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All)
+        public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false)
         {
             var results = new List<GeneratedCode>();
 
@@ -107,15 +107,17 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All)
                 {
-                    var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock("ApiMock", doc.Paths);
+                    var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock("ApiMock", doc.Paths, tests);
                     mockNode = AddDocTags(mockNode, doc);
                     var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                         .AddMembers(mockNode).NormalizeWhitespace();
                     results.Add(new GeneratedCode { FileName = "ApiMock.cs", Code = mockNsNode.ToFullString() });
 
-                    var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests("ApiTests", doc.Paths);
+                    var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests("ApiTests", doc.Paths, tests);
                     testsNode = AddDocTags(testsNode, doc);
                     var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                         .AddMembers(testsNode).NormalizeWhitespace();
                     results.Add(new GeneratedCode { FileName = "ApiTests.cs", Code = testsNsNode.ToFullString() });
                 }

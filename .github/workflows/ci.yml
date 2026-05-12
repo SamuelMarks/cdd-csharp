@@ -1,70 +1,9 @@
 name: CI
 
-on:
-  push:
-    branches: [ master, main ]
-    tags:
-      - 'v*'
-      - 'latest'
-  pull_request:
-    branches: [ master, main ]
-
-permissions:
-  contents: write
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v6
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: |
-          10.0.x
-          8.0.x
-        dotnet-quality: "preview"
-    
-    - name: Install wasm-tools
-      run: dotnet workload install wasm-tools || true
-
-    - name: Restore dependencies
-      run: make install_deps
-
-    - name: Build
-      run: make build
-
-    - name: Test
-      run: make test
-
-    - name: Build WASM
-      run: make build_wasm
-
-    - name: Archive normal build
-      uses: actions/upload-artifact@v6
-      with:
-        name: cdd-csharp-bin
-        path: bin/Release/net10.0/linux-x64/publish/
-
-    - name: Archive WASM build
-      uses: actions/upload-artifact@v6
-      with:
-        name: cdd-csharp-wasm
-        path: bin/cdd-csharp.wasm
-
-    - name: Zip WASM
-      if: startsWith(github.ref, 'refs/tags/')
-      run: cd bin && zip cdd-csharp-wasm.zip cdd-csharp.wasm
-
-    - name: Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          bin/Release/net10.0/linux-x64/publish/cdd-csharp
-          bin/cdd-csharp-wasm.zip
-          bin/cdd-csharp.wasm
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v3

@@ -7,17 +7,9 @@ namespace Cdd.OpenApi.Emit
 /// <summary>Auto-generated documentation for OpenApiEmitter.</summary>
     public class OpenApiEmitter
     {
-        private readonly JsonSerializerOptions _jsonOptions;
-
 /// <summary>Auto-generated documentation for OpenApiEmitter.</summary>
         public OpenApiEmitter()
         {
-            _jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                TypeInfoResolver = Cdd.OpenApi.Parse.OpenApiJsonContext.Default
-            };
         }
 
 /// <summary>Auto-generated documentation for EmitJson.</summary>
@@ -28,7 +20,20 @@ namespace Cdd.OpenApi.Emit
                 throw new ArgumentNullException(nameof(document));
             }
 
-            return JsonSerializer.Serialize(document, _jsonOptions);
+            try
+            {
+                return JsonSerializer.Serialize(document, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.OpenApiDocument);
+            }
+            catch (Exception ex) when (ex is MissingMethodException || ex.InnerException is MissingMethodException || ex is TypeInitializationException)
+            {
+                return JsonSerializer.Serialize(document, FallbackOptions);
+            }
         }
+
+        private static readonly JsonSerializerOptions FallbackOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
     }
 }

@@ -58,4 +58,11 @@ namespace Cdd.OpenApi.DocsJson
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? WrapperEnd { get; set; }
     }
+
+    /// <summary>DocsJsonContext</summary>
+    [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSerializable(typeof(List<DocsJsonOutput>))]
+    public partial class DocsJsonContext : JsonSerializerContext
+    {
+    }
 }

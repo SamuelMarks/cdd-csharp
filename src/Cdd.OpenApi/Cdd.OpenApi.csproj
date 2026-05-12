@@ -4,7 +4,7 @@
     <Version>0.0.1</Version>
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
     <PublishTrimmed>false</PublishTrimmed>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>

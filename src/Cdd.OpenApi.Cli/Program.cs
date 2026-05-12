@@ -230,65 +230,65 @@ namespace Cdd.OpenApi.Cli
             else if (subCommand == "to_sdk_cli") { type = GenerateType.SdkCli; startIndex = 2; }
             else if (subCommand == "to_server") { type = GenerateType.Server; startIndex = 2; }
 
-            var inputPaths = new List<string>();
-            string outputPath = Environment.GetEnvironmentVariable("OUTPUT_DIR") ?? Directory.GetCurrentDirectory();
-            bool noGithubActions = Environment.GetEnvironmentVariable("NO_GITHUB_ACTIONS") == "true";
-            bool noInstallablePackage = Environment.GetEnvironmentVariable("NO_INSTALLABLE_PACKAGE") == "true";
+            var config = new CddConfig();
+            config.OutputDir = Environment.GetEnvironmentVariable("OUTPUT_DIR") ?? Directory.GetCurrentDirectory();
+            config.NoGithubActions = Environment.GetEnvironmentVariable("NO_GITHUB_ACTIONS") == "true";
+            config.NoInstallablePackage = Environment.GetEnvironmentVariable("NO_INSTALLABLE_PACKAGE") == "true";
+            config.CreateComposableTestsAndMocks = Environment.GetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS") == "true";
 
             string? inputEnv = Environment.GetEnvironmentVariable("INPUT");
-            if (!string.IsNullOrEmpty(inputEnv)) inputPaths.Add(inputEnv);
+            if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
             
             string? inputDirEnv = Environment.GetEnvironmentVariable("INPUT_DIR");
-            if (!string.IsNullOrEmpty(inputDirEnv) && Directory.Exists(inputDirEnv))
-            {
-                inputPaths.AddRange(Directory.GetFiles(inputDirEnv, "*.json", SearchOption.AllDirectories));
-                inputPaths.AddRange(Directory.GetFiles(inputDirEnv, "*.yaml", SearchOption.AllDirectories));
-            }
+            if (!string.IsNullOrEmpty(inputDirEnv)) config.InputDir = inputDirEnv;
 
             for (int i = startIndex; i < args.Length; i++)
             {
-                if (args[i] == "-i" && i + 1 < args.Length)
+                if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
                 {
-                    inputPaths.Add(args[++i]);
+                    config.InputPaths.Add(args[++i]);
                 }
                 else if (args[i] == "--input-dir" && i + 1 < args.Length)
                 {
-                    var dir = args[++i];
-                    if (Directory.Exists(dir))
-                    {
-                        inputPaths.AddRange(Directory.GetFiles(dir, "*.json", SearchOption.AllDirectories));
-                        inputPaths.AddRange(Directory.GetFiles(dir, "*.yaml", SearchOption.AllDirectories));
-                    }
+                    config.InputDir = args[++i];
                 }
-                else if (args[i] == "-o" && i + 1 < args.Length)
+                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
                 {
-                    outputPath = args[++i];
+                    config.OutputDir = args[++i];
                 }
                 else if (args[i] == "--no-github-actions")
                 {
-                    noGithubActions = true;
+                    config.NoGithubActions = true;
                 }
                 else if (args[i] == "--no-installable-package")
                 {
-                    noInstallablePackage = true;
+                    config.NoInstallablePackage = true;
+                }
+                else if (args[i] == "--tests")
+                {
+                    config.CreateComposableTestsAndMocks = true;
                 }
             }
 
-            if (!inputPaths.Any())
+            if (string.IsNullOrEmpty(config.InputPath) && string.IsNullOrEmpty(config.InputDir) && !config.InputPaths.Any())
             {
-                return Error("Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <spec.json> | --input-dir <dir> [-o <output-dir>]");
+                return Error("Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | --input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests]");
             }
 
-            int res = RunFromOpenApi(inputPaths, outputPath, type);
-            if (res == 0)
+            try
             {
-                if (!noGithubActions)
-                {
-                    var ghDir = Path.Combine(outputPath, ".github", "workflows");
-                    try { Directory.CreateDirectory(ghDir); File.WriteAllText(Path.Combine(ghDir, "ci.yml"), "name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n"); } catch {} }
-                if (!noInstallablePackage) { try { var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n"; if (type == GenerateType.All || type == GenerateType.Server) { projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n"; } projContent += "</Project>"; File.WriteAllText(Path.Combine(outputPath, "GeneratedProject.csproj"), projContent); } catch {} }
+                if (type == GenerateType.Sdk) CddGenerator.GenerateSdk(config);
+                else if (type == GenerateType.SdkCli) CddGenerator.GenerateSdkCli(config);
+                else if (type == GenerateType.Server) CddGenerator.GenerateServer(config);
+                else CddGenerator.GenerateAll(config);
+
+                Console.WriteLine($"Successfully generated C# code in '{config.OutputDir}'.");
+                return 0;
             }
-            return res;
+            catch (Exception ex)
+            {
+                return Error($"Operation failed: {ex.Message}");
+            }
         }
 
         private static int HandleToOpenApi(string[] args)
@@ -310,7 +310,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd-csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
+                return Error("Usage: cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]");
             }
 
             return RunToOpenApi(inputPath, outputPath);
@@ -329,7 +329,7 @@ namespace Cdd.OpenApi.Cli
                 {
                     inputPath = args[++i];
                 }
-                else if (args[i] == "-o" && i + 1 < args.Length)
+                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
                 {
                     outputPath = args[++i];
                 }
@@ -345,7 +345,7 @@ namespace Cdd.OpenApi.Cli
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                return Error("Usage: cdd-csharp to_docs_json -i <spec.json> [-o docs.json] [--no-imports] [--no-wrapping]");
+                return Error("Usage: cdd-csharp to_docs_json -i|--input <spec.json> [-o|--output docs.json] [--no-imports] [--no-wrapping]");
             }
 
             string jsonContent;
@@ -374,31 +374,6 @@ namespace Cdd.OpenApi.Cli
             return 0;
         }
 
-        private static int RunFromOpenApi(IEnumerable<string> inputPaths, string outputDir, GenerateType type)
-        {
-
-            var parser = new OpenApiParser();
-            foreach (var inputPath in inputPaths)
-            {
-                if (!File.Exists(inputPath)) return Error($"Error: Input '{inputPath}' not found.");
-                
-                var doc = parser.ParseJson(File.ReadAllText(inputPath));
-                var codes = CodeGenerator.Generate(doc, "Generated", type);
-                
-                foreach (var code in codes)
-                {
-                    var fullPath = Path.Combine(outputDir, code.FileName);
-                    var dir = Path.GetDirectoryName(fullPath);
-                    if (!string.IsNullOrEmpty(dir))
-                    {
-                        try { Directory.CreateDirectory(dir); } catch {} }
-                    File.WriteAllText(fullPath, code.Code);
-                }
-            }
-            
-            Console.WriteLine($"Successfully generated C# code in '{outputDir}'.");
-            return 0;
-        }
 
         private static int RunToOpenApi(string inputPath, string outputPath)
         {
@@ -424,9 +399,9 @@ namespace Cdd.OpenApi.Cli
             Console.WriteLine("Usage:");
             Console.WriteLine("  cdd-csharp --help");
             Console.WriteLine("  cdd-csharp --version");
-            Console.WriteLine("  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <spec.json> | --input-dir <dir> [-o <output-dir>]");
-            Console.WriteLine("  cdd-csharp to_openapi -i <csharp-dir-or-file> [-o <output.json>]");
-            Console.WriteLine("  cdd-csharp to_docs_json --no-imports --no-wrapping -i <spec.json> [-o docs.json]");
+            Console.WriteLine("  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | --input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests]");
+            Console.WriteLine("  cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]");
+            Console.WriteLine("  cdd-csharp to_docs_json --no-imports --no-wrapping -i|--input <spec.json> [-o|--output docs.json]");
             Console.WriteLine("  cdd-csharp serve_json_rpc --port <port> --listen <ip>");
         }
 
@@ -435,6 +410,5 @@ namespace Cdd.OpenApi.Cli
             Console.Error.WriteLine(message);
             return 1;
         }
-
     }
 }
