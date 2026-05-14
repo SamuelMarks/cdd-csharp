@@ -20,14 +20,7 @@ namespace Cdd.OpenApi.Emit
                 throw new ArgumentNullException(nameof(document));
             }
 
-            try
-            {
-                return JsonSerializer.Serialize(document, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.OpenApiDocument);
-            }
-            catch (Exception ex) when (ex is MissingMethodException || ex.InnerException is MissingMethodException || ex is TypeInitializationException)
-            {
-                return JsonSerializer.Serialize(document, FallbackOptions);
-            }
+            return JsonSerializer.Serialize(document, FallbackOptions);
         }
 
         private static readonly JsonSerializerOptions FallbackOptions = new JsonSerializerOptions

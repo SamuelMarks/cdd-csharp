@@ -1,0 +1,32 @@
+<linker>
+  <assembly fullname="Cdd.OpenApi.Cli">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="Cdd.OpenApi">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Runtime">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Private.CoreLib">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Text.Json">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Runtime.CompilerServices">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Runtime.CompilerServices.Unsafe">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="Microsoft.CodeAnalysis">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="Microsoft.CodeAnalysis.CSharp">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="System.Runtime.CompilerServices">
+    <type fullname="*" />
+  </assembly>
+</linker>
