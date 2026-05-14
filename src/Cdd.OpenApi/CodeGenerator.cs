@@ -92,6 +92,8 @@ namespace Cdd.OpenApi
                     var clientNode = Cdd.OpenApi.Clients.Emit.ToClient("ApiClient", doc.Paths);
                     clientNode = AddDocTags(clientNode, doc);
                     var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                                   SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
                         .AddMembers(clientNode).NormalizeWhitespace();
                     results.Add(new GeneratedCode { FileName = "Client.cs", Code = clientNsNode.ToFullString() });
                 }

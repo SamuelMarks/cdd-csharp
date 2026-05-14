@@ -266,7 +266,13 @@ namespace Cdd.OpenApi.Clients
                     var callMethod = $"{httpMethod}Async";
 
                     InvocationExpressionSyntax httpClientCall;
-                    if (operation.RequestBody != null)
+                    bool hasJsonBody = false;
+                    if (operation.RequestBody?.Content != null && operation.RequestBody.Content.ContainsKey("application/json"))
+                    {
+                        hasJsonBody = true;
+                    }
+
+                    if (hasJsonBody)
                     {
                         callMethod = $"{httpMethod}AsJsonAsync";
                         httpClientCall = SyntaxFactory.InvocationExpression(
@@ -282,13 +288,19 @@ namespace Cdd.OpenApi.Clients
                     }
                     else
                     {
+                        var args = new List<ArgumentSyntax> { SyntaxFactory.Argument(routePathExpr) };
+                        if (httpMethod == "Post" || httpMethod == "Put" || httpMethod == "Patch")
+                        {
+                            args.Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
+                        }
+                        
                         httpClientCall = SyntaxFactory.InvocationExpression(
                             SyntaxFactory.MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 SyntaxFactory.IdentifierName("_httpClient"),
                                 SyntaxFactory.IdentifierName(callMethod)
                             )
-                        ).AddArgumentListArguments(SyntaxFactory.Argument(routePathExpr));
+                        ).AddArgumentListArguments(args.ToArray());
                     }
 
                     var awaitHttpClientCall = SyntaxFactory.AwaitExpression(httpClientCall);
