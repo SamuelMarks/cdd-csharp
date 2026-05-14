@@ -24,7 +24,7 @@
     <EventSourceSupport>false</EventSourceSupport>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
     <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
-    <WasmStackSize>10485760</WasmStackSize>
+    <WasmStackSize>40960000</WasmStackSize>
   </PropertyGroup>
 
 </Project>
