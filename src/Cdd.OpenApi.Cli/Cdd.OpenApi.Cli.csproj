@@ -6,6 +6,7 @@
 
   <ItemGroup Condition="'$(UseWasiSdk)' == 'true'">
     <PackageReference Include="Wasi.Sdk" Version="0.1.4-preview.10020" />
+    <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>
   <PropertyGroup>
     <Version>0.0.1</Version>
@@ -16,8 +17,8 @@
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PublishTrimmed>true</PublishTrimmed>
-    <PublishAot>true</PublishAot>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishAot Condition="'$(UseWasiSdk)' != 'true'">true</PublishAot>
     <RunAOTCompilation>true</RunAOTCompilation>
     <InvariantGlobalization>true</InvariantGlobalization>
     <EventSourceSupport>false</EventSourceSupport>

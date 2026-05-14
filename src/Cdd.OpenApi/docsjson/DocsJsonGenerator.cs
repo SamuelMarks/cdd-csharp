@@ -125,7 +125,12 @@ namespace Cdd.OpenApi.DocsJson
             }
 
             var resultList = new List<DocsJsonOutput> { output };
-            return JsonSerializer.Serialize(resultList, DocsJsonContext.Default.ListDocsJsonOutput);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+            return JsonSerializer.Serialize(resultList, options);
         }
 
         private static string MapTypeToCSharp(string? openApiType)
