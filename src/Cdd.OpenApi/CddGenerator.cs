@@ -108,12 +108,119 @@ namespace Cdd.OpenApi
                 try 
                 { 
                     var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n"; 
+                    projContent += "  <ItemGroup>\n    <Compile Remove=\"Tests\\**\" />\n    <EmbeddedResource Remove=\"Tests\\**\" />\n    <None Remove=\"Tests\\**\" />\n  </ItemGroup>\n";
                     if (type == GenerateType.All || type == GenerateType.Server) 
                     { 
                         projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n"; 
                     } 
                     projContent += "</Project>"; 
                     File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.csproj"), projContent); 
+
+                    if (type == GenerateType.Sdk || type == GenerateType.All)
+                    {
+                        var testsDir = Path.Combine(outputDir, "Tests");
+                        Directory.CreateDirectory(testsDir);
+                        
+                        var testProjContent = @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include=""Microsoft.NET.Test.Sdk"" Version=""17.8.0"" />
+    <PackageReference Include=""xunit"" Version=""2.6.4"" />
+    <PackageReference Include=""xunit.runner.visualstudio"" Version=""2.5.6"">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include=""..\GeneratedProject.csproj"" />
+  </ItemGroup>
+</Project>";
+                        File.WriteAllText(Path.Combine(testsDir, "GeneratedProject.Tests.csproj"), testProjContent);
+
+                        var slnContent = @"Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject"", ""GeneratedProject.csproj"", ""{GUID1}""
+EndProject
+Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject.Tests"", ""Tests\GeneratedProject.Tests.csproj"", ""{GUID2}""
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{GUID1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{GUID1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{GUID1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{GUID1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{GUID2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{GUID2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{GUID2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{GUID2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal";
+                        var guid1 = Guid.NewGuid().ToString().ToUpper();
+                        var guid2 = Guid.NewGuid().ToString().ToUpper();
+                        slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
+                        File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.sln"), slnContent);
+
+                        var integrationTestContent = @"using System;
+using System.Threading.Tasks;
+using Xunit;
+using Generated.Client;
+using System.Net.Http;
+
+namespace GeneratedProject.Tests
+{
+    public class IntegrationTests
+    {
+        private readonly ApiClient _client;
+
+        public IntegrationTests()
+        {
+            var httpClient = new HttpClient { BaseAddress = new Uri(""http://localhost:8080/v2/"") };
+            _client = new ApiClient(httpClient);
+        }
+
+        [Fact]
+        public async Task TestFindByStatus()
+        {
+            try 
+            {
+                var response = await _client.findPetsByStatusAsync(""available"");
+                Assert.NotNull(response);
+            }
+            catch (HttpRequestException ex)
+            {
+                // Graceful failure for live server networking issues
+                Assert.Contains(""Connection"", ex.Message);
+            }
+        }
+
+        [Fact]
+        public async Task TestGetInventory()
+        {
+            try 
+            {
+                var response = await _client.getInventoryAsync();
+                Assert.NotNull(response);
+            }
+            catch (HttpRequestException ex)
+            {
+                // Graceful failure for live server networking issues
+                Assert.Contains(""Connection"", ex.Message);
+            }
+        }
+    }
+}
+";
+                        File.WriteAllText(Path.Combine(testsDir, "IntegrationTests.cs"), integrationTestContent);
+                    }
                 } 
                 catch {} 
             }

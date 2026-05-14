@@ -63,6 +63,13 @@ namespace Cdd.OpenApi.Models
         public OpenApiComponents? Components { get; set; }
 
         /// <summary>
+        /// Swagger 2.0 definitions.
+        /// </summary>
+        [JsonPropertyName("definitions")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IDictionary<string, OpenApiSchema>? Definitions { get; set; }
+
+        /// <summary>
         /// A declaration of which security mechanisms can be used across the API.
         /// </summary>
         [JsonPropertyName("security")]

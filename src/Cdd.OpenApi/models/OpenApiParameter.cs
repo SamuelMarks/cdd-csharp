@@ -54,6 +54,21 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiSchema? Schema { get; set; }
 
+        /// <summary>Swagger 2.0 type</summary>
+        [JsonPropertyName("type")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Type { get; set; }
+
+        /// <summary>Swagger 2.0 format</summary>
+        [JsonPropertyName("format")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Format { get; set; }
+
+        /// <summary>Swagger 2.0 items</summary>
+        [JsonPropertyName("items")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public OpenApiSchema? Items { get; set; }
+
 /// <summary>Auto-generated documentation for Content.</summary>
         [JsonPropertyName("content")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

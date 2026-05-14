@@ -15,6 +15,11 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiMediaType>? Content { get; set; }
 
+        /// <summary>Swagger 2.0 Schema</summary>
+        [JsonPropertyName("schema")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public OpenApiSchema? Schema { get; set; }
+
 /// <summary>Auto-generated documentation for Headers.</summary>
         [JsonPropertyName("headers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
