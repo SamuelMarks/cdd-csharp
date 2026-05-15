@@ -94,6 +94,10 @@ namespace Cdd.OpenApi.Clients
                                 {
                                     returnTypeName = schema.Ref.Split('/').Last();
                                 }
+                                else if (schema.Type == "array" && schema.Items?.Ref != null)
+                                {
+                                    returnTypeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+                                }
                                 else if (schema.Type != null)
                                 {
                                     returnTypeName = MapTypeToCSharp(schema.Type);
@@ -118,6 +122,7 @@ namespace Cdd.OpenApi.Clients
                             if (p.Schema != null)
                             {
                                 if (!string.IsNullOrEmpty(p.Schema.Ref)) paramType = p.Schema.Ref.Split('/').Last();
+                                else if (p.Schema.Type == "array" && p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
                                 else if (p.Schema.Type != null) paramType = MapTypeToCSharp(p.Schema.Type);
                                 else if (p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
                             }
@@ -235,6 +240,7 @@ namespace Cdd.OpenApi.Clients
                                 {
                                     string typeName = "string";
                                     if (!string.IsNullOrEmpty(schema.Ref)) typeName = schema.Ref.Split('/').Last();
+                                    else if (schema.Type == "array" && schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
                                     else if (schema.Type != null) typeName = MapTypeToCSharp(schema.Type);
                                     else if (schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
                                     

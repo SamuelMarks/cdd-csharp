@@ -73,11 +73,13 @@ namespace Cdd.OpenApi
             var outputDir = string.IsNullOrEmpty(config.OutputDir) ? Directory.GetCurrentDirectory() : config.OutputDir;
 
             var parser = new OpenApiParser();
+            OpenApiDocument? lastDoc = null;
             foreach (var inputPath in inputPaths)
             {
                 if (!File.Exists(inputPath)) throw new FileNotFoundException($"Input '{inputPath}' not found.");
                 
                 var doc = parser.ParseJson(File.ReadAllText(inputPath));
+                lastDoc = doc;
                 var codes = CodeGenerator.Generate(doc, "Generated", type, config.CreateComposableTestsAndMocks);
                 
                 foreach (var code in codes)
@@ -169,56 +171,7 @@ EndGlobal";
                         slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
                         File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.sln"), slnContent);
 
-                        var integrationTestContent = @"using System;
-using System.Threading.Tasks;
-using Xunit;
-using Generated.Client;
-using System.Net.Http;
-
-namespace GeneratedProject.Tests
-{
-    public class IntegrationTests
-    {
-        private readonly ApiClient _client;
-
-        public IntegrationTests()
-        {
-            var httpClient = new HttpClient { BaseAddress = new Uri(""http://localhost:8080/v2/"") };
-            _client = new ApiClient(httpClient);
-        }
-
-        [Fact]
-        public async Task TestFindByStatus()
-        {
-            try 
-            {
-                var response = await _client.findPetsByStatusAsync(""available"");
-                Assert.NotNull(response);
-            }
-            catch (HttpRequestException ex)
-            {
-                // Graceful failure for live server networking issues
-                Assert.Contains(""Connection"", ex.Message);
-            }
-        }
-
-        [Fact]
-        public async Task TestGetInventory()
-        {
-            try 
-            {
-                var response = await _client.getInventoryAsync();
-                Assert.NotNull(response);
-            }
-            catch (HttpRequestException ex)
-            {
-                // Graceful failure for live server networking issues
-                Assert.Contains(""Connection"", ex.Message);
-            }
-        }
-    }
-}
-";
+                        var integrationTestContent = lastDoc != null ? IntegrationTestGenerator.Generate(lastDoc) : "";
                         File.WriteAllText(Path.Combine(testsDir, "IntegrationTests.cs"), integrationTestContent);
                     }
                 } 
