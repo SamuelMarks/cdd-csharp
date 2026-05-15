@@ -6,8 +6,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
+    /// <summary>
+    /// Generates integration tests.
+    /// </summary>
     public static class IntegrationTestGenerator
     {
+        /// <summary>
+        /// Generates test code from an OpenAPI document.
+        /// </summary>
         public static string Generate(OpenApiDocument doc)
         {
             var sb = new StringBuilder();

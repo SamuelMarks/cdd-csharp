@@ -53,5 +53,25 @@ namespace Cdd.OpenApi.Models
         [JsonPropertyName("deprecated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Deprecated { get; set; }
+
+        /// <summary>Swagger 2.0 flow</summary>
+        [JsonPropertyName("flow")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Flow { get; set; }
+
+        /// <summary>Swagger 2.0 authorizationUrl</summary>
+        [JsonPropertyName("authorizationUrl")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? AuthorizationUrl { get; set; }
+
+        /// <summary>Swagger 2.0 tokenUrl</summary>
+        [JsonPropertyName("tokenUrl")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? TokenUrl { get; set; }
+
+        /// <summary>Swagger 2.0 scopes</summary>
+        [JsonPropertyName("scopes")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public System.Collections.Generic.IDictionary<string, string>? Scopes { get; set; }
     }
 }

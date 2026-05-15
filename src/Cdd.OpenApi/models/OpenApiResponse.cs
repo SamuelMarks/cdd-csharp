@@ -25,6 +25,11 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiHeader>? Headers { get; set; }
 
+        /// <summary>Swagger 2.0 examples</summary>
+        [JsonPropertyName("examples")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IDictionary<string, object>? Examples { get; set; }
+
 /// <summary>Auto-generated documentation for Links.</summary>
         [JsonPropertyName("links")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
