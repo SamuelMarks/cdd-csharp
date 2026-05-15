@@ -69,6 +69,76 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiSchema? Items { get; set; }
 
+        /// <summary>Swagger 2.0 collectionFormat</summary>
+        [JsonPropertyName("collectionFormat")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? CollectionFormat { get; set; }
+
+        /// <summary>Swagger 2.0 default</summary>
+        [JsonPropertyName("default")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public object? Default { get; set; }
+
+        /// <summary>Swagger 2.0 maximum</summary>
+        [JsonPropertyName("maximum")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? Maximum { get; set; }
+
+        /// <summary>Swagger 2.0 exclusiveMaximum</summary>
+        [JsonPropertyName("exclusiveMaximum")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? ExclusiveMaximum { get; set; }
+
+        /// <summary>Swagger 2.0 minimum</summary>
+        [JsonPropertyName("minimum")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? Minimum { get; set; }
+
+        /// <summary>Swagger 2.0 exclusiveMinimum</summary>
+        [JsonPropertyName("exclusiveMinimum")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? ExclusiveMinimum { get; set; }
+
+        /// <summary>Swagger 2.0 maxLength</summary>
+        [JsonPropertyName("maxLength")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaxLength { get; set; }
+
+        /// <summary>Swagger 2.0 minLength</summary>
+        [JsonPropertyName("minLength")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MinLength { get; set; }
+
+        /// <summary>Swagger 2.0 pattern</summary>
+        [JsonPropertyName("pattern")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Pattern { get; set; }
+
+        /// <summary>Swagger 2.0 maxItems</summary>
+        [JsonPropertyName("maxItems")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MaxItems { get; set; }
+
+        /// <summary>Swagger 2.0 minItems</summary>
+        [JsonPropertyName("minItems")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? MinItems { get; set; }
+
+        /// <summary>Swagger 2.0 uniqueItems</summary>
+        [JsonPropertyName("uniqueItems")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? UniqueItems { get; set; }
+
+        /// <summary>Swagger 2.0 enum</summary>
+        [JsonPropertyName("enum")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<object>? Enum { get; set; }
+
+        /// <summary>Swagger 2.0 multipleOf</summary>
+        [JsonPropertyName("multipleOf")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? MultipleOf { get; set; }
+
 /// <summary>Auto-generated documentation for Content.</summary>
         [JsonPropertyName("content")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

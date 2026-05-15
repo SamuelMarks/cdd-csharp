@@ -31,6 +31,21 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? OperationId { get; set; }
 
+        /// <summary>A list of MIME types the operation can consume.</summary>
+        [JsonPropertyName("consumes")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Consumes { get; set; }
+
+        /// <summary>A list of MIME types the operation can produce.</summary>
+        [JsonPropertyName("produces")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Produces { get; set; }
+
+        /// <summary>The transfer protocol for the operation.</summary>
+        [JsonPropertyName("schemes")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Schemes { get; set; }
+
 /// <summary>Auto-generated documentation for Parameters.</summary>
         [JsonPropertyName("parameters")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

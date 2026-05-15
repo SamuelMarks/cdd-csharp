@@ -12,7 +12,50 @@ namespace Cdd.OpenApi.Models
         /// The semantic version number of the OpenAPI Specification version that the OpenAPI document uses.
         /// </summary>
         [JsonPropertyName("openapi")]
-        public string OpenApi { get; set; } = "3.2.0";
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? OpenApi { get; set; } = "3.2.0";
+
+        /// <summary>
+        /// Specifies the Swagger Specification version being used. It can be used by the Swagger UI and other clients to interpret the API listing. The value MUST be "2.0".
+        /// </summary>
+        [JsonPropertyName("swagger")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Swagger { get; set; }
+
+        /// <summary>
+        /// The host (name or ip) serving the API.
+        /// </summary>
+        [JsonPropertyName("host")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Host { get; set; }
+
+        /// <summary>
+        /// The base path on which the API is served, which is relative to the host.
+        /// </summary>
+        [JsonPropertyName("basePath")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? BasePath { get; set; }
+
+        /// <summary>
+        /// The transfer protocol of the API.
+        /// </summary>
+        [JsonPropertyName("schemes")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Schemes { get; set; }
+
+        /// <summary>
+        /// A list of MIME types the APIs can consume.
+        /// </summary>
+        [JsonPropertyName("consumes")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Consumes { get; set; }
+
+        /// <summary>
+        /// A list of MIME types the APIs can produce.
+        /// </summary>
+        [JsonPropertyName("produces")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<string>? Produces { get; set; }
 
         /// <summary>
         /// Provides the self-assigned URI of this document.
@@ -68,6 +111,27 @@ namespace Cdd.OpenApi.Models
         [JsonPropertyName("definitions")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiSchema>? Definitions { get; set; }
+
+        /// <summary>
+        /// Swagger 2.0 parameters.
+        /// </summary>
+        [JsonPropertyName("parameters")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IDictionary<string, OpenApiParameter>? Parameters { get; set; }
+
+        /// <summary>
+        /// Swagger 2.0 responses.
+        /// </summary>
+        [JsonPropertyName("responses")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IDictionary<string, OpenApiResponse>? Responses { get; set; }
+
+        /// <summary>
+        /// Swagger 2.0 securityDefinitions.
+        /// </summary>
+        [JsonPropertyName("securityDefinitions")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IDictionary<string, OpenApiSecurityScheme>? SecurityDefinitions { get; set; }
 
         /// <summary>
         /// A declaration of which security mechanisms can be used across the API.
