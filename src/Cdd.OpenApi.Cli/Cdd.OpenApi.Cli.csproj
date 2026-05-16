@@ -14,7 +14,7 @@
     <AssemblyName>cdd-csharp</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cdd-csharp</ToolCommandName>
-    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishTrimmed>false</PublishTrimmed>

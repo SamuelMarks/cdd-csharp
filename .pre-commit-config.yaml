@@ -1,17 +1,32 @@
 repos:
 -   repo: local
     hooks:
-    -   id: tests-and-coverage
-        name: Run tests and update coverage badges
-        entry: bash -c "make test && bash scripts/update_badges.sh"
+    -   id: auto-format
+        name: Auto-format Code
+        entry: bash -c "dotnet format CddOpenApi.slnx"
         language: system
         pass_filenames: false
 
-  - repo: local
-    hooks:
-      - id: update-badges
-        name: Update Badges
-        entry: python3 scripts/update_badges.py
+    -   id: format-check
+        name: Check Code Formatting
+        entry: bash -c "dotnet format CddOpenApi.slnx --verify-no-changes"
         language: system
-        files: ^README\.md$
+        pass_filenames: false
+
+    -   id: lint
+        name: Lint (Analyzers)
+        entry: bash -c "dotnet format analyzers CddOpenApi.slnx --verify-no-changes"
+        language: system
+        pass_filenames: false
+
+    -   id: build
+        name: Build
+        entry: dotnet build CddOpenApi.slnx
+        language: system
+        pass_filenames: false
+
+    -   id: tests-and-coverage
+        name: Run tests and update coverage badges
+        entry: bash scripts/update_badges.sh
+        language: system
         pass_filenames: false

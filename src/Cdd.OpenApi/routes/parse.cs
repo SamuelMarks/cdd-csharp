@@ -5,14 +5,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
-/// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
-/// <summary>Auto-generated documentation for ToPaths.</summary>
+        /// <summary>Auto-generated documentation for ToPaths.</summary>
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();
-            
+
             var pathSummary = Docstrings.Parse.GetTag(classNode, "path-summary");
             var pathDescription = Docstrings.Parse.GetTag(classNode, "path-description");
             var pathRef = Docstrings.Parse.GetTag(classNode, "path-ref");
@@ -22,7 +22,7 @@ namespace Cdd.OpenApi.Routes
                 var routeAttr = method.AttributeLists
                     .SelectMany(a => a.Attributes)
                     .FirstOrDefault(a => a.Name.ToString().StartsWith("Http"));
-                    
+
                 if (routeAttr == null) continue;
 
                 var attrName = routeAttr.Name.ToString(); // HttpGet, HttpPost, etc.
@@ -67,9 +67,9 @@ namespace Cdd.OpenApi.Routes
                 {
                     var code = tag.Attributes.TryGetValue("code", out var c) ? c : "default";
                     if (code == "200") has200 = true;
-                    
+
                     var resp = new OpenApiResponse { Description = string.IsNullOrEmpty(tag.Text) ? "Response" : tag.Text };
-                    
+
                     // headers & links could be fetched here via other nested tags if expanded, but for simplicity:
 
                     if (tag.Attributes.TryGetValue("header", out var hdr))
@@ -78,7 +78,7 @@ namespace Cdd.OpenApi.Routes
                         if (tag.Attributes.TryGetValue("header-required", out var hr) && bool.TryParse(hr, out var hrb)) headerObj.Required = hrb;
                         if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr) && bool.TryParse(hdpr, out var hdprb)) headerObj.Deprecated = hdprb;
                         if (tag.Attributes.TryGetValue("header-example", out var he)) headerObj.Example = he;
-                        
+
                         if (tag.Attributes.TryGetValue("header-examples", out var hex))
                         {
                             headerObj.Examples = new Dictionary<string, OpenApiExample>();
@@ -91,9 +91,9 @@ namespace Cdd.OpenApi.Routes
 
                         if (tag.Attributes.TryGetValue("header-style", out var hs)) headerObj.Style = hs;
                         if (tag.Attributes.TryGetValue("header-explode", out var hexpl) && bool.TryParse(hexpl, out var hexplb)) headerObj.Explode = hexplb;
-                        
+
                         if (tag.Attributes.TryGetValue("header-schema", out var hsch)) headerObj.Schema = new OpenApiSchema { Type = hsch };
-                        
+
                         if (tag.Attributes.TryGetValue("header-content", out var hcnt))
                         {
                             var parts = hcnt.Split(':');
@@ -112,11 +112,11 @@ namespace Cdd.OpenApi.Routes
                     if (tag.Attributes.TryGetValue("link", out var lnk))
                     {
                         var linkObj = new OpenApiLink { OperationId = lnk };
-                        
+
                         if (tag.Attributes.TryGetValue("link-operationRef", out var opRef)) linkObj.OperationRef = opRef;
                         if (tag.Attributes.TryGetValue("link-description", out var desc)) linkObj.Description = desc;
                         if (tag.Attributes.TryGetValue("link-requestBody", out var rb)) linkObj.RequestBody = rb;
-                        
+
                         var paramStr = tag.Attributes.TryGetValue("link-parameters", out var pStr) ? pStr : null;
                         if (!string.IsNullOrEmpty(paramStr))
                         {
@@ -138,7 +138,7 @@ namespace Cdd.OpenApi.Routes
                             { lnk, linkObj }
                         };
                     }
-                    
+
                     if (code == "200" || code.StartsWith("2"))
                     {
                         resp.Content = defaultResponse.Content; // Inherit generated content for success
@@ -191,7 +191,7 @@ namespace Cdd.OpenApi.Routes
                 foreach (var param in method.ParameterList.Parameters)
                 {
                     var inType = routePath.Contains($"{{{param.Identifier.Text}}}") ? "path" : "query";
-                    
+
                     var attrs = param.AttributeLists.SelectMany(al => al.Attributes).Select(a => a.Name.ToString()).ToList();
                     if (attrs.Contains("FromRoute")) inType = "path";
                     else if (attrs.Contains("FromQuery")) inType = "query";
@@ -214,7 +214,7 @@ namespace Cdd.OpenApi.Routes
                                 }
                             }
                         };
-                        
+
                         var encodingAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString().Contains("Encoding"));
                         if (encodingAttr != null && encodingAttr.ArgumentList != null && encodingAttr.ArgumentList.Arguments.Count >= 2)
                         {
@@ -223,19 +223,21 @@ namespace Cdd.OpenApi.Routes
                             if (propName != null && contentType != null)
                             {
                                 var encObj = new OpenApiEncoding { ContentType = contentType };
-                                
+
                                 var styleArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "Style");
                                 if (styleArg != null) encObj.Style = (styleArg.Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                                
+
                                 var explodeArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "Explode");
-                                if (explodeArg != null) {
+                                if (explodeArg != null)
+                                {
                                     if (explodeArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.Explode = true;
                                     else if (explodeArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) encObj.Explode = false;
                                 }
 
                                 var allowReservedArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "AllowReserved");
-                                if (allowReservedArg != null) {
-                                     if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.AllowReserved = true;
+                                if (allowReservedArg != null)
+                                {
+                                    if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.AllowReserved = true;
                                     else if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) encObj.AllowReserved = false;
                                 }
 
@@ -269,7 +271,7 @@ namespace Cdd.OpenApi.Routes
                         if (attrs.Contains("AllowEmptyValue")) paramObj.AllowEmptyValue = true;
                         if (attrs.Contains("AllowReserved")) paramObj.AllowReserved = true;
 
-                        
+
                         var styleAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString().Contains("Style"));
 
                         var examplesAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString().Contains("Examples"));
@@ -320,7 +322,7 @@ namespace Cdd.OpenApi.Routes
                         var paramDoc = paramTags.FirstOrDefault(t => t.Attributes.TryGetValue("name", out var n) && n == param.Identifier.Text);
                         if (paramDoc.Text != null && !string.IsNullOrWhiteSpace(paramDoc.Text))
                         {
-                             paramObj.Description = paramDoc.Text;
+                            paramObj.Description = paramDoc.Text;
                         }
 
                         var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content");
@@ -357,9 +359,9 @@ namespace Cdd.OpenApi.Routes
                     {
                         var name = ct.Attributes.TryGetValue("name", out var n) ? n : "myCallback";
                         var expression = ct.Attributes.TryGetValue("expression", out var e) ? e : "{$request.body#/callbackUrl}";
-                        
+
                         var cb = new OpenApiCallback();
-                        cb[expression] = new OpenApiPathItem 
+                        cb[expression] = new OpenApiPathItem
                         {
                             Post = new OpenApiOperation { Description = ct.Text }
                         };
@@ -397,7 +399,7 @@ namespace Cdd.OpenApi.Routes
                 case "patch": pathItem.Patch = op; break;
                 case "trace": pathItem.Trace = op; break;
                 case "query": pathItem.Query = op; break;
-                default: 
+                default:
                     if (pathItem.AdditionalOperations == null) pathItem.AdditionalOperations = new Dictionary<string, OpenApiOperation>();
                     pathItem.AdditionalOperations[method.ToUpperInvariant()] = op;
                     break;

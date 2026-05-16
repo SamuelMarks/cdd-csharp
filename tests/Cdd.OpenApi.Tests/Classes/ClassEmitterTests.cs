@@ -16,12 +16,14 @@ namespace Cdd.OpenApi.Tests.Classes
                 Description = "A pet schema",
                 Example = "examplePet",
                 ExternalDocs = new OpenApiExternalDocs { Url = "http://pet.docs" },
-                Discriminator = new OpenApiDiscriminator { 
+                Discriminator = new OpenApiDiscriminator
+                {
                     PropertyName = "petType",
                     DefaultMapping = "dog",
                     Mapping = new Dictionary<string, string> { { "cat", "#/components/schemas/Cat" } }
                 },
-                Xml = new OpenApiXml {
+                Xml = new OpenApiXml
+                {
                     Name = "Pet",
                     Namespace = "http://pet.xml",
                     Prefix = "p",
@@ -32,17 +34,20 @@ namespace Cdd.OpenApi.Tests.Classes
                 Required = new List<string> { "Id" },
                 Properties = new Dictionary<string, OpenApiSchema>
                 {
-                    ["Id"] = new OpenApiSchema { 
-                        Type = "integer", 
+                    ["Id"] = new OpenApiSchema
+                    {
+                        Type = "integer",
                         Description = "Pet ID",
                         Example = 123,
                         ExternalDocs = new OpenApiExternalDocs { Url = "http://pet.docs/id" },
-                        Discriminator = new OpenApiDiscriminator { 
+                        Discriminator = new OpenApiDiscriminator
+                        {
                             PropertyName = "idType",
                             DefaultMapping = "num",
                             Mapping = new Dictionary<string, string> { { "str", "#/components/schemas/StrId" } }
                         },
-                        Xml = new OpenApiXml {
+                        Xml = new OpenApiXml
+                        {
                             Name = "Id",
                             Namespace = "http://id.xml",
                             Prefix = "i",
@@ -75,7 +80,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.Contains("/// <xml-wrapped>\n/// false\n/// </xml-wrapped>", code.Replace("\r", ""));
 
             Assert.Contains("public class Pet", code);
-            
+
             // Id is required
             Assert.Contains("public int Id { get; set; }", code);
             Assert.Contains("/// <summary>", code);
@@ -97,7 +102,7 @@ namespace Cdd.OpenApi.Tests.Classes
 
             // IsVaccinated is optional bool
             Assert.Contains("public bool? IsVaccinated { get; set; }", code);
-            
+
             // Data is unknown fallback to object
             Assert.Contains("public object Data { get; set; }", code);
         }
@@ -164,7 +169,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.Equal("dog", schema.Discriminator.DefaultMapping);
             Assert.True(schema.Discriminator.Mapping.ContainsKey("cat"));
             Assert.Equal("https://pet.docs", schema.ExternalDocs?.Url);
-            
+
             Assert.NotNull(schema.Xml);
             Assert.Equal("Pet", schema.Xml.Name);
             Assert.Equal("http://pet.xml", schema.Xml.Namespace);
@@ -176,7 +181,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.NotNull(schema.Properties);
             Assert.True(schema.Properties.ContainsKey("Id"));
             var idProp = schema.Properties["Id"];
-            
+
             Assert.True(idProp.Xml?.Wrapped);
             Assert.False(idProp.Xml?.Attribute);
             Assert.Equal("attribute", idProp.Xml?.NodeType);

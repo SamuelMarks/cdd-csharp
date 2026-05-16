@@ -32,17 +32,17 @@ namespace Cdd.OpenApi.Tests.Classes
 
             Assert.Equal("object", schema.Type);
             Assert.Equal("A representation of a pet.", schema.Description);
-            
+
             Assert.NotNull(schema.Properties);
             Assert.Equal(3, schema.Properties.Count);
-            
+
             Assert.True(schema.Properties.ContainsKey("Id"));
             Assert.Equal("integer", schema.Properties["Id"].Type);
             Assert.Equal("The pet's ID", schema.Properties["Id"].Description);
 
             Assert.True(schema.Properties.ContainsKey("Name"));
             Assert.Equal("string", schema.Properties["Name"].Type);
-            
+
             Assert.True(schema.Properties.ContainsKey("IsVaccinated"));
             Assert.Equal("boolean", schema.Properties["IsVaccinated"].Type);
 

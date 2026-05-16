@@ -45,7 +45,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("Summary of API", doc.Info.Summary);
             Assert.Equal("1.0.0", doc.Info.Version);
             Assert.Equal("https://example.com/terms", doc.Info.TermsOfService);
-            
+
             Assert.NotNull(doc.Info.Contact);
             Assert.Equal("John Doe", doc.Info.Contact.Name);
             Assert.Equal("john@example.com", doc.Info.Contact.Email);
@@ -246,7 +246,7 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc.Paths);
             Assert.True(doc.Paths.ContainsKey("/test1"));
         }
-        
+
         [Fact]
         public void Generate_Mock_ReturnsPaths()
         {

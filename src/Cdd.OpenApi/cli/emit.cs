@@ -35,7 +35,7 @@ namespace Cdd.OpenApi.CliModule
             {
                 var routePath = pathKvp.Key;
                 var pathItem = pathKvp.Value;
-                
+
                 var ops = new Dictionary<string, OpenApiOperation?>
                 {
                     { "get", pathItem.Get },
@@ -55,15 +55,15 @@ namespace Cdd.OpenApi.CliModule
                     if (op == null) continue;
                     var operationId = op.OperationId ?? (opKvp.Key + routePath.Replace("/", "").Replace("{", "").Replace("}", ""));
                     var commandName = operationId.ToLower();
-                    
+
                     var description = op.Summary ?? "No description";
-                    
+
                     var caseLabel = SyntaxFactory.CaseSwitchLabel(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(commandName)));
-                    
+
                     var caseStatements = new SyntaxList<StatementSyntax>();
 
                     string helpStr = $"System.Console.WriteLine(\"{description}\");";
-                    
+
                     if (op.Parameters != null && op.Parameters.Any())
                     {
                         helpStr += " System.Console.WriteLine(\"Options:\");";
@@ -72,29 +72,32 @@ namespace Cdd.OpenApi.CliModule
                             string exampleStr = "";
                             if (p.Example != null) exampleStr = $" (Example: {p.Example})";
                             else if (p.Examples != null && p.Examples.Any()) exampleStr = $" (Example: {p.Examples.First().Value.Value})";
-                            
+
                             helpStr += $" System.Console.WriteLine(\"  --{p.Name.ToLower()} <{p.Schema?.Type ?? "string"}> : {p.Description ?? "No description"}{exampleStr}\");";
-                            
+
                             string varType = p.Schema?.Type == "integer" ? "int" : "string";
                             string varName = p.Name.Replace("-", "_");
                             caseStatements = caseStatements.Add(SyntaxFactory.ParseStatement($"{varType} {varName} = default;"));
                         }
-                        
+
                         var loopCode = "for (int i = cmdIndex + 1; i < args.Length; i++) { ";
                         foreach (var p in op.Parameters)
                         {
                             string varType = p.Schema?.Type == "integer" ? "int" : "string";
                             string varName = p.Name.Replace("-", "_");
                             string flagName = $"--{p.Name.ToLower()}";
-                            if (varType == "int") {
+                            if (varType == "int")
+                            {
                                 loopCode += $"if (args[i] == \"{flagName}\" && i + 1 < args.Length) {{ if (int.TryParse(args[++i], out var temp_{varName})) {varName} = temp_{varName}; }} ";
-                            } else {
+                            }
+                            else
+                            {
                                 loopCode += $"if (args[i] == \"{flagName}\" && i + 1 < args.Length) {{ {varName} = args[++i]; }} ";
                             }
                         }
                         loopCode += "}";
                         caseStatements = caseStatements.Add(SyntaxFactory.ParseStatement(loopCode));
-                        
+
                         string executedArgs = string.Join(", ", op.Parameters.Select(p => $"{p.Name.Replace("-", "_")}={{{p.Name.Replace("-", "_")}}}"));
                         caseStatements = caseStatements.Add(SyntaxFactory.ParseStatement($"System.Console.WriteLine($\"Executing {commandName} with {executedArgs}...\");"));
                     }
@@ -105,7 +108,7 @@ namespace Cdd.OpenApi.CliModule
 
                     var cmdHelpCheck = SyntaxFactory.ParseStatement($"if (args.Length > cmdIndex + 1 && args[cmdIndex + 1] == \"--help\") {{ {helpStr} return 0; }}");
                     caseStatements = caseStatements.Insert(0, cmdHelpCheck);
-                    
+
                     caseStatements = caseStatements.Add(SyntaxFactory.BreakStatement());
 
                     switchStatement = switchStatement.AddSections(SyntaxFactory.SwitchSection(new SyntaxList<SwitchLabelSyntax>().Add(caseLabel), caseStatements));

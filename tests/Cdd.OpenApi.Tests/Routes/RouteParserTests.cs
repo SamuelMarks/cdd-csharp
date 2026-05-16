@@ -39,7 +39,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             Assert.True(paths.ContainsKey("/pets"));
             var petsPath = paths["/pets"];
-            
+
             // GET /pets
             Assert.NotNull(petsPath.Get);
             Assert.Equal("GetPets", petsPath.Get.OperationId);
@@ -149,7 +149,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/users/{id}"].Delete;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Responses);
             Assert.True(op.Responses.ContainsKey("204"));
@@ -175,11 +175,11 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/users"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
             Assert.Equal(3, op.Parameters.Count);
-            
+
             var oldId = op.Parameters[0];
             Assert.True(oldId.Deprecated);
 
@@ -230,11 +230,11 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/complex"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
             Assert.Single(op.Parameters);
-            
+
             var ids = op.Parameters[0];
             Assert.Equal("matrix", ids.Style);
             Assert.True(ids.Explode);
@@ -255,10 +255,10 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/content"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
-            
+
             var p = op.Parameters[0];
             Assert.Null(p.Schema);
             Assert.NotNull(p.Content);
@@ -277,21 +277,21 @@ namespace Cdd.OpenApi.Tests.Routes
                         OperationId = "GetComplex",
                         Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter 
-                            { 
-                                Name = "ids", 
-                                Schema = new OpenApiSchema { Type = "string" }, 
-                                Style = "matrix", 
-                                Explode = true, 
-                                AllowReserved = true 
+                            new OpenApiParameter
+                            {
+                                Name = "ids",
+                                Schema = new OpenApiSchema { Type = "string" },
+                                Style = "matrix",
+                                Explode = true,
+                                AllowReserved = true
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "payload", 
+                            new OpenApiParameter
+                            {
+                                Name = "payload",
                                 Content = new Dictionary<string, OpenApiMediaType>
                                 {
                                     { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "object" } } }
-                                } 
+                                }
                             }
                         }
                     }
@@ -329,7 +329,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/srv"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Servers);
             Assert.Single(op.Servers);
@@ -368,7 +368,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/subscribe"].Post;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Callbacks);
             Assert.True(op.Callbacks.ContainsKey("onEvent"));
@@ -395,10 +395,10 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/links"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Responses);
-            
+
             var resp = op.Responses["200"];
             Assert.NotNull(resp.Links);
             Assert.True(resp.Links.ContainsKey("GetUser"));
@@ -443,7 +443,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/meta"].Get;
-            
+
             Assert.NotNull(op);
             Assert.Equal("The desc", op.Description);
             Assert.Equal("https://docs.api.com", op.ExternalDocs?.Url);
@@ -451,12 +451,12 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.NotNull(op.Tags);
             Assert.Contains("users", op.Tags);
             Assert.Contains("admin", op.Tags);
-            
+
             Assert.NotNull(op.Security);
             Assert.Single(op.Security);
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
             Assert.Contains("read:users", op.Security[0]["OAuth2"]);
-            
+
             Assert.Equal(9, op.Parameters.Count);
         }
         [Fact]
@@ -474,10 +474,10 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/ex"].Get;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
-            
+
             var p = op.Parameters[0];
             Assert.NotNull(p.Examples);
             Assert.Equal(2, p.Examples.Count);
@@ -502,7 +502,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/enc"].Post;
-            
+
             Assert.NotNull(op);
             Assert.NotNull(op.RequestBody);
             Assert.True(op.RequestBody.Content.ContainsKey("application/x-www-form-urlencoded"));
@@ -510,7 +510,7 @@ namespace Cdd.OpenApi.Tests.Routes
             var encs = op.RequestBody.Content["application/x-www-form-urlencoded"].Encoding;
             Assert.NotNull(encs);
             Assert.True(encs.ContainsKey("profileImage"));
-            
+
             var e = encs["profileImage"];
             Assert.Equal("image/png", e.ContentType);
             Assert.Equal("form", e.Style);
@@ -535,7 +535,7 @@ namespace Cdd.OpenApi.Tests.Routes
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
-            
+
             Assert.NotNull(paths["/query"].Query);
             Assert.Equal("QueryMethod", paths["/query"].Query.OperationId);
 

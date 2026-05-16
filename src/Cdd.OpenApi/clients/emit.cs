@@ -7,17 +7,17 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Clients
 {
-/// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
-/// <summary>Auto-generated documentation for ToClient.</summary>
+        /// <summary>Auto-generated documentation for ToClient.</summary>
         public static ClassDeclarationSyntax ToClient(string className, OpenApiPaths paths)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
             var httpClientType = SyntaxFactory.ParseTypeName("System.Net.Http.HttpClient");
-            
+
             var varDecl = SyntaxFactory.VariableDeclarator("_httpClient");
             var varDeclaration = SyntaxFactory.VariableDeclaration(httpClientType)
                 .AddVariables(varDecl);
@@ -126,7 +126,7 @@ namespace Cdd.OpenApi.Clients
                                 else if (p.Schema.Type != null) paramType = MapTypeToCSharp(p.Schema.Type);
                                 else if (p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
                             }
-                            
+
                             var pNode = SyntaxFactory.Parameter(SyntaxFactory.Identifier(p.Name))
                                 .WithType(SyntaxFactory.ParseTypeName(paramType));
 
@@ -243,7 +243,7 @@ namespace Cdd.OpenApi.Clients
                                     else if (schema.Type == "array" && schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
                                     else if (schema.Type != null) typeName = MapTypeToCSharp(schema.Type);
                                     else if (schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
-                                    
+
                                     parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body"))
                                         .WithType(SyntaxFactory.ParseTypeName(typeName)));
                                 }
@@ -259,7 +259,7 @@ namespace Cdd.OpenApi.Clients
                     string interpolatedPath = routePath;
 
                     ExpressionSyntax routePathExpr;
-                    
+
                     if (interpolatedPath.Contains("{"))
                     {
                         routePathExpr = SyntaxFactory.ParseExpression($"$\"{interpolatedPath}\"");
@@ -299,7 +299,7 @@ namespace Cdd.OpenApi.Clients
                         {
                             args.Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
                         }
-                        
+
                         httpClientCall = SyntaxFactory.InvocationExpression(
                             SyntaxFactory.MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
@@ -453,7 +453,7 @@ namespace Cdd.OpenApi.Clients
                                 var expression = expKvp.Key;
                                 var opItem = expKvp.Value;
                                 var desc = opItem.Post?.Description ?? opItem.Get?.Description ?? "Callback";
-                                
+
                                 var attrs = new Dictionary<string, string> { { "name", cName }, { "expression", expression } };
                                 methodNode = Docstrings.Emit.WithTag(methodNode, "callback", attrs, desc);
                             }

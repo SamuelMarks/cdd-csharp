@@ -18,14 +18,20 @@ namespace Cdd.OpenApi.Cli
         {
             if (args.Length < 1)
             {
-                if (System.IO.File.Exists("/.cdd_args")) {
+                if (System.IO.File.Exists("/.cdd_args"))
+                {
                     args = System.IO.File.ReadAllLines("/.cdd_args");
-                } else {
+                }
+                else
+                {
                     var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
                     var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
-                    if (!string.IsNullOrEmpty(cddArgs)) {
+                    if (!string.IsNullOrEmpty(cddArgs))
+                    {
                         args = cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    } else if (!string.IsNullOrEmpty(cddCommand)) {
+                    }
+                    else if (!string.IsNullOrEmpty(cddCommand))
+                    {
                         args = new[] { cddCommand };
                     }
                 }
@@ -35,9 +41,12 @@ namespace Cdd.OpenApi.Cli
             {
                 var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
                 var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
-                if (!string.IsNullOrEmpty(cddArgs)) {
+                if (!string.IsNullOrEmpty(cddArgs))
+                {
                     args = cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                } else if (!string.IsNullOrEmpty(cddCommand)) {
+                }
+                else if (!string.IsNullOrEmpty(cddCommand))
+                {
                     args = new[] { cddCommand };
                 }
             }
@@ -46,10 +55,12 @@ namespace Cdd.OpenApi.Cli
             {
                 var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
                 var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
-                if (!string.IsNullOrEmpty(cddCommand)) {
+                if (!string.IsNullOrEmpty(cddCommand))
+                {
                     var list = new System.Collections.Generic.List<string>();
                     list.Add(cddCommand);
-                    if (!string.IsNullOrEmpty(cddArgs)) {
+                    if (!string.IsNullOrEmpty(cddArgs))
+                    {
                         list.AddRange(cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
                     }
                     args = list.ToArray();
@@ -60,12 +71,16 @@ namespace Cdd.OpenApi.Cli
             {
                 var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
                 var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
-                if (!string.IsNullOrEmpty(cddCommand)) {
+                if (!string.IsNullOrEmpty(cddCommand))
+                {
                     var list = new System.Collections.Generic.List<string>();
                     list.Add(cddCommand);
-                    if (!string.IsNullOrEmpty(cddArgs)) {
+                    if (!string.IsNullOrEmpty(cddArgs))
+                    {
                         list.AddRange(cddArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-                    } else {
+                    }
+                    else
+                    {
                         list.Add(cddCommand);
                     }
                     args = list.ToArray();
@@ -109,9 +124,9 @@ namespace Cdd.OpenApi.Cli
                 {
                     return HandleServerJsonRpc(args);
                 }
-                
+
                 var inputPath = args.Length > 1 ? args[1] : string.Empty;
-                
+
                 if (command == "parse" && !string.IsNullOrEmpty(inputPath))
                 {
                     if (!File.Exists(inputPath)) return Error($"Error: Input '{inputPath}' not found.");
@@ -156,7 +171,7 @@ namespace Cdd.OpenApi.Cli
                     listen = args[++i];
                 }
             }
-            
+
             var listener = new HttpListener();
             string url = $"http://{(listen == "0.0.0.0" ? "*" : listen)}:{portStr}/";
             listener.Prefixes.Add(url);
@@ -238,7 +253,7 @@ namespace Cdd.OpenApi.Cli
 
             string? inputEnv = Environment.GetEnvironmentVariable("INPUT");
             if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
-            
+
             string? inputDirEnv = Environment.GetEnvironmentVariable("INPUT_DIR");
             if (!string.IsNullOrEmpty(inputDirEnv)) config.InputDir = inputDirEnv;
 
@@ -362,7 +377,7 @@ namespace Cdd.OpenApi.Cli
 
             var doc = new OpenApiParser().ParseJson(jsonContent);
             var outputJson = Cdd.OpenApi.DocsJson.DocsJsonGenerator.Generate(doc, noImports, noWrapping);
-            
+
             if (!string.IsNullOrEmpty(outputPath))
             {
                 File.WriteAllText(outputPath, outputJson);
@@ -382,13 +397,13 @@ namespace Cdd.OpenApi.Cli
                 return Error($"Error: Input '{inputPath}' not found.");
             }
 
-            var files = Directory.Exists(inputPath) 
-                ? Directory.GetFiles(inputPath, "*.cs", SearchOption.AllDirectories) 
+            var files = Directory.Exists(inputPath)
+                ? Directory.GetFiles(inputPath, "*.cs", SearchOption.AllDirectories)
                 : new[] { inputPath };
-                
+
             var codes = files.Select(f => File.ReadAllText(f));
             var doc = SpecGenerator.Generate(codes);
-            
+
             File.WriteAllText(outputPath, new OpenApiEmitter().EmitJson(doc));
             Console.WriteLine($"Successfully generated spec at '{outputPath}'.");
             return 0;

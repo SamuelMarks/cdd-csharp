@@ -26,12 +26,12 @@ namespace Cdd.OpenApi.Tests.Cli
                     }
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
-            
+
             var pathItem = paths["/init"];
             Assert.NotNull(pathItem);
             Assert.NotNull(pathItem.Parameters);
@@ -74,12 +74,12 @@ namespace Cdd.OpenApi.Tests.Cli
                     }
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
-            
+
             Assert.NotNull(paths["/put"].Put);
             Assert.NotNull(paths["/post"].Post);
             Assert.NotNull(paths["/delete"].Delete);
@@ -109,12 +109,12 @@ namespace Cdd.OpenApi.Tests.Cli
                     }
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
-            
+
             var pathItem = paths["/init"];
             var countParam = pathItem.Parameters.First(p => p.Name == "count");
             Assert.Equal("The number of items", countParam.Description);
@@ -140,12 +140,12 @@ namespace Cdd.OpenApi.Tests.Cli
                     }
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
-            
+
             Assert.NotNull(paths["/query"].Query);
         }
 
@@ -178,7 +178,7 @@ namespace Cdd.OpenApi.Tests.Cli
                     }
                 }
             });
-            
+
             var node = Cdd.OpenApi.CliModule.Emit.ToCli("MyCli", paths);
             var code = node.ToFullString();
             Assert.Contains("string format = default;", code);

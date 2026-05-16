@@ -6,16 +6,16 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Docstrings
 {
-/// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
-/// <summary>Auto-generated documentation for GetSummary.</summary>
+        /// <summary>Auto-generated documentation for GetSummary.</summary>
         public static string? GetSummary(SyntaxNode node)
         {
             return GetTag(node, "summary");
         }
 
-/// <summary>Auto-generated documentation for GetTag.</summary>
+        /// <summary>Auto-generated documentation for GetTag.</summary>
         public static string? GetTag(SyntaxNode node, string tagName)
         {
             var trivia = node.GetLeadingTrivia()
@@ -40,7 +40,7 @@ namespace Cdd.OpenApi.Docstrings
             return string.Join(" ", textLines);
         }
 
-/// <summary>Auto-generated documentation for GetTagsWithAttributes.</summary>
+        /// <summary>Auto-generated documentation for GetTagsWithAttributes.</summary>
         public static IEnumerable<(IDictionary<string, string> Attributes, string Text)> GetTagsWithAttributes(SyntaxNode node, string tagName)
         {
             var trivia = node.GetLeadingTrivia()
@@ -124,7 +124,7 @@ namespace Cdd.OpenApi.Docstrings
 
                     var varName = varAttrs.TryGetValue("name", out var vn) ? vn : "var";
                     var enumElements = varElem.Content.OfType<XmlElementSyntax>().Where(e => e.StartTag.Name.ToString() == "enum");
-                    
+
                     var varTextLines = varElem.Content
                         .OfType<XmlTextSyntax>()
                         .SelectMany(t => t.TextTokens)

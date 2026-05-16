@@ -22,7 +22,7 @@ namespace Cdd.OpenApi.Orm
                 if (typeStr.StartsWith("DbSet<") && typeStr.EndsWith(">"))
                 {
                     var entityName = typeStr.Substring(6, typeStr.Length - 7);
-                    
+
                     var schema = new OpenApiSchema
                     {
                         Type = "object",

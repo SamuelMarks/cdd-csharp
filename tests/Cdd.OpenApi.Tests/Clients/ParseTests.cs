@@ -96,7 +96,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
             Assert.NotNull(paths);
-            
+
             Assert.True(paths.ContainsKey("/users"));
             Assert.NotNull(paths["/users"].Get);
             Assert.Equal("GetUsers", paths["/users"].Get?.OperationId);
@@ -105,14 +105,14 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(paths.ContainsKey("/users/{id}"));
             Assert.NotNull(paths["/users/{id}"].Post);
             Assert.Equal("PostUser", paths["/users/{id}"].Post?.OperationId);
-            
+
             var parameters = paths["/users/{id}"].Post?.Parameters;
             Assert.NotNull(parameters);
             Assert.Single(parameters);
             Assert.Equal("id", parameters[0].Name);
             Assert.Equal("path", parameters[0].In);
             Assert.Equal("integer", parameters[0].Schema?.Type);
-            
+
             var requestBody = paths["/users/{id}"].Post?.RequestBody;
             Assert.NotNull(requestBody);
             Assert.Equal("Request body", requestBody.Description);
@@ -148,12 +148,12 @@ namespace Cdd.OpenApi.Tests.Clients
                     return 0;
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/user"].Get;
             Assert.NotNull(op);
             Assert.NotNull(op.Responses);
@@ -164,7 +164,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(op.Responses["204"].Headers?.ContainsKey("X-Limit"));
             Assert.True(op.Responses["204"].Links?.ContainsKey("OtherOp"));
             Assert.Equal("application/json", op.Responses["204"].Headers["X-Limit"].Content.First().Key);
-            
+
             Assert.NotNull(op.Servers);
             Assert.Single(op.Servers);
             Assert.Equal("http://s1", op.Servers[0].Url);
@@ -186,20 +186,20 @@ namespace Cdd.OpenApi.Tests.Clients
                     return """";
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/user/{oldId}?q={q}&x={x}"].Get;
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
             Assert.Equal(3, op.Parameters.Count);
-            
+
             var oldIdParam = op.Parameters.First(p => p.Name == "oldId");
             Assert.True(oldIdParam.Deprecated);
-            
+
             var qParam = op.Parameters.First(p => p.Name == "q");
             Assert.True(qParam.AllowEmptyValue);
             Assert.Equal("", qParam.Example);
@@ -223,17 +223,17 @@ namespace Cdd.OpenApi.Tests.Clients
                     await _client.PostAsync(""/event"", null);
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/event"].Post;
             Assert.NotNull(op);
             Assert.NotNull(op.Callbacks);
             Assert.True(op.Callbacks.ContainsKey("onWebhook"));
-            
+
             var cb = op.Callbacks["onWebhook"];
             Assert.True(cb.ContainsKey("{$request.query.url}"));
             Assert.Equal("Webhook details", cb["{$request.query.url}"].Post?.Description);
@@ -254,16 +254,16 @@ namespace Cdd.OpenApi.Tests.Clients
                     await _client.GetAsync(""/it"");
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/it"].Get;
             Assert.NotNull(op);
             Assert.NotNull(op.Responses);
-            
+
             var resp = op.Responses["200"];
             Assert.NotNull(resp.Links);
             Assert.True(resp.Links.ContainsKey("GetDetails"));
@@ -295,12 +295,12 @@ namespace Cdd.OpenApi.Tests.Clients
                     await _client.GetAsync(""/meta"");
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/meta"].Get;
             Assert.NotNull(op);
             Assert.Equal("Desc", op.Description);
@@ -308,7 +308,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(op.Deprecated);
             Assert.NotNull(op.Tags);
             Assert.Contains("api", op.Tags);
-            
+
             Assert.NotNull(op.Security);
             Assert.Single(op.Security);
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
@@ -338,16 +338,16 @@ namespace Cdd.OpenApi.Tests.Clients
                     await _client.GetAsync($""/it/{id}"");
                 }
             }";
-            
+
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             var op = paths["/it/{id}"].Get;
             Assert.NotNull(op);
             Assert.NotNull(op.Parameters);
-            
+
             var p = op.Parameters[0];
             Assert.NotNull(p.Examples);
             Assert.Equal(2, p.Examples.Count);
@@ -371,7 +371,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-            
+
             Assert.NotNull(paths["/query"].Query);
             Assert.Equal("QueryMethod", paths["/query"].Query.OperationId);
 

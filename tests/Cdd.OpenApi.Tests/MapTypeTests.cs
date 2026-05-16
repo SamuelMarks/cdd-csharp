@@ -27,9 +27,12 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void RouteEmitMapType_HandlesOtherTypes()
         {
-            var iface = Cdd.OpenApi.Routes.Emit.ToInterface("I", new Cdd.OpenApi.Models.OpenApiPaths { 
-                ["/"] = new Cdd.OpenApi.Models.OpenApiPathItem { 
-                    Get = new Cdd.OpenApi.Models.OpenApiOperation {
+            var iface = Cdd.OpenApi.Routes.Emit.ToInterface("I", new Cdd.OpenApi.Models.OpenApiPaths
+            {
+                ["/"] = new Cdd.OpenApi.Models.OpenApiPathItem
+                {
+                    Get = new Cdd.OpenApi.Models.OpenApiOperation
+                    {
                         OperationId = "M",
                         Parameters = new System.Collections.Generic.List<Cdd.OpenApi.Models.OpenApiParameter> {
                             new Cdd.OpenApi.Models.OpenApiParameter { Name = "p1", Schema = new Cdd.OpenApi.Models.OpenApiSchema { Type = "integer" } },
@@ -37,8 +40,8 @@ namespace Cdd.OpenApi.Tests
                             new Cdd.OpenApi.Models.OpenApiParameter { Name = "p3", Schema = new Cdd.OpenApi.Models.OpenApiSchema { Type = "string" } },
                             new Cdd.OpenApi.Models.OpenApiParameter { Name = "p4", Schema = new Cdd.OpenApi.Models.OpenApiSchema { Type = "unknown" } },
                         }
-                    } 
-                } 
+                    }
+                }
             });
             var code = iface.ToFullString();
             Assert.Contains("int p1", code);
@@ -46,12 +49,14 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("string p3", code);
             Assert.Contains("string p4", code);
         }
-        
+
         [Fact]
         public void ClassEmitMapType_HandlesAllTypes()
         {
-            var cls = Cdd.OpenApi.Classes.Emit.ToClass("C", new Cdd.OpenApi.Models.OpenApiSchema {
-                Properties = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema> {
+            var cls = Cdd.OpenApi.Classes.Emit.ToClass("C", new Cdd.OpenApi.Models.OpenApiSchema
+            {
+                Properties = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema>
+                {
                     ["p1"] = new Cdd.OpenApi.Models.OpenApiSchema { Type = "integer" },
                     ["p2"] = new Cdd.OpenApi.Models.OpenApiSchema { Type = "boolean" },
                     ["p3"] = new Cdd.OpenApi.Models.OpenApiSchema { Type = "string" },

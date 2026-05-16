@@ -57,12 +57,12 @@ namespace Cdd.OpenApi.Classes
                 {
                     var propName = prop.Key;
                     var propSchema = prop.Value;
-                    
+
                     var isRequired = schema.Required != null && schema.Required.Contains(propName);
                     var isKey = propName.Equals("id", System.StringComparison.OrdinalIgnoreCase);
-                    
+
                     var csharpType = MapTypeToCSharp(propSchema.Type);
-                    
+
                     if (!isRequired && csharpType != "object" && csharpType != "string")
                     {
                         csharpType += "?";

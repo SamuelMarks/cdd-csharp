@@ -14,7 +14,7 @@ namespace Cdd.OpenApi.Functions
                 OperationId = method.Identifier.Text,
                 Summary = Docstrings.Parse.GetSummary(method)
             };
-            
+
             return operation;
         }
     }

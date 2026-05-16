@@ -19,7 +19,7 @@ namespace Cdd.OpenApi.Tests.Models
             };
             var json = JsonSerializer.Serialize(disc);
             var result = JsonSerializer.Deserialize<OpenApiDiscriminator>(json);
-            
+
             Assert.NotNull(result);
             Assert.Equal("petType", result.PropertyName);
             Assert.NotNull(result.Mapping);
@@ -53,7 +53,7 @@ namespace Cdd.OpenApi.Tests.Models
             };
             var json = JsonSerializer.Serialize(disc);
             var result = JsonSerializer.Deserialize<OpenApiDiscriminator>(json);
-            
+
             Assert.NotNull(result);
             Assert.Equal("petType", result.PropertyName);
             Assert.Equal("#/components/schemas/Pet", result.DefaultMapping);
@@ -67,7 +67,7 @@ namespace Cdd.OpenApi.Tests.Models
             var ex = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<OpenApiDiscriminator>(json));
             Assert.Equal("Expected string or object for Discriminator.", ex.Message);
         }
-        
+
         [Fact]
         public void Schema_CanContainDiscriminator()
         {
@@ -78,7 +78,7 @@ namespace Cdd.OpenApi.Tests.Models
             var json = JsonSerializer.Serialize(schema);
             Assert.Contains("discriminator", json);
             Assert.Contains("type", json);
-            
+
             var result = JsonSerializer.Deserialize<OpenApiSchema>(json);
             Assert.NotNull(result?.Discriminator);
             Assert.Equal("type", result.Discriminator.PropertyName);

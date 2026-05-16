@@ -1,5 +1,18 @@
 #!/bin/bash
 set -e
-make test
+
+echo "Running auto-format..."
+dotnet format CddOpenApi.slnx
+
+echo "Checking formatting..."
+dotnet format CddOpenApi.slnx --verify-no-changes
+
+echo "Linting..."
+dotnet format analyzers CddOpenApi.slnx --verify-no-changes
+
+echo "Building..."
+dotnet build CddOpenApi.slnx
+
+echo "Testing and updating coverage badges..."
 bash scripts/update_badges.sh
-git add README.md
+

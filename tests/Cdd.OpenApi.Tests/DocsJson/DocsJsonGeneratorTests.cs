@@ -50,12 +50,12 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Equal("GET", op.Method);
             Assert.Equal("/pets", op.Path);
             Assert.Equal("getPets", op.OperationId);
-            
+
             Assert.NotNull(op.Code.Imports);
             Assert.NotNull(op.Code.WrapperStart);
             Assert.NotNull(op.Code.WrapperEnd);
             Assert.NotNull(op.Code.Snippet);
-            
+
             Assert.Contains("int limit = 0;", op.Code.Snippet);
         }
 
@@ -141,7 +141,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Equal("GET", op.Method);
             Assert.Contains("GETsomerouteidAsync", op.Code.Snippet);
         }
-        
+
         [Fact]
         public void MapTypeToCSharp_HandlesAllTypes()
         {
