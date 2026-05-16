@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cdd.OpenApi\Cdd.OpenApi.csproj" />
+    <ProjectReference Include="..\..\src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj" />
   </ItemGroup>
 
 </Project>

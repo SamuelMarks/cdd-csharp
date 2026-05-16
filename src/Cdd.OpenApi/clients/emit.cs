@@ -98,6 +98,10 @@ namespace Cdd.OpenApi.Clients
                                 {
                                     returnTypeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
                                 }
+                                else if (schema.Type == "array" && schema.Items?.Type != null)
+                                {
+                                    returnTypeName = $"System.Collections.Generic.List<{MapTypeToCSharp(schema.Items.Type)}>";
+                                }
                                 else if (schema.Type != null)
                                 {
                                     returnTypeName = MapTypeToCSharp(schema.Type);
@@ -123,6 +127,7 @@ namespace Cdd.OpenApi.Clients
                             {
                                 if (!string.IsNullOrEmpty(p.Schema.Ref)) paramType = p.Schema.Ref.Split('/').Last();
                                 else if (p.Schema.Type == "array" && p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
+                                else if (p.Schema.Type == "array" && p.Schema.Items?.Type != null) paramType = $"System.Collections.Generic.List<{MapTypeToCSharp(p.Schema.Items.Type)}>";
                                 else if (p.Schema.Type != null) paramType = MapTypeToCSharp(p.Schema.Type);
                                 else if (p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
                             }
@@ -241,6 +246,7 @@ namespace Cdd.OpenApi.Clients
                                     string typeName = "string";
                                     if (!string.IsNullOrEmpty(schema.Ref)) typeName = schema.Ref.Split('/').Last();
                                     else if (schema.Type == "array" && schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+                                    else if (schema.Type == "array" && schema.Items?.Type != null) typeName = $"System.Collections.Generic.List<{MapTypeToCSharp(schema.Items.Type)}>";
                                     else if (schema.Type != null) typeName = MapTypeToCSharp(schema.Type);
                                     else if (schema.Items?.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
 
@@ -257,6 +263,39 @@ namespace Cdd.OpenApi.Clients
                     }
 
                     string interpolatedPath = routePath;
+                    if (interpolatedPath.StartsWith("/"))
+                    {
+                        interpolatedPath = interpolatedPath.Substring(1);
+                    }
+
+                    var pathParams = operation.Parameters?.Where(p => p.In == "path").ToList();
+                    if (pathParams != null)
+                    {
+                        foreach (var pp in pathParams)
+                        {
+                            interpolatedPath = interpolatedPath.Replace($"{{{pp.Name}}}", $"{{System.Uri.EscapeDataString(System.Convert.ToString({pp.Name}) ?? string.Empty)}}");
+                        }
+                    }
+
+                    var queryParams = operation.Parameters?.Where(p => p.In == "query").ToList();
+                    if (queryParams != null && queryParams.Any())
+                    {
+                        var qb = new List<string>();
+                        foreach (var qp in queryParams)
+                        {
+                            var qpType = "string";
+                            if (qp.Schema?.Type == "array") qpType = "array";
+                            if (qpType == "array")
+                            {
+                                qb.Add($"{qp.Name}={{string.Join(\"&{qp.Name}=\", {qp.Name} != null ? System.Linq.Enumerable.Select({qp.Name}, x => System.Uri.EscapeDataString(System.Convert.ToString(x) ?? string.Empty)) : System.Linq.Enumerable.Empty<string>())}}");
+                            }
+                            else
+                            {
+                                qb.Add($"{qp.Name}={{System.Uri.EscapeDataString(System.Convert.ToString({qp.Name}) ?? string.Empty)}}");
+                            }
+                        }
+                        interpolatedPath += "?" + string.Join("&", qb);
+                    }
 
                     ExpressionSyntax routePathExpr;
 
@@ -266,60 +305,56 @@ namespace Cdd.OpenApi.Clients
                     }
                     else
                     {
-                        routePathExpr = SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(routePath));
+                        routePathExpr = SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(interpolatedPath));
                     }
 
-                    var callMethod = $"{httpMethod}Async";
+                    var stmts = new List<StatementSyntax>();
 
-                    InvocationExpressionSyntax httpClientCall;
-                    bool hasJsonBody = false;
+                    stmts.Add(SyntaxFactory.LocalDeclarationStatement(
+                        SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                        .AddVariables(
+                            SyntaxFactory.VariableDeclarator("request")
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(
+                                SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Net.Http.HttpRequestMessage"))
+                                .AddArgumentListArguments(
+                                    SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"new System.Net.Http.HttpMethod(\"{httpMethod.ToUpperInvariant()}\")")),
+                                    SyntaxFactory.Argument(routePathExpr)
+                                )
+                            ))
+                        )
+                    ));
+
+                    var headerParams = operation.Parameters?.Where(p => p.In == "header").ToList();
+                    if (headerParams != null)
+                    {
+                        foreach (var hp in headerParams)
+                        {
+                            stmts.Add(SyntaxFactory.ParseStatement($"if ({hp.Name} != null) request.Headers.Add(\"{hp.Name}\", {hp.Name}.ToString());\n"));
+                        }
+                    }
+
                     if (operation.RequestBody?.Content != null && operation.RequestBody.Content.ContainsKey("application/json"))
                     {
-                        hasJsonBody = true;
+                        stmts.Add(SyntaxFactory.ParseStatement("request.Content = System.Net.Http.Json.JsonContent.Create(body);\n"));
                     }
 
-                    if (hasJsonBody)
-                    {
-                        callMethod = $"{httpMethod}AsJsonAsync";
-                        httpClientCall = SyntaxFactory.InvocationExpression(
-                            SyntaxFactory.MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                SyntaxFactory.IdentifierName("_httpClient"),
-                                SyntaxFactory.IdentifierName(callMethod)
-                            )
-                        ).AddArgumentListArguments(
-                            SyntaxFactory.Argument(routePathExpr),
-                            SyntaxFactory.Argument(SyntaxFactory.IdentifierName("body"))
-                        );
-                    }
-                    else
-                    {
-                        var args = new List<ArgumentSyntax> { SyntaxFactory.Argument(routePathExpr) };
-                        if (httpMethod == "Post" || httpMethod == "Put" || httpMethod == "Patch")
-                        {
-                            args.Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
-                        }
+                    var sendCall = SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("_httpClient"),
+                            SyntaxFactory.IdentifierName("SendAsync")
+                        )
+                    ).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request")));
 
-                        httpClientCall = SyntaxFactory.InvocationExpression(
-                            SyntaxFactory.MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                SyntaxFactory.IdentifierName("_httpClient"),
-                                SyntaxFactory.IdentifierName(callMethod)
-                            )
-                        ).AddArgumentListArguments(args.ToArray());
-                    }
-
-                    var awaitHttpClientCall = SyntaxFactory.AwaitExpression(httpClientCall);
-
-                    var statement1 = SyntaxFactory.LocalDeclarationStatement(
+                    stmts.Add(SyntaxFactory.LocalDeclarationStatement(
                         SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                         .AddVariables(
                             SyntaxFactory.VariableDeclarator("response")
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(awaitHttpClientCall))
+                            .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.AwaitExpression(sendCall)))
                         )
-                    );
+                    ));
 
-                    var statement2 = SyntaxFactory.ExpressionStatement(
+                    stmts.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
                             SyntaxFactory.MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
@@ -327,7 +362,7 @@ namespace Cdd.OpenApi.Clients
                                 SyntaxFactory.IdentifierName("EnsureSuccessStatusCode")
                             )
                         )
-                    );
+                    ));
 
                     var readAsStringCall = SyntaxFactory.InvocationExpression(
                         SyntaxFactory.MemberAccessExpression(
@@ -382,7 +417,8 @@ namespace Cdd.OpenApi.Clients
                         statement3 = SyntaxFactory.ReturnStatement(jsonDeserializeCall);
                     }
 
-                    methodNode = methodNode.WithBody(SyntaxFactory.Block(statement1, statement2, statement3));
+                    stmts.Add(statement3);
+                    methodNode = methodNode.WithBody(SyntaxFactory.Block(stmts));
 
                     if (!string.IsNullOrWhiteSpace(operation.Summary))
                     {
