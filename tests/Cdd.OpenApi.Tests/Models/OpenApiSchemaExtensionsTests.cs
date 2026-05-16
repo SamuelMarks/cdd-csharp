@@ -26,7 +26,7 @@ namespace Cdd.OpenApi.Tests.Models
             };
             var json = JsonSerializer.Serialize(schema);
             var result = JsonSerializer.Deserialize<OpenApiSchema>(json);
-            
+
             Assert.NotNull(result);
             Assert.NotNull(result.If);
             Assert.Equal("string", result.If.Type);

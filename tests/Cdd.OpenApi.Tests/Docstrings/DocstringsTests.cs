@@ -38,7 +38,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
 
             Assert.Null(summary);
         }
-        
+
         [Fact]
         public void Parse_GetSummary_NoSummaryElement_ReturnsNull()
         {
@@ -65,7 +65,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Contains("A generated summary", triviaString);
             Assert.Contains("</summary>", triviaString);
         }
-        
+
         [Fact]
         public void Emit_CreateSummary_NullOrEmpty_ReturnsEmptyList()
         {
@@ -114,7 +114,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Equal("123", tags.ElementAt(0).Attributes["c"]);
             Assert.Equal("abc", tags.ElementAt(0).Attributes["unquoted"]);
             Assert.Equal("Tag text 1", tags.ElementAt(0).Text);
-            
+
             Assert.Equal("f! ", tags.ElementAt(1).Attributes["e"]);
             Assert.Equal("Tag text 2", tags.ElementAt(1).Text);
 

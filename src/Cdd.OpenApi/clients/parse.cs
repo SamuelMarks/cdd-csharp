@@ -6,10 +6,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Clients
 {
-/// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Auto-generated documentation for Parse.</summary>
     public static class Parse
     {
-/// <summary>Auto-generated documentation for ToPaths.</summary>
+        /// <summary>Auto-generated documentation for ToPaths.</summary>
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();
@@ -27,9 +27,9 @@ namespace Cdd.OpenApi.Clients
                     if (inv.Expression is MemberAccessExpressionSyntax memberAccess)
                     {
                         var methodName = memberAccess.Name.Identifier.Text;
-                        if (methodName.EndsWith("Async") && 
-                            methodName != "ReadAsStringAsync" && 
-                            methodName != "SendAsync" && 
+                        if (methodName.EndsWith("Async") &&
+                            methodName != "ReadAsStringAsync" &&
+                            methodName != "SendAsync" &&
                             methodName != "GetStreamAsync" &&
                             methodName != "GetByteArrayAsync" &&
                             methodName != "GetStringAsync")
@@ -97,9 +97,9 @@ namespace Cdd.OpenApi.Clients
                 {
                     var code = tag.Attributes.TryGetValue("code", out var c) ? c : "default";
                     if (code == "200") has200 = true;
-                    
+
                     var resp = new OpenApiResponse { Description = string.IsNullOrEmpty(tag.Text) ? "Response" : tag.Text };
-                    
+
 
                     if (tag.Attributes.TryGetValue("header", out var hdr))
                     {
@@ -107,7 +107,7 @@ namespace Cdd.OpenApi.Clients
                         if (tag.Attributes.TryGetValue("header-required", out var hr) && bool.TryParse(hr, out var hrb)) headerObj.Required = hrb;
                         if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr) && bool.TryParse(hdpr, out var hdprb)) headerObj.Deprecated = hdprb;
                         if (tag.Attributes.TryGetValue("header-example", out var he)) headerObj.Example = he;
-                        
+
                         if (tag.Attributes.TryGetValue("header-examples", out var hex))
                         {
                             headerObj.Examples = new Dictionary<string, OpenApiExample>();
@@ -120,9 +120,9 @@ namespace Cdd.OpenApi.Clients
 
                         if (tag.Attributes.TryGetValue("header-style", out var hs)) headerObj.Style = hs;
                         if (tag.Attributes.TryGetValue("header-explode", out var hexpl) && bool.TryParse(hexpl, out var hexplb)) headerObj.Explode = hexplb;
-                        
+
                         if (tag.Attributes.TryGetValue("header-schema", out var hsch)) headerObj.Schema = new OpenApiSchema { Type = hsch };
-                        
+
                         if (tag.Attributes.TryGetValue("header-content", out var hcnt))
                         {
                             var parts = hcnt.Split(':');
@@ -141,11 +141,11 @@ namespace Cdd.OpenApi.Clients
                     if (tag.Attributes.TryGetValue("link", out var lnk))
                     {
                         var linkObj = new OpenApiLink { OperationId = lnk };
-                        
+
                         if (tag.Attributes.TryGetValue("link-operationRef", out var opRef)) linkObj.OperationRef = opRef;
                         if (tag.Attributes.TryGetValue("link-description", out var desc)) linkObj.Description = desc;
                         if (tag.Attributes.TryGetValue("link-requestBody", out var rb)) linkObj.RequestBody = rb;
-                        
+
                         var paramStr = tag.Attributes.TryGetValue("link-parameters", out var pStr) ? pStr : null;
                         if (!string.IsNullOrEmpty(paramStr))
                         {
@@ -167,7 +167,7 @@ namespace Cdd.OpenApi.Clients
                             { lnk, linkObj }
                         };
                     }
-                    
+
                     if (code == "200" || code.StartsWith("2"))
                     {
                         resp.Content = defaultResponse.Content;
@@ -218,21 +218,22 @@ namespace Cdd.OpenApi.Clients
                 var isMethodDeprecated = method.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Obsolete");
                 if (isMethodDeprecated) operation.Deprecated = true;
 
-                                var parameters = new List<OpenApiParameter>();
+                var parameters = new List<OpenApiParameter>();
                 foreach (var param in method.ParameterList.Parameters)
                 {
                     var paramName = param.Identifier.Text;
                     var typeStr = param.Type?.ToString();
                     bool isFromBody = param.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString().Contains("FromBody"));
-                    
+
 
                     bool isDeprecated = param.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString().Contains("Obsolete"));
                     bool isAllowEmpty = param.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString().Contains("AllowEmptyValue"));
                     object? exampleValue = null;
-                    if (param.Default != null) {
+                    if (param.Default != null)
+                    {
                         exampleValue = param.Default.Value.ToString().Trim('"');
                     }
-                    
+
                     if (isFromBody || ((httpMethod == "post" || httpMethod == "put" || httpMethod == "patch") && !routePath.Contains($"{{{paramName}}}")))
 
                     {
@@ -255,12 +256,12 @@ namespace Cdd.OpenApi.Clients
                             Required = true,
                             Schema = new OpenApiSchema { Type = MapType(typeStr) }
                         };
-                        
+
                         if (isDeprecated) paramObj.Deprecated = true;
                         if (isAllowEmpty) paramObj.AllowEmptyValue = true;
                         if (exampleValue != null) paramObj.Example = exampleValue;
 
-                        
+
                         var styleAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Style");
 
                         var examplesAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Examples");
@@ -300,7 +301,7 @@ namespace Cdd.OpenApi.Clients
                             paramObj.Description = paramDoc.Text;
                         }
 
-                        var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content");                        if (contentAttr?.ArgumentList?.Arguments.Count >= 2)
+                        var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content"); if (contentAttr?.ArgumentList?.Arguments.Count >= 2)
                         {
                             var mediaType = (contentAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
                             var schemaType = (contentAttr.ArgumentList.Arguments[1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
@@ -333,9 +334,9 @@ namespace Cdd.OpenApi.Clients
                     {
                         var name = ct.Attributes.TryGetValue("name", out var n) ? n : "myCallback";
                         var expression = ct.Attributes.TryGetValue("expression", out var e) ? e : "{$request.body#/callbackUrl}";
-                        
+
                         var cb = new OpenApiCallback();
-                        cb[expression] = new OpenApiPathItem 
+                        cb[expression] = new OpenApiPathItem
                         {
                             Post = new OpenApiOperation { Description = ct.Text }
                         };
@@ -368,7 +369,7 @@ namespace Cdd.OpenApi.Clients
                 case "patch": pathItem.Patch = op; break;
                 case "trace": pathItem.Trace = op; break;
                 case "query": pathItem.Query = op; break;
-                default: 
+                default:
                     if (pathItem.AdditionalOperations == null) pathItem.AdditionalOperations = new Dictionary<string, OpenApiOperation>();
                     pathItem.AdditionalOperations[method.ToUpperInvariant()] = op;
                     break;

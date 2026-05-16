@@ -52,7 +52,7 @@ namespace Cdd.OpenApi.Tests
 
             // AST -> Spec
             var doc = SpecGenerator.Generate(new[] { code });
-            
+
             Assert.NotNull(doc.Paths);
             Assert.True(doc.Paths.ContainsKey("/users/{id}"));
             Assert.NotNull(doc.Components?.Schemas);
@@ -62,12 +62,12 @@ namespace Cdd.OpenApi.Tests
             var generatedFiles = CodeGenerator.Generate(doc);
 
             Assert.Equal(7, generatedFiles.Count);
-            
+
             var userClass = generatedFiles.Find(f => f.FileName == "Models.cs");
             Assert.NotNull(userClass);
             Assert.Contains("public class User", userClass.Code);
             Assert.Contains("int Id", userClass.Code);
-            
+
             var interfaceFile = generatedFiles.Find(f => f.FileName == "IApi.cs");
             Assert.NotNull(interfaceFile);
             Assert.Contains("interface IApi", interfaceFile.Code);

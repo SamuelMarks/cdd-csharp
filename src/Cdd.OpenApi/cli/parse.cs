@@ -14,7 +14,7 @@ namespace Cdd.OpenApi.CliModule
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();
-            
+
             var switchStmts = classNode.DescendantNodes().OfType<SwitchStatementSyntax>();
             foreach (var switchStmt in switchStmts)
             {
@@ -25,7 +25,7 @@ namespace Cdd.OpenApi.CliModule
                         if (label.Value is LiteralExpressionSyntax literal && literal.Token.IsKind(SyntaxKind.StringLiteralToken))
                         {
                             var commandName = literal.Token.ValueText;
-                            
+
                             var parameters = new List<OpenApiParameter>();
                             var localDecls = section.Statements.OfType<LocalDeclarationStatementSyntax>();
                             foreach (var decl in localDecls)
@@ -68,7 +68,7 @@ namespace Cdd.OpenApi.CliModule
                             };
 
                             var pathItem = new OpenApiPathItem();
-                            
+
                             switch (commandName.ToLower())
                             {
                                 case "put": pathItem.Put = operation; break;
@@ -86,13 +86,13 @@ namespace Cdd.OpenApi.CliModule
                             {
                                 pathItem.Parameters = parameters;
                             }
-                            
+
                             paths["/" + commandName] = pathItem;
                         }
                     }
                 }
             }
-            
+
             return paths;
         }
     }

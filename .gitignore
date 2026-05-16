@@ -405,3 +405,10 @@ tmp_test2/
 *.sh
 *.patch
 
+\ntemp-cs-spec.json
+check_dir.cs
+CheckDir/
+
+temp-cs-spec.json
+check_dir.cs
+CheckDir/

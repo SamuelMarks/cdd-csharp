@@ -19,7 +19,7 @@ namespace Cdd.OpenApi.Tests.Placeholders
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
             var methodNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
-            
+
             var op = global::Cdd.OpenApi.Functions.Parse.ParseFunction(methodNode);
             Assert.Equal("DoTask", op.OperationId);
 
@@ -38,7 +38,7 @@ namespace Cdd.OpenApi.Tests.Placeholders
             var code = "public class TestMock { public void GetUser() {} }";
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
-            
+
             var parsedPaths = global::Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
             Assert.NotEmpty(parsedPaths);
 

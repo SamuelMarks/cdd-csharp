@@ -200,12 +200,12 @@ namespace Cdd.OpenApi.Tests.Routes
                         OperationId = "QueryFull",
                         Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter 
-                            { 
-                                Name = "param1", 
+                            new OpenApiParameter
+                            {
+                                Name = "param1",
                                 Description = "Param1 desc",
-                                In = "path", 
-                                Deprecated = true, 
+                                In = "path",
+                                Deprecated = true,
                                 AllowEmptyValue = true,
                                 Example = "hello",
                                 Examples = new Dictionary<string, OpenApiExample> { { "ex1", new OpenApiExample { Value = "val1" } } },
@@ -214,10 +214,10 @@ namespace Cdd.OpenApi.Tests.Routes
                                 AllowReserved = true,
                                 Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string" } } } }
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "param2", 
-                                In = "query", 
+                            new OpenApiParameter
+                            {
+                                Name = "param2",
+                                In = "query",
                                 Example = 123,
                                 Schema = new OpenApiSchema { Type = "integer" }
                             }

@@ -7,10 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
-/// <summary>Auto-generated documentation for SpecGenerator.</summary>
+    /// <summary>Auto-generated documentation for SpecGenerator.</summary>
     public static class SpecGenerator
     {
-/// <summary>Auto-generated documentation for Generate.</summary>
+        /// <summary>Auto-generated documentation for Generate.</summary>
         public static OpenApiDocument Generate(IEnumerable<string> csharpSourceCodes)
         {
             var doc = new OpenApiDocument
@@ -29,7 +29,7 @@ namespace Cdd.OpenApi
                 {
                     var hasRoutes = classNode.DescendantNodes().OfType<MethodDeclarationSyntax>()
                         .Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().StartsWith("Http")));
-                        
+
                     var hasClientMethods = classNode.DescendantNodes().OfType<InvocationExpressionSyntax>()
                         .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
                                     memberAccess.Name.Identifier.Text.EndsWith("Async") &&
@@ -44,19 +44,20 @@ namespace Cdd.OpenApi
                     var isDbContext = classNode.BaseList?.Types.Any(t => t.Type.ToString() == "DbContext" || t.Type.ToString().EndsWith("DbContext")) == true;
 
                     // Extract Info tags if they exist on a main entry point or prominent class
-                    if (classNode.Identifier.Text == "Program" || classNode.Identifier.Text == "Startup" || classNode.Identifier.Text.EndsWith("Api")) {
+                    if (classNode.Identifier.Text == "Program" || classNode.Identifier.Text == "Startup" || classNode.Identifier.Text.EndsWith("Api"))
+                    {
                         var selfStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "self");
                         if (!string.IsNullOrEmpty(selfStr)) doc.Self = selfStr;
-                        
+
                         var dialectStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "jsonSchemaDialect");
                         if (!string.IsNullOrEmpty(dialectStr)) doc.JsonSchemaDialect = dialectStr;
 
                         var desc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "description");
                         if (!string.IsNullOrEmpty(desc)) doc.Info.Description = desc;
-                        
+
                         var summary = Cdd.OpenApi.Docstrings.Parse.GetSummary(classNode);
                         if (!string.IsNullOrEmpty(summary)) doc.Info.Summary = summary;
-                        
+
                         var version = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "version");
                         if (!string.IsNullOrEmpty(version)) doc.Info.Version = version;
 
@@ -66,34 +67,39 @@ namespace Cdd.OpenApi
                         var contactName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "contact-name");
                         var contactEmail = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "contact-email");
                         var contactUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "contact-url");
-                        
-                        if (!string.IsNullOrEmpty(contactName) || !string.IsNullOrEmpty(contactEmail) || !string.IsNullOrEmpty(contactUrl)) {
+
+                        if (!string.IsNullOrEmpty(contactName) || !string.IsNullOrEmpty(contactEmail) || !string.IsNullOrEmpty(contactUrl))
+                        {
                             doc.Info.Contact = new OpenApiContact { Name = contactName, Email = contactEmail, Url = contactUrl };
                         }
 
                         var licenseName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "license-name");
                         var licenseUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "license-url");
                         var licenseId = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "license-identifier");
-                        if (!string.IsNullOrEmpty(licenseName)) {
+                        if (!string.IsNullOrEmpty(licenseName))
+                        {
                             doc.Info.License = new OpenApiLicense { Name = licenseName, Url = licenseUrl, Identifier = licenseId };
                         }
 
                         var serverUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "server-url");
                         var serverDescription = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "server-description");
-                        if (!string.IsNullOrEmpty(serverUrl)) {
+                        if (!string.IsNullOrEmpty(serverUrl))
+                        {
                             if (doc.Servers == null) doc.Servers = new List<OpenApiServer>();
                             doc.Servers.Add(new OpenApiServer { Url = serverUrl, Description = serverDescription });
                         }
 
                         var extDocsUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "externalDocs-url");
                         var extDocsDesc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "externalDocs-description");
-                        if (!string.IsNullOrEmpty(extDocsUrl)) {
+                        if (!string.IsNullOrEmpty(extDocsUrl))
+                        {
                             doc.ExternalDocs = new OpenApiExternalDocs { Url = extDocsUrl, Description = extDocsDesc };
                         }
-                        
+
                         var tagName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "tag-name");
                         var tagDesc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "tag-description");
-                        if (!string.IsNullOrEmpty(tagName)) {
+                        if (!string.IsNullOrEmpty(tagName))
+                        {
                             if (doc.Tags == null) doc.Tags = new List<OpenApiTag>();
                             doc.Tags.Add(new OpenApiTag { Name = tagName, Description = tagDesc });
                         }
@@ -110,7 +116,7 @@ namespace Cdd.OpenApi
                         // Check for Authorize attribute on class or methods to add simple Bearer auth
                         var hasAuth = classNode.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")) ||
                                       classNode.DescendantNodes().OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")));
-                        
+
                         if (hasAuth)
                         {
                             if (doc.Components!.SecuritySchemes == null)
@@ -148,7 +154,7 @@ namespace Cdd.OpenApi
                                 var tokenUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-tokenUrl");
                                 var refreshUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-refreshUrl");
                                 var deviceUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-deviceAuthorizationUrl");
-                                
+
                                 var flows = new OpenApiOAuthFlows();
                                 var flow = new OpenApiOAuthFlow { AuthorizationUrl = authUrl, TokenUrl = tokenUrl, RefreshUrl = refreshUrl, DeviceAuthorizationUrl = deviceUrl, Scopes = new Dictionary<string, string>() };
 
@@ -166,13 +172,14 @@ namespace Cdd.OpenApi
                                             // Handle case where scope might be like `read:pets:Read pets` meaning key="read:pets" and val="Read pets"
                                             // We will assume the last colon is the separator if there are multiple.
                                             var lastIdx = s.LastIndexOf(':');
-                                            if (lastIdx > 0 && lastIdx != idx) {
+                                            if (lastIdx > 0 && lastIdx != idx)
+                                            {
                                                 key = s.Substring(0, lastIdx).Trim();
                                                 val = s.Substring(lastIdx + 1).Trim();
                                             }
                                             flow.Scopes[key] = val;
                                         }
-                                        else 
+                                        else
                                         {
                                             flow.Scopes[s.Trim()] = "Access to " + s.Trim();
                                         }
@@ -253,7 +260,7 @@ namespace Cdd.OpenApi
             {
                 if (doc.Components.Schemas != null && !doc.Components.Schemas.Any()) doc.Components.Schemas = null;
                 if (doc.Components.SecuritySchemes != null && !doc.Components.SecuritySchemes.Any()) doc.Components.SecuritySchemes = null;
-                
+
                 if (doc.Components.Schemas == null && doc.Components.SecuritySchemes == null)
                 {
                     doc.Components = null;

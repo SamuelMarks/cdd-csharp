@@ -20,7 +20,7 @@ namespace Cdd.OpenApi.TestsModule
                     SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName("IApi"))
                     .WithVariables(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.VariableDeclarator("_api"))))
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.ProtectedKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
-                
+
                 var ctor = SyntaxFactory.ConstructorDeclaration(name)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                     .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("api")).WithType(SyntaxFactory.ParseTypeName("IApi")))
@@ -31,7 +31,7 @@ namespace Cdd.OpenApi.TestsModule
                             SyntaxFactory.IdentifierName("api")
                         ))
                     ));
-                
+
                 classDecl = classDecl.AddMembers(field, ctor);
             }
 
@@ -54,9 +54,9 @@ namespace Cdd.OpenApi.TestsModule
             var returnType = SyntaxFactory.ParseTypeName(tests ? "System.Threading.Tasks.Task" : "void");
             var methodDecl = SyntaxFactory.MethodDeclaration(returnType, methodName + "Test")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            
+
             var body = SyntaxFactory.Block();
-            
+
             if (tests)
             {
                 body = SyntaxFactory.Block(

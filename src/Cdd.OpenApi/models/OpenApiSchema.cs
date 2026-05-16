@@ -115,7 +115,7 @@ namespace Cdd.OpenApi.Models
         [JsonPropertyName("nullable")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Nullable { get; set; }
-        
+
         /// <summary>Auto-generated documentation for Example.</summary>
         [JsonPropertyName("example")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

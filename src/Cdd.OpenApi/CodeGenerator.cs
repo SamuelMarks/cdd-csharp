@@ -19,31 +19,31 @@ namespace Cdd.OpenApi
         All
     }
 
-/// <summary>Auto-generated documentation for GeneratedCode.</summary>
+    /// <summary>Auto-generated documentation for GeneratedCode.</summary>
     public class GeneratedCode
     {
-/// <summary>Auto-generated documentation for FileName.</summary>
+        /// <summary>Auto-generated documentation for FileName.</summary>
         public string FileName { get; set; } = string.Empty;
-/// <summary>Auto-generated documentation for Code.</summary>
+        /// <summary>Auto-generated documentation for Code.</summary>
         public string Code { get; set; } = string.Empty;
     }
 
-/// <summary>Auto-generated documentation for CodeGenerator.</summary>
+    /// <summary>Auto-generated documentation for CodeGenerator.</summary>
     public static class CodeGenerator
     {
         private static TNode AddDocTags<TNode>(TNode node, OpenApiDocument doc) where TNode : SyntaxNode
         {
             if (doc == null) return node;
-            
+
             if (!string.IsNullOrEmpty(doc.Self)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "self", doc.Self);
             if (!string.IsNullOrEmpty(doc.JsonSchemaDialect)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "jsonSchemaDialect", doc.JsonSchemaDialect);
             if (!string.IsNullOrEmpty(doc.Info?.TermsOfService)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "termsOfService", doc.Info.TermsOfService);
             if (!string.IsNullOrEmpty(doc.Info?.License?.Identifier)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "license-identifier", doc.Info.License.Identifier);
-            
+
             return node;
         }
 
-/// <summary>Auto-generated documentation for Generate.</summary>
+        /// <summary>Auto-generated documentation for Generate.</summary>
         public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false)
         {
             var results = new List<GeneratedCode>();
@@ -52,17 +52,17 @@ namespace Cdd.OpenApi
             {
                 var modelsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                     .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")));
-                    
+
                 foreach (var schemaKvp in doc.Components.Schemas)
                 {
                     var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
                     modelsNsNode = modelsNsNode.AddMembers(classNode);
                 }
-                
-                results.Add(new GeneratedCode 
-                { 
-                    FileName = "Models.cs", 
-                    Code = modelsNsNode.NormalizeWhitespace().ToFullString() 
+
+                results.Add(new GeneratedCode
+                {
+                    FileName = "Models.cs",
+                    Code = modelsNsNode.NormalizeWhitespace().ToFullString()
                 });
 
                 if (type == GenerateType.All || type == GenerateType.Server)

@@ -12,7 +12,7 @@ namespace Cdd.OpenApi.Functions
         {
             var returnType = SyntaxFactory.ParseTypeName("void");
             var methodName = operation.OperationId ?? "DefaultFunction";
-            
+
             var methodDecl = SyntaxFactory.MethodDeclaration(returnType, methodName)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword));
 

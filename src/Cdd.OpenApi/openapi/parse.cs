@@ -5,15 +5,15 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Parse
 {
-/// <summary>Auto-generated documentation for OpenApiParser.</summary>
+    /// <summary>Auto-generated documentation for OpenApiParser.</summary>
     public class OpenApiParser
     {
-/// <summary>Auto-generated documentation for OpenApiParser.</summary>
+        /// <summary>Auto-generated documentation for OpenApiParser.</summary>
         public OpenApiParser()
         {
         }
 
-/// <summary>Auto-generated documentation for ParseJson.</summary>
+        /// <summary>Auto-generated documentation for ParseJson.</summary>
         public OpenApiDocument ParseJson(string jsonContent)
         {
             if (string.IsNullOrWhiteSpace(jsonContent))

@@ -18,17 +18,17 @@ namespace Cdd.OpenApi.Tests
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
-            
+
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var p = paths["/"].Get?.Parameters;
-            
+
             Assert.Equal("number", p?[0].Schema?.Type); // decimal
             Assert.Equal("number", p?[1].Schema?.Type); // double
             Assert.Equal("number", p?[2].Schema?.Type); // float
             Assert.Equal("boolean", p?[3].Schema?.Type); // bool
             Assert.Equal("string", p?[4].Schema?.Type); // object fallback
         }
-        
+
         [Fact]
         public void ClassParseMapType_HandlesDecimal_Double_Float_Bool()
         {
@@ -41,10 +41,10 @@ namespace Cdd.OpenApi.Tests
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
-            
+
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             var p = schema.Properties;
-            
+
             Assert.Equal("number", p?["D"].Type); // decimal
             Assert.Equal("number", p?["Db"].Type); // double
             Assert.Equal("number", p?["F"].Type); // float

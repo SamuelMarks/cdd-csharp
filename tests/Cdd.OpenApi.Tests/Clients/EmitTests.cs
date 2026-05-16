@@ -13,19 +13,19 @@ namespace Cdd.OpenApi.Tests.Clients
         {
             var paths = new OpenApiPaths
             {
-                { "/users", new OpenApiPathItem 
-                    { 
-                        Get = new OpenApiOperation 
-                        { 
+                { "/users", new OpenApiPathItem
+                    {
+                        Get = new OpenApiOperation
+                        {
                             OperationId = "GetUsers",
                             Summary = "Gets all users"
-                        } 
-                    } 
+                        }
+                    }
                 },
-                { "/users/{id}", new OpenApiPathItem 
-                    { 
-                        Post = new OpenApiOperation 
-                        { 
+                { "/users/{id}", new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
                             OperationId = "CreateUser",
                             Parameters = new List<OpenApiParameter>
                             {
@@ -38,7 +38,7 @@ namespace Cdd.OpenApi.Tests.Clients
                         Head = new OpenApiOperation(),
                         Patch = new OpenApiOperation(),
                         Trace = new OpenApiOperation()
-                    } 
+                    }
                 }
             };
 
@@ -51,7 +51,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("GetUsersAsync()", code);
             Assert.Contains("CreateUserAsync(int id)", code);
             Assert.Contains("PutusersidAsync()", code);
-            
+
             // Should contain mapping types correctly
             // Let's test all mapped types:
             var allTypesPaths = new OpenApiPaths
@@ -93,12 +93,12 @@ namespace Cdd.OpenApi.Tests.Clients
                         OperationId = "QueryFull",
                         Parameters = new List<OpenApiParameter>
                         {
-                            new OpenApiParameter 
-                            { 
-                                Name = "param1", 
+                            new OpenApiParameter
+                            {
+                                Name = "param1",
                                 Description = "Param1 desc",
-                                In = "path", 
-                                Deprecated = true, 
+                                In = "path",
+                                Deprecated = true,
                                 AllowEmptyValue = true,
                                 Example = "hello",
                                 Examples = new Dictionary<string, OpenApiExample> { { "ex1", new OpenApiExample { Value = "val1" } } },
@@ -108,31 +108,31 @@ namespace Cdd.OpenApi.Tests.Clients
                                 Content = new Dictionary<string, OpenApiMediaType> { { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string" } } } },
                                 Schema = new OpenApiSchema { Type = "string" }
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "param2", 
-                                In = "query", 
+                            new OpenApiParameter
+                            {
+                                Name = "param2",
+                                In = "query",
                                 Example = "123",
                                 Schema = new OpenApiSchema { Type = "integer" }
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "param3", 
-                                In = "query", 
+                            new OpenApiParameter
+                            {
+                                Name = "param3",
+                                In = "query",
                                 Example = "12.3",
                                 Schema = new OpenApiSchema { Type = "number" }
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "param4", 
-                                In = "query", 
+                            new OpenApiParameter
+                            {
+                                Name = "param4",
+                                In = "query",
                                 Example = "true",
                                 Schema = new OpenApiSchema { Type = "boolean" }
                             },
-                            new OpenApiParameter 
-                            { 
-                                Name = "param5", 
-                                In = "query", 
+                            new OpenApiParameter
+                            {
+                                Name = "param5",
+                                In = "query",
                                 Example = "hello",
                                 Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" } }
                             }
@@ -195,7 +195,8 @@ namespace Cdd.OpenApi.Tests.Clients
                     },
                     AdditionalOperations = new Dictionary<string, OpenApiOperation>
                     {
-                        ["PURGE"] = new OpenApiOperation { 
+                        ["PURGE"] = new OpenApiOperation
+                        {
                             OperationId = "PurgeFull",
                             Responses = new OpenApiResponses
                             {
@@ -215,7 +216,8 @@ namespace Cdd.OpenApi.Tests.Clients
                                 }
                             }
                         },
-                        ["MKCOL"] = new OpenApiOperation { 
+                        ["MKCOL"] = new OpenApiOperation
+                        {
                             OperationId = "MkcolFull",
                             Responses = new OpenApiResponses
                             {

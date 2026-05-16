@@ -177,7 +177,7 @@ public class Program
 
             Assert.NotNull(doc.Components?.Schemas);
             var schema = doc.Components.Schemas["Widget"];
-            
+
             Assert.NotNull(schema.Discriminator);
             Assert.Equal("type", schema.Discriminator.PropertyName);
             Assert.Equal("fallbackType", schema.Discriminator.DefaultMapping);
@@ -215,15 +215,15 @@ public class Program
             Assert.NotNull(scheme);
             Assert.Equal("oauth2", scheme.Type); // Forced to oauth2 by presence of flows
             Assert.Equal("https://example.com/oidc", scheme.OpenIdConnectUrl);
-            
+
             Assert.NotNull(scheme.Flows);
             Assert.NotNull(scheme.Flows.ClientCredentials);
             Assert.Equal("https://example.com/token", scheme.Flows.ClientCredentials.TokenUrl);
-            
+
             Assert.NotNull(scheme.Flows.ClientCredentials.Scopes);
             Assert.True(scheme.Flows.ClientCredentials.Scopes.ContainsKey("read:pets"));
             Assert.Equal("Read pets", scheme.Flows.ClientCredentials.Scopes["read:pets"]);
-            
+
             Assert.NotNull(doc.Security);
             var req = Assert.Single(doc.Security);
             Assert.True(req.ContainsKey("OAuth2"));
@@ -297,10 +297,10 @@ public class Program
             Assert.NotNull(op);
             Assert.NotNull(op.Security);
             Assert.Equal(2, op.Security.Count);
-            
+
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
             Assert.Contains("read:users", op.Security[0]["OAuth2"]);
-            
+
             Assert.True(op.Security[1].ContainsKey("ApiKey"));
         }
     }

@@ -12,7 +12,7 @@ namespace Cdd.OpenApi.Docstrings
         public static SyntaxTriviaList CreateTag(string tagName, string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return SyntaxFactory.TriviaList();
-            
+
             var xml = $"/// <{tagName}>\n/// {text.Replace("\n", "\n/// ")}\n/// </{tagName}>\n";
             return SyntaxFactory.ParseLeadingTrivia(xml);
         }

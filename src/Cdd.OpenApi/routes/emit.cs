@@ -7,10 +7,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
-/// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
-/// <summary>Auto-generated documentation for ToInterface.</summary>
+        /// <summary>Auto-generated documentation for ToInterface.</summary>
         public static InterfaceDeclarationSyntax ToInterface(string interfaceName, OpenApiPaths paths)
         {
             var interfaceNode = SyntaxFactory.InterfaceDeclaration(interfaceName)
@@ -93,10 +93,11 @@ namespace Cdd.OpenApi.Routes
 
                     if (operation.Parameters != null)
                     {
-                        var parameters = operation.Parameters.Select(p => {
+                        var parameters = operation.Parameters.Select(p =>
+                        {
                             var param = SyntaxFactory.Parameter(SyntaxFactory.Identifier(p.Name))
                                 .WithType(SyntaxFactory.ParseTypeName(MapTypeToCSharp(p.Schema?.Type)));
-                            
+
                             if (p.In == "query")
                             {
                                 param = param.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
@@ -131,7 +132,7 @@ namespace Cdd.OpenApi.Routes
                                 else if (int.TryParse(exampleStr, out int i)) defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(i));
                                 else if (double.TryParse(exampleStr, out double d)) defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(d));
                                 else defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
-                                
+
                                 param = param.WithDefault(SyntaxFactory.EqualsValueClause(defaultValue));
                             }
 
@@ -197,7 +198,7 @@ namespace Cdd.OpenApi.Routes
                         var schema = operation.RequestBody.Content?.Values.FirstOrDefault()?.Schema;
                         var typeName = MapTypeToCSharp(schema?.Type);
                         if (typeName == "string") typeName = "object"; // Fallback generic type for bodies
-                        
+
                         var param = SyntaxFactory.Parameter(SyntaxFactory.Identifier("body"))
                             .WithType(SyntaxFactory.ParseTypeName(typeName))
                             .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
@@ -270,7 +271,7 @@ namespace Cdd.OpenApi.Routes
                                 var expression = expKvp.Key;
                                 var opItem = expKvp.Value;
                                 var desc = opItem.Post?.Description ?? opItem.Get?.Description ?? "Callback";
-                                
+
                                 var attrs = new Dictionary<string, string> { { "name", cName }, { "expression", expression } };
                                 methodNode = Docstrings.Emit.WithTag(methodNode, "callback", attrs, desc);
                             }

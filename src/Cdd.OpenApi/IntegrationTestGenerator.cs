@@ -43,7 +43,7 @@ namespace Cdd.OpenApi
                 {
                     var route = pathKvp.Key;
                     var pathItem = pathKvp.Value;
-                    
+
                     var operations = new Dictionary<string, OpenApiOperation?>
                     {
                         { "Get", pathItem.Get },
@@ -64,14 +64,14 @@ namespace Cdd.OpenApi
 
                         var methodName = operation.OperationId ?? $"{httpMethod}{route.Replace("/", "").Replace("{", "").Replace("}", "")}Async";
                         if (!methodName.EndsWith("Async")) methodName += "Async";
-                        
+
                         var testMethodName = "Test" + methodName;
-                        
+
                         sb.AppendLine();
                         sb.AppendLine("        [Fact]");
                         sb.AppendLine($"        public async Task {testMethodName}()");
                         sb.AppendLine("        {");
-                        
+
                         var args = new List<string>();
                         if (operation.Parameters != null)
                         {
@@ -119,15 +119,15 @@ namespace Cdd.OpenApi
                         }
 
                         var argsString = string.Join(", ", args);
-                        
+
                         sb.AppendLine($"            var response = await _client.{methodName}({argsString});");
-                        
+
                         // We shouldn't assert NotNull.
                         // Actually, the client method will EnsureSuccessStatusCode().
                         // The chaos test asserts that if server returns 500 or invalid schema, the test FAILS.
                         // Since EnsureSuccessStatusCode() and JsonSerializer throw exceptions, the test will naturally fail on bad responses.
                         // Therefore, we don't need any catch blocks. We WANT the test to fail.
-                        
+
                         sb.AppendLine("        }");
                     }
                 }

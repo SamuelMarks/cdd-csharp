@@ -19,24 +19,27 @@ namespace Cdd.OpenApi.Mocks
                 classDecl = classDecl.AddBaseListTypes(
                     SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IApi"))
                 );
-                
+
                 var interfaceNode = Routes.Emit.ToInterface("IApi", paths);
                 foreach (var member in interfaceNode.Members.OfType<MethodDeclarationSyntax>())
                 {
                     var methodDecl = member.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>());
-                    
+
                     var newParams = methodDecl.ParameterList.Parameters.Select(p => p.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>()));
                     methodDecl = methodDecl.WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(newParams)));
-                    
+
                     BlockSyntax body;
-                    if (methodDecl.ReturnType.ToString() == "void") {
+                    if (methodDecl.ReturnType.ToString() == "void")
+                    {
                         body = SyntaxFactory.Block();
-                    } else {
+                    }
+                    else
+                    {
                         body = SyntaxFactory.Block(
                             SyntaxFactory.ReturnStatement(SyntaxFactory.DefaultExpression(methodDecl.ReturnType))
                         );
                     }
-                    
+
                     methodDecl = methodDecl.WithBody(body)
                         .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None))
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
@@ -65,7 +68,7 @@ namespace Cdd.OpenApi.Mocks
             var returnType = SyntaxFactory.ParseTypeName("object");
             var methodDecl = SyntaxFactory.MethodDeclaration(returnType, methodName)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            
+
             var body = SyntaxFactory.Block(
                 SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression))
             );
