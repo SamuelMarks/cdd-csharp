@@ -412,3 +412,14 @@ CheckDir/
 temp-cs-spec.json
 check_dir.cs
 CheckDir/
+
+# Cdd Test Harness and Docs
+docs/
+out_src/
+uri_test/bin/
+uri_test/obj/
+scripts/bin/
+scripts/obj/
+tests/TestResults/
+*.info
+*.cobertura.xml

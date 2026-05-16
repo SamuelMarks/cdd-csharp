@@ -33,7 +33,32 @@ namespace Cdd.OpenApi
             sb.AppendLine();
             sb.AppendLine("        public IntegrationTests()");
             sb.AppendLine("        {");
-            sb.AppendLine("            var httpClient = new HttpClient { BaseAddress = new Uri(\"http://localhost:8080/v2/\") };");
+            string basePath = "/v2/";
+            if (doc?.Servers != null && doc.Servers.Count > 0 && !string.IsNullOrEmpty(doc.Servers[0].Url))
+            {
+                var url = doc.Servers[0].Url;
+                if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    basePath = uri.AbsolutePath;
+                }
+                else
+                {
+                    basePath = url;
+                }
+            }
+            else if (doc != null && !string.IsNullOrEmpty(doc.BasePath))
+            {
+                basePath = doc.BasePath;
+            }
+
+            if (!basePath.StartsWith("/")) basePath = "/" + basePath;
+            if (!basePath.EndsWith("/")) basePath += "/";
+
+            var fullUrl = "http://localhost:8080" + basePath;
+
+            sb.AppendLine($"            var httpClient = new HttpClient {{ BaseAddress = new Uri(\"{fullUrl}\") }};");
+            sb.AppendLine("            httpClient.DefaultRequestHeaders.Add(\"api_key\", \"special-key\");");
+            sb.AppendLine("            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(\"Bearer\", \"special-key\");");
             sb.AppendLine("            _client = new ApiClient(httpClient);");
             sb.AppendLine("        }");
 
@@ -53,8 +78,18 @@ namespace Cdd.OpenApi
                         { "Options", pathItem.Options },
                         { "Head", pathItem.Head },
                         { "Patch", pathItem.Patch },
-                        { "Trace", pathItem.Trace }
+                        { "Trace", pathItem.Trace },
+                        { "Query", pathItem.Query }
                     };
+
+                    if (pathItem.AdditionalOperations != null)
+                    {
+                        foreach (var addOp in pathItem.AdditionalOperations)
+                        {
+                            var normVerb = addOp.Key.Substring(0, 1).ToUpperInvariant() + addOp.Key.Substring(1).ToLowerInvariant();
+                            operations[normVerb] = addOp.Value;
+                        }
+                    }
 
                     foreach (var opKvp in operations)
                     {
@@ -78,19 +113,25 @@ namespace Cdd.OpenApi
                             foreach (var p in operation.Parameters)
                             {
                                 string dummyValue = "\"string\"";
-                                if (p.Schema?.Type == "integer") dummyValue = "123";
+                                if (p.Schema?.Type == "integer") dummyValue = "1";
                                 else if (p.Schema?.Type == "number") dummyValue = "123.45";
                                 else if (p.Schema?.Type == "boolean") dummyValue = "true";
-                                else if (p.Schema?.Items?.Ref != null)
+                                else if (p.Schema?.Type == "array" && p.Schema?.Items?.Ref != null)
                                 {
                                     var refName = p.Schema.Items.Ref.Split('/').Last();
                                     dummyValue = $"new List<{refName}>()";
+                                }
+                                else if (p.Schema?.Type == "array" && p.Schema?.Items?.Type != null)
+                                {
+                                    var itemType = p.Schema.Items.Type == "integer" ? "int" : (p.Schema.Items.Type == "number" ? "double" : (p.Schema.Items.Type == "boolean" ? "bool" : "string"));
+                                    dummyValue = $"new List<{itemType}>()";
                                 }
                                 else if (p.Schema?.Ref != null)
                                 {
                                     var refName = p.Schema.Ref.Split('/').Last();
                                     dummyValue = $"new {refName}()";
                                 }
+                                if (p.Name == "api_key") dummyValue = "\"special-key\"";
                                 args.Add(dummyValue);
                             }
                         }
@@ -106,13 +147,18 @@ namespace Cdd.OpenApi
                                     var refName = schema.Ref.Split('/').Last();
                                     dummyValue = $"new {refName}()";
                                 }
-                                else if (schema.Type == "integer") dummyValue = "123";
+                                else if (schema.Type == "integer") dummyValue = "1";
                                 else if (schema.Type == "number") dummyValue = "123.45";
                                 else if (schema.Type == "boolean") dummyValue = "true";
-                                else if (schema.Items?.Ref != null)
+                                else if (schema.Type == "array" && schema.Items?.Ref != null)
                                 {
                                     var refName = schema.Items.Ref.Split('/').Last();
                                     dummyValue = $"new List<{refName}>()";
+                                }
+                                else if (schema.Type == "array" && schema.Items?.Type != null)
+                                {
+                                    var itemType = schema.Items.Type == "integer" ? "int" : (schema.Items.Type == "number" ? "double" : (schema.Items.Type == "boolean" ? "bool" : "string"));
+                                    dummyValue = $"new List<{itemType}>()";
                                 }
                             }
                             args.Add(dummyValue);
