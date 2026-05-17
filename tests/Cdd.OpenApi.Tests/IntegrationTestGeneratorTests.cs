@@ -159,12 +159,12 @@ namespace Cdd.OpenApi.Tests
                     }
                 }
             };
-            
+
             var generated = IntegrationTestGenerator.Generate(doc);
             Assert.Contains("http://localhost:8080/relative/path/", generated);
             Assert.Contains("TestGettestAsync", generated);
         }
-        
+
         [Fact]
         public void Generate_FallbackToBaseUrl()
         {

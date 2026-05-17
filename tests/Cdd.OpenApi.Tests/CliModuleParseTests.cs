@@ -59,7 +59,7 @@ public class MyCli
             Assert.NotNull(postPath.Post);
             Assert.NotNull(postPath.Parameters);
             Assert.Equal(2, postPath.Parameters.Count);
-            
+
             var countParam = postPath.Parameters[0];
             Assert.Equal("count", countParam.Name);
             Assert.Equal("integer", countParam.Schema.Type);

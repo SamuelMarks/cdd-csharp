@@ -104,7 +104,7 @@ namespace Cdd.OpenApi.Tests
                 CddGenerator.GenerateSdk(config);
                 CddGenerator.GenerateSdkCli(config);
                 CddGenerator.GenerateServer(config);
-                
+
                 var config2 = new CddConfig
                 {
                     InputDir = tempDir,
@@ -117,7 +117,7 @@ namespace Cdd.OpenApi.Tests
                 Directory.Delete(tempDir, true);
             }
         }
-        
+
         [Fact]
         public void Test_CddGenerator_NoInputPaths_Throws()
         {
@@ -184,3 +184,6 @@ namespace Cdd.OpenApi.Tests
         }
     }
 }
+
+
+

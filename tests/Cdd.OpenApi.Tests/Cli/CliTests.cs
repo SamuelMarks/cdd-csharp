@@ -64,11 +64,11 @@ namespace Cdd.OpenApi.Cli.Tests
         {
             Environment.SetEnvironmentVariable("CDD_COMMAND", "--version");
             Assert.Equal(0, Program.Main(new string[0]));
-            
+
             Environment.SetEnvironmentVariable("CDD_ARGS", "version");
             Environment.SetEnvironmentVariable("CDD_COMMAND", "");
             Assert.Equal(0, Program.Main(new string[0]));
-            
+
             Environment.SetEnvironmentVariable("CDD_COMMAND", "help");
             Environment.SetEnvironmentVariable("CDD_ARGS", "");
             Assert.Equal(0, Program.Main(new string[0]));
@@ -140,10 +140,10 @@ namespace Cdd.OpenApi.Cli.Tests
                 Assert.Equal(0, Program.Main(new[] { "from_openapi", "to_sdk_cli", "--input", tempInput, "--output", tempDir }));
                 Assert.Equal(0, Program.Main(new[] { "from_openapi", "to_server", "--input-dir", tempDir, "--output", tempDir }));
                 Assert.Equal(0, Program.Main(new[] { "from_openapi", "--input", tempInput, "--output", tempDir }));
-                
+
                 // missing input
                 Assert.Equal(1, Program.Main(new[] { "from_openapi" }));
-                
+
                 // exception in handle
                 Assert.Equal(1, Program.Main(new[] { "from_openapi", "-i", "does_not_exist.json" }));
             }
@@ -152,7 +152,7 @@ namespace Cdd.OpenApi.Cli.Tests
                 Directory.Delete(tempDir, true);
             }
         }
-        
+
         [Fact]
         public void ToOpenApi_Works()
         {
@@ -171,7 +171,7 @@ namespace Cdd.OpenApi.Cli.Tests
                 // missing input logic test (default is env vars)
                 Environment.SetEnvironmentVariable("INPUT_FILE", null);
                 Assert.Equal(1, Program.Main(new[] { "to_openapi" }));
-                
+
                 Assert.Equal(1, Program.Main(new[] { "to_openapi", "-i", "does_not_exist.cs" }));
             }
             finally
@@ -179,7 +179,7 @@ namespace Cdd.OpenApi.Cli.Tests
                 Directory.Delete(tempDir, true);
             }
         }
-        
+
         [Fact]
         public void ToDocsJson_Works()
         {
@@ -190,7 +190,7 @@ namespace Cdd.OpenApi.Cli.Tests
             {
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempOutput, "--no-imports", "--no-wrapping" }));
                 Assert.True(File.Exists(tempOutput));
-                
+
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "--input", tempInput }));
 
                 Environment.SetEnvironmentVariable("INPUT_FILE", null);

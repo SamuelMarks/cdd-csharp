@@ -38,7 +38,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("example", p.Example);
             Assert.NotNull(p.Examples);
             Assert.NotNull(p.Content);
-            
+
             p.Type = "string";
             p.Format = "uuid";
             p.Items = new OpenApiSchema();
@@ -56,7 +56,7 @@ namespace Cdd.OpenApi.Tests.Models
             p.UniqueItems = true;
             p.Enum = new List<object> { "a", "b" };
             p.MultipleOf = 2;
-            
+
             Assert.Equal("string", p.Type);
             Assert.Equal("uuid", p.Format);
             Assert.NotNull(p.Items);
