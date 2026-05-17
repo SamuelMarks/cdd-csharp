@@ -131,5 +131,56 @@ namespace Cdd.OpenApi.Tests
             var config = new CddConfig { InputPath = "does_not_exist.json" };
             Assert.Throws<FileNotFoundException>(() => CddGenerator.GenerateAll(config));
         }
+
+        [Fact]
+        public void Test_CddGenerator_InputPaths_Works()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                var inputPath = Path.Combine(tempDir, "spec.json");
+                File.WriteAllText(inputPath, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
+
+                var config = new CddConfig
+                {
+                    InputPaths = new System.Collections.Generic.List<string> { inputPath },
+                    OutputDir = tempDir
+                };
+
+                CddGenerator.GenerateAll(config);
+                Assert.True(File.Exists(Path.Combine(tempDir, "GeneratedProject.csproj")));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void Test_CddGenerator_CatchBlocks()
+        {
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var inputPath = Path.GetTempFileName();
+                File.WriteAllText(inputPath, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
+
+                var config = new CddConfig
+                {
+                    InputPath = inputPath,
+                    OutputDir = tempFile, // It's a file, so creating subdirs will throw and be caught
+                    NoGithubActions = false,
+                    CreateComposableTestsAndMocks = true
+                };
+
+                CddGenerator.GenerateAll(config);
+                // Should not throw, catch blocks should be hit
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 }

@@ -248,5 +248,100 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("QueryFullAsync", code);
             Assert.Contains("PurgeFullAsync", code);
         }
+        [Fact]
+        public void ToClient_ExplodeArrayParameters_Omitted()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/explode-test"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetExplode",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "arrayParam",
+                                In = "query",
+                                Explode = true,
+                                Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Type = "string" } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "stringParam",
+                                In = "query",
+                                Explode = true,
+                                Schema = new OpenApiSchema { Type = "string" }
+                            }
+                        }
+                    }
+                }
+            };
+            var classNode = Cdd.OpenApi.Clients.Emit.ToClient("ExplodeClient", paths);
+            var code = classNode.ToFullString();
+            
+            // stringParam should have [Explode]
+            Assert.Contains("[Explode] string stringParam", code);
+            // arrayParam should NOT have [Explode]
+            Assert.DoesNotContain("[Explode] System.Collections.Generic.List<string> arrayParam", code);
+            Assert.Contains("System.Collections.Generic.List<string> arrayParam", code);
+        }
+        [Fact]
+        public void ToClient_ArrayReturnsAndHeaders()
+        {
+            var paths = new OpenApiPaths
+            {
+                { "/array", new OpenApiPathItem
+                    {
+                        Get = new OpenApiOperation
+                        {
+                            OperationId = "GetArrayRef",
+                            Parameters = new List<OpenApiParameter>
+                            {
+                                new OpenApiParameter { Name = "myHeader", In = "header", Schema = new OpenApiSchema { Type = "string" } }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "GetArrayType",
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Content = new Dictionary<string, OpenApiMediaType>
+                                    {
+                                        ["application/json"] = new OpenApiMediaType
+                                        {
+                                            Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Type = "integer" } }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var classNode = Cdd.OpenApi.Clients.Emit.ToClient("ArrayClient", paths);
+            var code = classNode.ToFullString();
+
+            Assert.Contains("System.Collections.Generic.List<MyModel>", code);
+            Assert.Contains("System.Collections.Generic.List<int>", code);
+            Assert.Contains("request.Headers.Add(\"myHeader\", myHeader.ToString());", code);
+        }
     }
 }

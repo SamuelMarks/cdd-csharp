@@ -175,5 +175,27 @@ namespace Cdd.OpenApi.Tests
             var generated = IntegrationTestGenerator.Generate(doc);
             Assert.Contains("http://localhost:8080/mybase/", generated);
         }
+
+        [Fact]
+        public void Generate_InvalidUrlInServer_HitsElse()
+        {
+            var doc = new OpenApiDocument
+            {
+                Servers = new List<OpenApiServer>
+                {
+                    new OpenApiServer { Url = "not-an-absolute-url" }
+                }
+            };
+            var generated = IntegrationTestGenerator.Generate(doc);
+            Assert.Contains("http://localhost:8080/not-an-absolute-url/", generated);
+        }
+
+        [Fact]
+        public void Generate_NoServersOrBasePath_Fallback()
+        {
+            var doc = new OpenApiDocument();
+            var generated = IntegrationTestGenerator.Generate(doc);
+            Assert.Contains("http://localhost:8080/", generated);
+        }
     }
 }

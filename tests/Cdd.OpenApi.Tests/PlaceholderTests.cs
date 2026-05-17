@@ -45,6 +45,7 @@ namespace Cdd.OpenApi.Tests.Placeholders
             var paths = new OpenApiPaths();
             paths.Add("/test", new OpenApiPathItem { Get = new OpenApiOperation(), Post = new OpenApiOperation(), Put = new OpenApiOperation(), Delete = new OpenApiOperation() });
             global::Cdd.OpenApi.Mocks.Emit.ToMock("TestMock", paths);
+            global::Cdd.OpenApi.Mocks.Emit.ToMock("TestMock", paths, tests: true);
         }
 
         [Fact]
