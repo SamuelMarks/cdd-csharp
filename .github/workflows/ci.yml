@@ -1,9 +1,66 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        # We need the parent repo structure for petstore tests
+        path: cdd-csharp
+    
+    # We also need to checkout the parent test harness for the petstore specs
+    # since the script references ../petstore.json
+    - name: Checkout parent test harness
+      uses: actions/checkout@v4
+      with:
+        repository: SamuelMarks/cdd-openapi-test-harness
+        path: cdd-openapi-test-harness-tmp
+        
+    - name: Setup test harness structure
+      run: |
+        mv cdd-openapi-test-harness-tmp/petstore.json ./petstore.json
+        mv cdd-openapi-test-harness-tmp/petstore_oas3.json ./petstore_oas3.json
+        rm -rf cdd-openapi-test-harness-tmp
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          10.0.x
+
+    - name: Restore dependencies
+      working-directory: ./cdd-csharp
+      run: dotnet restore CddOpenApi.slnx
+
+    - name: Check Formatting
+      working-directory: ./cdd-csharp
+      run: dotnet format CddOpenApi.slnx --verify-no-changes
+
+    - name: Linting
+      working-directory: ./cdd-csharp
+      run: dotnet format analyzers CddOpenApi.slnx --verify-no-changes
+
+    - name: Build
+      working-directory: ./cdd-csharp
+      run: dotnet build CddOpenApi.slnx -c Release
+
+    - name: Test (and Badge update script)
+      working-directory: ./cdd-csharp
+      run: bash scripts/update_badges.sh
+
+    - name: Build WASM
+      working-directory: ./cdd-csharp
+      run: make build_wasm
+
+    - name: Swagger and OpenAPI Petstore Tests
+      working-directory: ./cdd-csharp
+      run: bash scripts/run_petstore_tests.sh
