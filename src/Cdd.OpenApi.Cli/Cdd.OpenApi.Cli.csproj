@@ -20,7 +20,8 @@
     <ToolCommandName>cdd-csharp</ToolCommandName>
     <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable Condition="'$(UseWasiSdk)' != 'true'">enable</Nullable>
+    <Nullable Condition="'$(UseWasiSdk)' == 'true'">disable</Nullable>
     <PublishTrimmed>false</PublishTrimmed>
     <PublishAot Condition="'$(UseWasiSdk)' != 'true'">true</PublishAot>
     <RunAOTCompilation>true</RunAOTCompilation>
@@ -31,4 +32,11 @@
     <WasmStackSize>40960000</WasmStackSize>
   </PropertyGroup>
 
+  <Target Name="CreateWasiClangWrapper" BeforeTargets="BuildWasm" Condition="'$(UseWasiSdk)' == 'true'">
+    <WriteLinesToFile File="$(IntermediateOutputPath)wasi-clang-wrapper.sh" Lines="#!/bin/bash&#xA;args=()&#xA;for arg in &quot;$@&quot;; do&#xA;  if [[ &quot;$arg&quot; == *&quot;--initial-memory=&quot;* ]]; then&#xA;    arg=&quot;${arg/--initial-memory=52428800/--initial-memory=104857600}&quot;&#xA;  fi&#xA;  args+=(&quot;$arg&quot;)&#xA;done&#xA;&quot;$(WasiSdkRoot)/bin/clang&quot; &quot;${args[@]}&quot; -Wl,-z,stack-size=40960000" Overwrite="true" />
+    <Exec Command="chmod +x $(IntermediateOutputPath)wasi-clang-wrapper.sh" />
+    <PropertyGroup>
+      <WasiClang>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)wasi-clang-wrapper.sh</WasiClang>
+    </PropertyGroup>
+  </Target>
 </Project>
