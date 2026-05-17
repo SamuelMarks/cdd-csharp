@@ -16,3 +16,8 @@ dotnet build CddOpenApi.slnx
 echo "Testing and updating coverage badges..."
 bash scripts/update_badges.sh
 
+echo "Building WASM..."
+make build_wasm
+
+echo "Running Petstore SDK Generation & Tests..."
+bash scripts/run_petstore_tests.sh

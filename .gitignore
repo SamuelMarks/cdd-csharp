@@ -405,7 +405,8 @@ tmp_test2/
 *.sh
 *.patch
 
-\ntemp-cs-spec.json
+
+temp-cs-spec.json
 check_dir.cs
 CheckDir/
 
@@ -426,4 +427,12 @@ scripts/obj/
 tests/TestResults/
 *.info
 *.cobertura.xml
-.cdd_args\nWasiTest/\ntest_args/\ntest_file.cs\ntest_file.csproj
+.cdd_args
+WasiTest/
+test_args/
+test_file.cs
+test_file.csproj
+
+# CDD Client Generators
+../cdd-csharp-client/
+cdd-csharp-client/

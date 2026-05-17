@@ -30,3 +30,15 @@ repos:
         entry: bash scripts/update_badges.sh
         language: system
         pass_filenames: false
+
+    -   id: build-wasm
+        name: Build WASM
+        entry: make build_wasm
+        language: system
+        pass_filenames: false
+
+    -   id: petstore-tests
+        name: Swagger and OpenAPI Petstore Tests
+        entry: bash scripts/run_petstore_tests.sh
+        language: system
+        pass_filenames: false
