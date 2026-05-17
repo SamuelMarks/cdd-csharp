@@ -3,7 +3,7 @@ repos:
     hooks:
     -   id: auto-format
         name: Auto-format Code
-        entry: bash -c "dotnet format CddOpenApi.slnx"
+        entry: bash -c "dotnet format CddOpenApi.slnx --verify-no-changes >/dev/null 2>&1 || (dotnet format CddOpenApi.slnx && exit 1)"
         language: system
         pass_filenames: false
 

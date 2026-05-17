@@ -280,7 +280,7 @@ namespace Cdd.OpenApi.Tests.Clients
             };
             var classNode = Cdd.OpenApi.Clients.Emit.ToClient("ExplodeClient", paths);
             var code = classNode.ToFullString();
-            
+
             // stringParam should have [Explode]
             Assert.Contains("[Explode] string stringParam", code);
             // arrayParam should NOT have [Explode]
