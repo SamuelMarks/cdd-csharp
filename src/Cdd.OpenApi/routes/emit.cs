@@ -160,7 +160,7 @@ namespace Cdd.OpenApi.Routes
                                         )))
                                 )));
                             }
-                            if (p.Explode == true)
+                            if (p.Explode == true && p.Schema?.Type != "array")
                             {
                                 param = param.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
                                     SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Explode"))

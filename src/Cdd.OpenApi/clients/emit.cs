@@ -201,7 +201,7 @@ namespace Cdd.OpenApi.Clients
                                         )))
                                 )));
                             }
-                            if (p.Explode == true)
+                            if (p.Explode == true && p.Schema?.Type != "array")
                             {
                                 pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
                                     SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Explode"))

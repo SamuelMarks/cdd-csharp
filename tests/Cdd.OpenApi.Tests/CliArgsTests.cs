@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 namespace Cdd.OpenApi.Tests
 {
+    [Collection("Cli")]
     public class CliArgsTests
     {
         // Simple manual validation since the CLI directly executes logic

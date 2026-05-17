@@ -416,8 +416,11 @@ CheckDir/
 # Cdd Test Harness and Docs
 docs/
 out_src/
-uri_test/bin/
-uri_test/obj/
+out_test/
+uri_test/
+patch_path.cs
+test.json
+test_uri.cs
 scripts/bin/
 scripts/obj/
 tests/TestResults/
