@@ -26,7 +26,4 @@
   <assembly fullname="Microsoft.CodeAnalysis.CSharp">
     <type fullname="*" />
   </assembly>
-  <assembly fullname="System.Runtime.CompilerServices">
-    <type fullname="*" />
-  </assembly>
 </linker>
