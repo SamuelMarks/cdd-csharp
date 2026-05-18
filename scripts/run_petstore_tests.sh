@@ -16,7 +16,15 @@ run_tests() {
     if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
         docker run -d -p 8080:8080 -e SWAGGER_HOST="http://localhost:8080" -e SWAGGER_BASE_PATH="$base_path" --name petstore_server swaggerapi/petstore >/dev/null || echo "Docker run failed, tests may fail"
         # Wait for the server to be ready
-        sleep 5
+        echo "Waiting for petstore server to be ready..."
+        for i in {1..30}; do
+            if curl -s "http://localhost:8080/" >/dev/null 2>&1; then
+                echo "Petstore server is ready! Waiting a few more seconds for endpoints to map..."
+                sleep 3
+                break
+            fi
+            sleep 2
+        done
     else
         echo "Warning: docker is not installed or daemon is not running. Tests relying on localhost:8080 may fail."
     fi
