@@ -500,7 +500,7 @@ namespace Cdd.OpenApi.Clients
                 }
             }
 
-            return classNode.NormalizeWhitespace();
+            return classNode;
         }
 
         private static string MapTypeToCSharp(string? openApiType)

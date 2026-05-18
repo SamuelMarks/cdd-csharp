@@ -31,16 +31,16 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IPetsApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("public interface IPetsApi", code);
-            Assert.Contains("/// <summary>", code);
-            Assert.Contains("/// List all pets", code);
-            Assert.Contains("[HttpGet(\"/pets\")]", code);
-            Assert.Contains("void GetPets([FromQuery] int limit);", code);
+            AssertHelper.ContainsNoWhitespace("public interface IPetsApi", code);
+            AssertHelper.ContainsNoWhitespace("/// <summary>", code);
+            AssertHelper.ContainsNoWhitespace("/// List all pets", code);
+            AssertHelper.ContainsNoWhitespace("[HttpGet(\"/pets\")]", code);
+            AssertHelper.ContainsNoWhitespace("void GetPets([FromQuery] int limit);", code);
 
-            Assert.Contains("[HttpPost(\"/pets\")]", code);
-            Assert.Contains("void CreatePet();", code);
+            AssertHelper.ContainsNoWhitespace("[HttpPost(\"/pets\")]", code);
+            AssertHelper.ContainsNoWhitespace("void CreatePet();", code);
         }
 
         [Fact]
@@ -82,9 +82,9 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IUploadApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadData([FromBody] object body);", code);
+            AssertHelper.ContainsNoWhitespace("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadData([FromBody] object body);", code);
         }
 
         [Fact]
@@ -109,9 +109,9 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("INoContentApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetNoContent();", code);
+            AssertHelper.ContainsNoWhitespace("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetNoContent();", code);
         }
 
         [Fact]
@@ -139,9 +139,9 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IUploadApi2", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("void UploadDataObj([FromBody] object body);", code);
+            AssertHelper.ContainsNoWhitespace("void UploadDataObj([FromBody] object body);", code);
         }
 
         [Fact]
@@ -156,10 +156,10 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IStoreApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("void Putstoreorder();", code);
-            Assert.Contains("[HttpPut(\"/store/order\")]", code);
+            AssertHelper.ContainsNoWhitespace("void Putstoreorder();", code);
+            AssertHelper.ContainsNoWhitespace("[HttpPut(\"/store/order\")]", code);
         }
 
         [Fact]
@@ -183,9 +183,9 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("ITestApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("void TestMethod(double weight, bool flag, string unknown);", code);
+            AssertHelper.ContainsNoWhitespace("void TestMethod(double weight, bool flag, string unknown);", code);
         }
 
         [Fact]
@@ -265,15 +265,15 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IFullApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
             Assert.NotNull(code);
-            Assert.Contains("HttpQuery", code);
-            Assert.Contains("HttpPurge", code);
-            Assert.Contains("server url", code);
-            Assert.Contains("callback name", code);
-            Assert.Contains("AllowReserved", code);
-            Assert.Contains("application/json:integer", code);
+            AssertHelper.ContainsNoWhitespace("HttpQuery", code);
+            AssertHelper.ContainsNoWhitespace("HttpPurge", code);
+            AssertHelper.ContainsNoWhitespace("server url", code);
+            AssertHelper.ContainsNoWhitespace("callback name", code);
+            AssertHelper.ContainsNoWhitespace("AllowReserved", code);
+            AssertHelper.ContainsNoWhitespace("application/json:integer", code);
         }
     }
 }
