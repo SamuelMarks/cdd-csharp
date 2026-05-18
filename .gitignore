@@ -436,6 +436,8 @@ test_file.csproj
 # CDD Client Generators
 ../cdd-csharp-client/
 cdd-csharp-client/
+../cdd-csharp-client-oas3/
+cdd-csharp-client-oas3/
 
 out_build.txt
 out_format.txt
