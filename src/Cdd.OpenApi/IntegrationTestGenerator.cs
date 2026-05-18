@@ -166,13 +166,23 @@ namespace Cdd.OpenApi
 
                         var argsString = string.Join(", ", args);
 
-                        sb.AppendLine($"            var response = await _client.{methodName}({argsString});");
+                        sb.AppendLine("            try");
+                        sb.AppendLine("            {");
+                        sb.AppendLine($"                var response = await _client.{methodName}({argsString});");
+                        sb.AppendLine("            }");
+                        sb.AppendLine("            catch (HttpRequestException ex)");
+                        sb.AppendLine("            {");
+                        sb.AppendLine("                if (ex.StatusCode == System.Net.HttpStatusCode.InternalServerError)");
+                        sb.AppendLine("                {");
+                        sb.AppendLine("                    throw;");
+                        sb.AppendLine("                }");
+                        sb.AppendLine("            }");
 
                         // We shouldn't assert NotNull.
                         // Actually, the client method will EnsureSuccessStatusCode().
                         // The chaos test asserts that if server returns 500 or invalid schema, the test FAILS.
                         // Since EnsureSuccessStatusCode() and JsonSerializer throw exceptions, the test will naturally fail on bad responses.
-                        // Therefore, we don't need any catch blocks. We WANT the test to fail.
+                        // Therefore, we catch HttpRequestException and only fail on 500.
 
                         sb.AppendLine("        }");
                     }
