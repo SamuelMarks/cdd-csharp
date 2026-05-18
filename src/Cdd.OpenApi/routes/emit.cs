@@ -282,7 +282,7 @@ namespace Cdd.OpenApi.Routes
                 }
             }
 
-            return interfaceNode.NormalizeWhitespace();
+            return interfaceNode;
         }
 
         private static string MapTypeToCSharp(string? openApiType)

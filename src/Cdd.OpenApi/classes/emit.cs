@@ -135,7 +135,7 @@ namespace Cdd.OpenApi.Classes
                 }
             }
 
-            return classNode.NormalizeWhitespace();
+            return classNode;
         }
 
         private static string MapTypeToCSharp(string? openApiType)

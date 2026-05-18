@@ -29,7 +29,7 @@ build_docs:
 
 BIN_DIR ?= bin/Release/net10.0/linux-x64/publish
 build:
-	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net10.0 -r linux-x64 --self-contained -o $(BIN_DIR)
+	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -r linux-x64 --self-contained -o $(BIN_DIR)
 
 test:
 	dotnet test CddOpenApi.slnx

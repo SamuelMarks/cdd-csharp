@@ -24,12 +24,12 @@ namespace Cdd.OpenApi.Tests.Placeholders
             Assert.Equal("DoTask", op.OperationId);
 
             var emitted = global::Cdd.OpenApi.Functions.Emit.EmitFunction(op);
-            Assert.Contains("DoTask", emitted.ToFullString());
+            AssertHelper.ContainsNoWhitespace("DoTask", emitted.ToFormattedString());
 
             // Branch coverage
             var opWithoutId = new OpenApiOperation { OperationId = null, Summary = null };
             var emittedWithoutId = global::Cdd.OpenApi.Functions.Emit.EmitFunction(opWithoutId);
-            Assert.Contains("DefaultFunction", emittedWithoutId.ToFullString());
+            AssertHelper.ContainsNoWhitespace("DefaultFunction", emittedWithoutId.ToFormattedString());
         }
 
         [Fact]

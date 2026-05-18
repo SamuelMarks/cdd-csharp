@@ -43,14 +43,14 @@ namespace Cdd.OpenApi.Tests.Clients
             };
 
             var classNode = Cdd.OpenApi.Clients.Emit.ToClient("TestClient", paths);
-            var code = classNode.ToFullString();
+            var code = classNode.ToFormattedString();
 
-            Assert.Contains("class TestClient", code);
-            Assert.Contains("private readonly System.Net.Http.HttpClient _httpClient;", code);
-            Assert.Contains("public TestClient(System.Net.Http.HttpClient httpClient)", code);
-            Assert.Contains("GetUsersAsync()", code);
-            Assert.Contains("CreateUserAsync(int id)", code);
-            Assert.Contains("PutusersidAsync()", code);
+            AssertHelper.ContainsNoWhitespace("class TestClient", code);
+            AssertHelper.ContainsNoWhitespace("private readonly System.Net.Http.HttpClient _httpClient;", code);
+            AssertHelper.ContainsNoWhitespace("public TestClient(System.Net.Http.HttpClient httpClient)", code);
+            AssertHelper.ContainsNoWhitespace("GetUsersAsync()", code);
+            AssertHelper.ContainsNoWhitespace("CreateUserAsync(int id)", code);
+            AssertHelper.ContainsNoWhitespace("PutusersidAsync()", code);
 
             // Should contain mapping types correctly
             // Let's test all mapped types:
@@ -73,12 +73,12 @@ namespace Cdd.OpenApi.Tests.Clients
                 }
             };
             var allTypesNode = Cdd.OpenApi.Clients.Emit.ToClient("TypeClient", allTypesPaths);
-            var typesCode = allTypesNode.ToFullString();
-            Assert.Contains("int a", typesCode);
-            Assert.Contains("double b", typesCode);
-            Assert.Contains("bool c", typesCode);
-            Assert.Contains("string d", typesCode);
-            Assert.Contains("string e", typesCode);
+            var typesCode = allTypesNode.ToFormattedString();
+            AssertHelper.ContainsNoWhitespace("int a", typesCode);
+            AssertHelper.ContainsNoWhitespace("double b", typesCode);
+            AssertHelper.ContainsNoWhitespace("bool c", typesCode);
+            AssertHelper.ContainsNoWhitespace("string d", typesCode);
+            AssertHelper.ContainsNoWhitespace("string e", typesCode);
         }
 
         [Fact]
@@ -242,11 +242,11 @@ namespace Cdd.OpenApi.Tests.Clients
             };
 
             var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IFullApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
             Assert.NotNull(code);
-            Assert.Contains("QueryFullAsync", code);
-            Assert.Contains("PurgeFullAsync", code);
+            AssertHelper.ContainsNoWhitespace("QueryFullAsync", code);
+            AssertHelper.ContainsNoWhitespace("PurgeFullAsync", code);
         }
         [Fact]
         public void ToClient_ExplodeArrayParameters_Omitted()
@@ -279,13 +279,13 @@ namespace Cdd.OpenApi.Tests.Clients
                 }
             };
             var classNode = Cdd.OpenApi.Clients.Emit.ToClient("ExplodeClient", paths);
-            var code = classNode.ToFullString();
+            var code = classNode.ToFormattedString();
 
             // stringParam should have [Explode]
-            Assert.Contains("[Explode] string stringParam", code);
+            AssertHelper.ContainsNoWhitespace("[Explode] string stringParam", code);
             // arrayParam should NOT have [Explode]
             Assert.DoesNotContain("[Explode] System.Collections.Generic.List<string> arrayParam", code);
-            Assert.Contains("System.Collections.Generic.List<string> arrayParam", code);
+            AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<string> arrayParam", code);
         }
         [Fact]
         public void ToClient_ArrayReturnsAndHeaders()
@@ -337,11 +337,11 @@ namespace Cdd.OpenApi.Tests.Clients
             };
 
             var classNode = Cdd.OpenApi.Clients.Emit.ToClient("ArrayClient", paths);
-            var code = classNode.ToFullString();
+            var code = classNode.ToFormattedString();
 
-            Assert.Contains("System.Collections.Generic.List<MyModel>", code);
-            Assert.Contains("System.Collections.Generic.List<int>", code);
-            Assert.Contains("request.Headers.Add(\"myHeader\", myHeader.ToString());", code);
+            AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<MyModel>", code);
+            AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<int>", code);
+            AssertHelper.ContainsNoWhitespace("request.Headers.Add(\"myHeader\", myHeader.ToString());", code);
         }
     }
 }

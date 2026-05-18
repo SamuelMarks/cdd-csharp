@@ -63,48 +63,48 @@ namespace Cdd.OpenApi.Tests.Classes
             };
 
             var classNode = Cdd.OpenApi.Classes.Emit.ToClass("Pet", schema);
-            var code = classNode.ToFullString();
+            var code = classNode.ToFormattedString();
 
-            Assert.Contains("/// <summary>", code);
-            Assert.Contains("/// A pet schema", code);
-            Assert.Contains("/// <example>\n/// examplePet\n/// </example>", code.Replace("\r", ""));
-            Assert.Contains("/// <externalDocs>\n/// http://pet.docs\n/// </externalDocs>", code.Replace("\r", ""));
-            Assert.Contains("/// <discriminator>\n/// petType\n/// </discriminator>", code.Replace("\r", ""));
-            Assert.Contains("/// <discriminator-defaultMapping>\n/// dog\n/// </discriminator-defaultMapping>", code.Replace("\r", ""));
-            Assert.Contains("/// <discriminator-mapping>\n/// cat:#/components/schemas/Cat\n/// </discriminator-mapping>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-name>\n/// Pet\n/// </xml-name>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-namespace>\n/// http://pet.xml\n/// </xml-namespace>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-prefix>\n/// p\n/// </xml-prefix>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-nodeType>\n/// element\n/// </xml-nodeType>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-attribute>\n/// true\n/// </xml-attribute>", code.Replace("\r", ""));
-            Assert.Contains("/// <xml-wrapped>\n/// false\n/// </xml-wrapped>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <summary>", code);
+            AssertHelper.ContainsNoWhitespace("/// A pet schema", code);
+            AssertHelper.ContainsNoWhitespace("/// <example>\n/// examplePet\n/// </example>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <externalDocs>\n/// http://pet.docs\n/// </externalDocs>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <discriminator>\n/// petType\n/// </discriminator>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <discriminator-defaultMapping>\n/// dog\n/// </discriminator-defaultMapping>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <discriminator-mapping>\n/// cat:#/components/schemas/Cat\n/// </discriminator-mapping>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-name>\n/// Pet\n/// </xml-name>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-namespace>\n/// http://pet.xml\n/// </xml-namespace>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-prefix>\n/// p\n/// </xml-prefix>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-nodeType>\n/// element\n/// </xml-nodeType>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-attribute>\n/// true\n/// </xml-attribute>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("/// <xml-wrapped>\n/// false\n/// </xml-wrapped>", code.Replace("\r", ""));
 
-            Assert.Contains("public class Pet", code);
+            AssertHelper.ContainsNoWhitespace("public class Pet", code);
 
             // Id is required
-            Assert.Contains("public int Id { get; set; }", code);
-            Assert.Contains("/// <summary>", code);
-            Assert.Contains("/// Pet ID", code);
-            Assert.Contains("    /// <example>\n    /// 123\n    /// </example>", code.Replace("\r", ""));
-            Assert.Contains("    /// <externalDocs>\n    /// http://pet.docs/id\n    /// </externalDocs>", code.Replace("\r", ""));
-            Assert.Contains("    /// <discriminator>\n    /// idType\n    /// </discriminator>", code.Replace("\r", ""));
-            Assert.Contains("    /// <discriminator-defaultMapping>\n    /// num\n    /// </discriminator-defaultMapping>", code.Replace("\r", ""));
-            Assert.Contains("    /// <discriminator-mapping>\n    /// str:#/components/schemas/StrId\n    /// </discriminator-mapping>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-name>\n    /// Id\n    /// </xml-name>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-namespace>\n    /// http://id.xml\n    /// </xml-namespace>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-prefix>\n    /// i\n    /// </xml-prefix>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-nodeType>\n    /// attribute\n    /// </xml-nodeType>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-attribute>\n    /// false\n    /// </xml-attribute>", code.Replace("\r", ""));
-            Assert.Contains("    /// <xml-wrapped>\n    /// true\n    /// </xml-wrapped>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("public int Id { get; set; }", code);
+            AssertHelper.ContainsNoWhitespace("/// <summary>", code);
+            AssertHelper.ContainsNoWhitespace("/// Pet ID", code);
+            AssertHelper.ContainsNoWhitespace("    /// <example>\n    /// 123\n    /// </example>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <externalDocs>\n    /// http://pet.docs/id\n    /// </externalDocs>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <discriminator>\n    /// idType\n    /// </discriminator>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <discriminator-defaultMapping>\n    /// num\n    /// </discriminator-defaultMapping>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <discriminator-mapping>\n    /// str:#/components/schemas/StrId\n    /// </discriminator-mapping>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-name>\n    /// Id\n    /// </xml-name>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-namespace>\n    /// http://id.xml\n    /// </xml-namespace>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-prefix>\n    /// i\n    /// </xml-prefix>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-nodeType>\n    /// attribute\n    /// </xml-nodeType>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-attribute>\n    /// false\n    /// </xml-attribute>", code.Replace("\r", ""));
+            AssertHelper.ContainsNoWhitespace("    /// <xml-wrapped>\n    /// true\n    /// </xml-wrapped>", code.Replace("\r", ""));
 
             // Name is optional string
-            Assert.Contains("public string? Name { get; set; }", code);
+            AssertHelper.ContainsNoWhitespace("public string? Name { get; set; }", code);
 
             // IsVaccinated is optional bool
-            Assert.Contains("public bool? IsVaccinated { get; set; }", code);
+            AssertHelper.ContainsNoWhitespace("public bool? IsVaccinated { get; set; }", code);
 
             // Data is unknown fallback to object
-            Assert.Contains("public object Data { get; set; }", code);
+            AssertHelper.ContainsNoWhitespace("public object Data { get; set; }", code);
         }
 
         [Fact]
@@ -120,9 +120,9 @@ namespace Cdd.OpenApi.Tests.Classes
             };
 
             var classNode = Cdd.OpenApi.Classes.Emit.ToClass("Pet", schema);
-            var code = classNode.ToFullString();
+            var code = classNode.ToFormattedString();
 
-            Assert.Contains("public double? Weight { get; set; }", code);
+            AssertHelper.ContainsNoWhitespace("public double? Weight { get; set; }", code);
         }
 
         [Fact]

@@ -127,7 +127,7 @@ namespace Cdd.OpenApi.CliModule
             mainMethod = mainMethod.WithBody(SyntaxFactory.Block(bodyStatements));
             classNode = classNode.AddMembers(mainMethod);
 
-            return classNode.NormalizeWhitespace();
+            return classNode;
         }
     }
 }

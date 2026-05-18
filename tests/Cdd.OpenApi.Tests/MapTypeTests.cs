@@ -43,11 +43,11 @@ namespace Cdd.OpenApi.Tests
                     }
                 }
             });
-            var code = iface.ToFullString();
-            Assert.Contains("int p1", code);
-            Assert.Contains("bool p2", code);
-            Assert.Contains("string p3", code);
-            Assert.Contains("string p4", code);
+            var code = iface.ToFormattedString();
+            AssertHelper.ContainsNoWhitespace("int p1", code);
+            AssertHelper.ContainsNoWhitespace("bool p2", code);
+            AssertHelper.ContainsNoWhitespace("string p3", code);
+            AssertHelper.ContainsNoWhitespace("string p4", code);
         }
 
         [Fact]
@@ -63,11 +63,11 @@ namespace Cdd.OpenApi.Tests
                     ["p4"] = new Cdd.OpenApi.Models.OpenApiSchema { Type = "unknown" },
                 }
             });
-            var code = cls.ToFullString();
-            Assert.Contains("int? p1", code);
-            Assert.Contains("bool? p2", code);
-            Assert.Contains("string? p3", code);
-            Assert.Contains("object p4", code);
+            var code = cls.ToFormattedString();
+            AssertHelper.ContainsNoWhitespace("int? p1", code);
+            AssertHelper.ContainsNoWhitespace("bool? p2", code);
+            AssertHelper.ContainsNoWhitespace("string? p3", code);
+            AssertHelper.ContainsNoWhitespace("object p4", code);
         }
     }
 }

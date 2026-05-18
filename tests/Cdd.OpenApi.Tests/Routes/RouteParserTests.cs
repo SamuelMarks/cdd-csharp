@@ -210,10 +210,10 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IUserApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("[System.Obsolete] int oldId = 42", code);
-            Assert.Contains("[AllowEmptyValue] string q = \"\"", code);
+            AssertHelper.ContainsNoWhitespace("[System.Obsolete] int oldId = 42", code);
+            AssertHelper.ContainsNoWhitespace("[AllowEmptyValue] string q = \"\"", code);
         }
         [Fact]
         public void ToPaths_WithComplexParameterAttributes_ParsesThem()
@@ -299,12 +299,12 @@ namespace Cdd.OpenApi.Tests.Routes
             };
 
             var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IComplexApi", paths);
-            var code = interfaceNode.ToFullString();
+            var code = interfaceNode.ToFormattedString();
 
-            Assert.Contains("[Style(\"matrix\")]", code);
-            Assert.Contains("[Explode]", code);
-            Assert.Contains("[AllowReserved]", code);
-            Assert.Contains("[Content(\"application/json\", \"object\")] string payload", code);
+            AssertHelper.ContainsNoWhitespace("[Style(\"matrix\")]", code);
+            AssertHelper.ContainsNoWhitespace("[Explode]", code);
+            AssertHelper.ContainsNoWhitespace("[AllowReserved]", code);
+            AssertHelper.ContainsNoWhitespace("[Content(\"application/json\", \"object\")] string payload", code);
         }
         [Fact]
         public void ToPaths_WithServerDocstrings_ParsesThem()

@@ -49,7 +49,7 @@ namespace Cdd.OpenApi.Orm
                 classNode = classNode.AddMembers(propNode);
             }
 
-            return classNode.NormalizeWhitespace();
+            return classNode;
         }
     }
 }
