@@ -443,3 +443,17 @@ out_build.txt
 out_format.txt
 out_wasm.txt
 out_wasm_make.txt
+
+# Additional untracked files
+Attributes.cs
+Client.cs
+GeneratedProject.csproj
+GeneratedProject.sln
+Models.cs
+petstore.json
+tiny.json
+test_parse*.cs
+test_wasm_node.*
+tests/GeneratedProject.Tests.csproj
+tests/IntegrationTests.cs
+test.cs
