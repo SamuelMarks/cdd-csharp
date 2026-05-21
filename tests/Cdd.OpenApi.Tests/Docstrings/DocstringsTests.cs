@@ -20,7 +20,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             public class TestClass {}";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var summary = Cdd.OpenApi.Docstrings.Parse.GetSummary(classNode);
 
@@ -32,7 +32,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
         {
             var code = @"public class TestClass {}";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var summary = Cdd.OpenApi.Docstrings.Parse.GetSummary(classNode);
 
@@ -48,7 +48,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             /// </remarks>
             public class TestClass {}";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var summary = Cdd.OpenApi.Docstrings.Parse.GetSummary(classNode);
 
@@ -103,7 +103,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             ";
 
             var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
 
             var tags = Cdd.OpenApi.Docstrings.Parse.GetTagsWithAttributes(classNode, "mytag");
             var paramTags = Cdd.OpenApi.Docstrings.Parse.GetTagsWithAttributes(classNode, "param");

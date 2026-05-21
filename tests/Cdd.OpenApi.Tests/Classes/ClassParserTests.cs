@@ -26,7 +26,7 @@ namespace Cdd.OpenApi.Tests.Classes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
 
@@ -63,7 +63,7 @@ namespace Cdd.OpenApi.Tests.Classes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Null(schema.Required);
@@ -79,7 +79,7 @@ namespace Cdd.OpenApi.Tests.Classes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Equal("object", schema.Properties!["Data"].Type);

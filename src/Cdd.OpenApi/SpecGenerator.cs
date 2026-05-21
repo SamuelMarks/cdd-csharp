@@ -23,14 +23,14 @@ namespace Cdd.OpenApi
             foreach (var code in csharpSourceCodes)
             {
                 var tree = CSharpSyntaxTree.ParseText(code);
-                var classNodes = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>();
+                var classNodes = tree.GetRoot().GetDescendantNodesSafe().OfType<ClassDeclarationSyntax>();
 
                 foreach (var classNode in classNodes)
                 {
-                    var hasRoutes = classNode.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                    var hasRoutes = classNode.GetDescendantNodesSafe().OfType<MethodDeclarationSyntax>()
                         .Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().StartsWith("Http")));
 
-                    var hasClientMethods = classNode.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                    var hasClientMethods = classNode.GetDescendantNodesSafe().OfType<InvocationExpressionSyntax>()
                         .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
                                     memberAccess.Name.Identifier.Text.EndsWith("Async") &&
                                     (memberAccess.Name.Identifier.Text.StartsWith("Get") ||
@@ -115,7 +115,7 @@ namespace Cdd.OpenApi
 
                         // Check for Authorize attribute on class or methods to add simple Bearer auth
                         var hasAuth = classNode.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")) ||
-                                      classNode.DescendantNodes().OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")));
+                                      classNode.GetDescendantNodesSafe().OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")));
 
                         if (hasAuth)
                         {

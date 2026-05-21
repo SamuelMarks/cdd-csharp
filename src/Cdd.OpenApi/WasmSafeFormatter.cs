@@ -7,19 +7,42 @@ namespace Cdd.OpenApi
 {
     public static class WasmSafeFormatter
     {
+        private static System.Collections.Generic.IEnumerable<SyntaxToken> GetTokens(SyntaxNode root)
+        {
+            var stack = new System.Collections.Generic.Stack<SyntaxNodeOrToken>();
+            stack.Push(root);
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (current.IsToken)
+                {
+                    yield return current.AsToken();
+                }
+                else
+                {
+                    var children = current.AsNode()!.ChildNodesAndTokens();
+                    foreach (var child in children.Reverse())
+                    {
+                        stack.Push(child);
+                    }
+                }
+            }
+        }
+
         public static string Format(SyntaxNode node)
         {
             var sb = new StringBuilder();
             int indent = 0;
             bool lastWasLetter = false;
 
-            foreach (var token in node.DescendantTokens())
+            foreach (var token in GetTokens(node))
             {
                 if (token.HasLeadingTrivia)
                 {
                     foreach (var trivia in token.LeadingTrivia)
                     {
-                        var triviaStr = trivia.ToFullString().Trim();
+                        var triviaStr = trivia.ToString().Trim();
                         if (!string.IsNullOrEmpty(triviaStr))
                         {
                             sb.AppendLine();

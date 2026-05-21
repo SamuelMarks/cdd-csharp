@@ -18,7 +18,7 @@ namespace Cdd.OpenApi.Clients
             {
                 if (method.Body == null) continue;
 
-                var invocations = method.Body.DescendantNodes().OfType<InvocationExpressionSyntax>();
+                var invocations = method.Body.GetDescendantNodesSafe().OfType<InvocationExpressionSyntax>();
                 InvocationExpressionSyntax? httpCall = null;
                 string? httpMethod = null;
 

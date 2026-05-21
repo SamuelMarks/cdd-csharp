@@ -158,7 +158,7 @@ namespace Cdd.OpenApi.Tests.Classes
             ";
 
             var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
 
