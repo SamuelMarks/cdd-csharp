@@ -20,7 +20,7 @@ namespace Cdd.OpenApi.Tests.Orm
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schemas = Cdd.OpenApi.Orm.Parse.ToSchemas(classNode);
 

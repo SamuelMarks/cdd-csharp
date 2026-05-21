@@ -15,7 +15,7 @@ namespace Cdd.OpenApi.CliModule
         {
             var paths = new OpenApiPaths();
 
-            var switchStmts = classNode.DescendantNodes().OfType<SwitchStatementSyntax>();
+            var switchStmts = classNode.GetDescendantNodesSafe().OfType<SwitchStatementSyntax>();
             foreach (var switchStmt in switchStmts)
             {
                 foreach (var section in switchStmt.Sections)
