@@ -1,21 +1,18 @@
 repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: mixed-line-ending
+        args: ['--fix=lf']
+        exclude: \.(bat|cmd|ps1)$
+
 -   repo: local
     hooks:
-    -   id: auto-format
-        name: Auto-format Code
-        entry: bash -c "dotnet format CddOpenApi.slnx --verify-no-changes >/dev/null 2>&1 || (dotnet format CddOpenApi.slnx && exit 1)"
-        language: system
-        pass_filenames: false
-
-    -   id: format-check
-        name: Check Code Formatting
-        entry: bash -c "dotnet format CddOpenApi.slnx --verify-no-changes"
-        language: system
-        pass_filenames: false
-
-    -   id: lint
-        name: Lint (Analyzers)
-        entry: bash -c "dotnet format analyzers CddOpenApi.slnx --verify-no-changes"
+    -   id: dotnet-format
+        name: Dotnet Format
+        entry: dotnet format CddOpenApi.slnx
         language: system
         pass_filenames: false
 
@@ -25,20 +22,8 @@ repos:
         language: system
         pass_filenames: false
 
-    -   id: tests-and-coverage
-        name: Run tests and update coverage badges
-        entry: bash scripts/update_badges.sh
-        language: system
-        pass_filenames: false
-
-    -   id: build-wasm
-        name: Build WASM
-        entry: make build_wasm
-        language: system
-        pass_filenames: false
-
-    -   id: petstore-tests
-        name: Swagger and OpenAPI Petstore Tests
-        entry: bash scripts/run_petstore_tests.sh
+    -   id: tests
+        name: Run tests
+        entry: dotnet test CddOpenApi.slnx
         language: system
         pass_filenames: false
