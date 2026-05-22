@@ -44,6 +44,7 @@ namespace Cdd.OpenApi.Clients
                 .WithBody(ctorBody);
 
             classNode = classNode.AddMembers(fieldNode, ctorNode);
+            var members = new List<MemberDeclarationSyntax>();
 
             foreach (var pathKvp in paths)
             {
@@ -496,11 +497,11 @@ namespace Cdd.OpenApi.Clients
                         }
                     }
 
-                    classNode = classNode.AddMembers(methodNode);
+                    members.Add(methodNode);
                 }
             }
 
-            return classNode;
+            return classNode.AddMembers(members.ToArray());
         }
 
         private static string MapTypeToCSharp(string? openApiType)

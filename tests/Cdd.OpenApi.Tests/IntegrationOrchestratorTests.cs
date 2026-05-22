@@ -11,8 +11,8 @@ namespace Cdd.OpenApi.Tests
         {
             var code = @"
             using System;
-            
-            public class User 
+
+            public class User
             {
                 /// <summary>
                 /// User identifier
@@ -20,8 +20,8 @@ namespace Cdd.OpenApi.Tests
                 public int Id { get; set; }
                 public string Name { get; set; }
             }
-            
-            public class UsersController 
+
+            public class UsersController
             {
                 /// <summary>
                 /// Get a user by ID
@@ -29,7 +29,7 @@ namespace Cdd.OpenApi.Tests
                 [HttpGet(""/users/{id}"")]
                 public void GetUser(int id) {}
             }
-            
+
             public class UserClient
             {
                 private HttpClient _client;
@@ -39,12 +39,12 @@ namespace Cdd.OpenApi.Tests
                     return """";
                 }
             }
-            
+
             public class UsersMock
             {
                 public void MockGetUser() {}
             }
-            
+
             public class UsersTests
             {
                 public void GetUserTest() {}

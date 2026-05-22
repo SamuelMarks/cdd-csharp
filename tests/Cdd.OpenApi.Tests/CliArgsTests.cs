@@ -58,14 +58,14 @@ namespace Cdd.OpenApi.Tests
 
             Assert.Equal(0, p.ExitCode);
             Assert.Contains("Successfully generated C# code", output);
-            Assert.True(File.Exists(Path.Combine(tmpDir, "ApiTests.cs")));
-            Assert.True(File.Exists(Path.Combine(tmpDir, "ApiMock.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "ApiTests.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "ApiMock.cs")));
 
-            var testsContent = File.ReadAllText(Path.Combine(tmpDir, "ApiTests.cs"));
+            var testsContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "ApiTests.cs"));
             Assert.Contains("IApi", testsContent);
             Assert.Contains("_api", testsContent);
 
-            var mockContent = File.ReadAllText(Path.Combine(tmpDir, "ApiMock.cs"));
+            var mockContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "ApiMock.cs"));
             Assert.Contains("IApi", mockContent); // Should implement IApi
 
             Directory.Delete(tmpDir, true);
@@ -91,7 +91,7 @@ namespace Cdd.OpenApi.Tests
 
             Assert.Equal(0, p.ExitCode);
             Assert.Contains("Successfully generated C# code", output);
-            Assert.True(File.Exists(Path.Combine(tmpDir, "Client.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "Client.cs")));
 
             Directory.Delete(tmpDir, true);
         }

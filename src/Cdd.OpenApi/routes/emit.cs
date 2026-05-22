@@ -16,6 +16,7 @@ namespace Cdd.OpenApi.Routes
             var interfaceNode = SyntaxFactory.InterfaceDeclaration(interfaceName)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
+            var members = new List<MemberDeclarationSyntax>();
             foreach (var pathKvp in paths)
             {
                 var routePath = pathKvp.Key;
@@ -278,11 +279,11 @@ namespace Cdd.OpenApi.Routes
                         }
                     }
 
-                    interfaceNode = interfaceNode.AddMembers(methodNode);
+                    members.Add(methodNode);
                 }
             }
 
-            return interfaceNode;
+            return interfaceNode.AddMembers(members.ToArray());
         }
 
         private static string MapTypeToCSharp(string? openApiType)

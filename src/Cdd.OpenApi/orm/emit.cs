@@ -32,6 +32,7 @@ namespace Cdd.OpenApi.Orm
 
             classNode = classNode.AddMembers(constructorNode);
 
+            var members = new List<MemberDeclarationSyntax>();
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
@@ -46,10 +47,10 @@ namespace Cdd.OpenApi.Orm
                     SyntaxFactory.EqualsValueClause(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Set<{schemaName}>")))
                 ).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
 
-                classNode = classNode.AddMembers(propNode);
+                members.Add(propNode);
             }
 
-            return classNode;
+            return classNode.AddMembers(members.ToArray());
         }
     }
 }

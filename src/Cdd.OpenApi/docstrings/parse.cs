@@ -156,4 +156,3 @@ namespace Cdd.OpenApi.Docstrings
         }
     }
 }
-

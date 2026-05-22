@@ -36,7 +36,7 @@ run_tests() {
     abs_spec_path=$(cd "$(dirname "$spec_file")" && pwd)/$(basename "$spec_file")
 
     dotnet run --project src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -f net10.0 -- from_openapi to_sdk -i "$abs_spec_path" -o ../cdd-csharp-client
-    
+
     echo "Running integration tests for $label..."
     (cd ../cdd-csharp-client && dotnet test GeneratedProject.sln)
 

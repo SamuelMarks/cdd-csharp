@@ -51,6 +51,7 @@ namespace Cdd.OpenApi.Classes
                 classNode = Docstrings.Emit.WithTag(classNode, "externalDocs", schema.ExternalDocs.Url);
             }
 
+            var members = new List<MemberDeclarationSyntax>();
             if (schema.Properties != null)
             {
                 foreach (var prop in schema.Properties)
@@ -131,11 +132,11 @@ namespace Cdd.OpenApi.Classes
                         propNode = Docstrings.Emit.WithTag(propNode, "externalDocs", propSchema.ExternalDocs.Url);
                     }
 
-                    classNode = classNode.AddMembers(propNode);
+                    members.Add(propNode);
                 }
             }
 
-            return classNode;
+            return classNode.AddMembers(members.ToArray());
         }
 
         private static string MapTypeToCSharp(string? openApiType)

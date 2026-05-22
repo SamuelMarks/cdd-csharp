@@ -82,9 +82,10 @@ namespace Cdd.OpenApi
                 lastDoc = doc;
                 var codes = CodeGenerator.Generate(doc, "Generated", type, config.CreateComposableTestsAndMocks);
 
+                var sourceDir = config.NoInstallablePackage ? outputDir : Path.Combine(outputDir, "src", "GeneratedProject");
                 foreach (var code in codes)
                 {
-                    var fullPath = Path.Combine(outputDir, code.FileName);
+                    var fullPath = Path.Combine(sourceDir, code.FileName);
                     var dir = Path.GetDirectoryName(fullPath);
                     if (!string.IsNullOrEmpty(dir))
                     {
@@ -109,21 +110,46 @@ namespace Cdd.OpenApi
             {
                 try
                 {
-                    var projContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n";
-                    projContent += "  <ItemGroup>\n    <Compile Remove=\"Tests\\**\" />\n    <EmbeddedResource Remove=\"Tests\\**\" />\n    <None Remove=\"Tests\\**\" />\n  </ItemGroup>\n";
+                    var title = lastDoc?.Info?.Title ?? "GeneratedProject";
+                    if (string.IsNullOrWhiteSpace(title)) title = "GeneratedProject";
+                    var version = lastDoc?.Info?.Version ?? "1.0.0";
+                    if (string.IsNullOrWhiteSpace(version)) version = "1.0.0";
+                    var authors = lastDoc?.Info?.Contact?.Name ?? "Generated";
+                    if (string.IsNullOrWhiteSpace(authors)) authors = "Generated";
+                    var description = lastDoc?.Info?.Description ?? "Generated OpenApi SDK";
+                    if (string.IsNullOrWhiteSpace(description)) description = "Generated OpenApi SDK";
+                    // Escape XML characters just in case
+                    title = System.Security.SecurityElement.Escape(title) ?? "GeneratedProject";
+                    version = System.Security.SecurityElement.Escape(version) ?? "1.0.0";
+                    authors = System.Security.SecurityElement.Escape(authors) ?? "Generated";
+                    description = System.Security.SecurityElement.Escape(description) ?? "Generated OpenApi SDK";
+
+                    var readmeContent = $"# {title}\n\n{description}\n";
+                    File.WriteAllText(Path.Combine(outputDir, "README.md"), readmeContent);
+
+                    var projContent = $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <PackageId>{title}</PackageId>\n    <Version>{version}</Version>\n    <Authors>{authors}</Authors>\n    <Description>{description}</Description>\n    <PackageReadmeFile>README.md</PackageReadmeFile>\n  </PropertyGroup>\n";
+                    projContent += "  <ItemGroup>\n    <None Include=\"..\\..\\README.md\" Pack=\"true\" PackagePath=\"\\\" />\n  </ItemGroup>\n";
+
                     if (type == GenerateType.All || type == GenerateType.Server)
                     {
                         projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n";
                     }
                     projContent += "</Project>";
-                    File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.csproj"), projContent);
+                    var projectDir = Path.Combine(outputDir, "src", "GeneratedProject");
+                    Directory.CreateDirectory(projectDir);
+                    File.WriteAllText(Path.Combine(projectDir, "GeneratedProject.csproj"), projContent);
 
                     if (type == GenerateType.Sdk || type == GenerateType.All)
                     {
-                        var testsDir = Path.Combine(outputDir, "Tests");
-                        Directory.CreateDirectory(testsDir);
+                        var guid1 = Guid.NewGuid().ToString().ToUpper();
+                        string slnContent;
 
-                        var testProjContent = @"<Project Sdk=""Microsoft.NET.Sdk"">
+                        if (config.CreateComposableTestsAndMocks)
+                        {
+                            var testsDir = Path.Combine(outputDir, "tests", "GeneratedProject.Tests");
+                            Directory.CreateDirectory(testsDir);
+
+                            var testProjContent = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -139,16 +165,16 @@ namespace Cdd.OpenApi
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=""..\GeneratedProject.csproj"" />
+    <ProjectReference Include=""..\..\src\GeneratedProject\GeneratedProject.csproj"" />
   </ItemGroup>
 </Project>";
-                        File.WriteAllText(Path.Combine(testsDir, "GeneratedProject.Tests.csproj"), testProjContent);
+                            File.WriteAllText(Path.Combine(testsDir, "GeneratedProject.Tests.csproj"), testProjContent);
 
-                        var slnContent = @"Microsoft Visual Studio Solution File, Format Version 12.00
+                            slnContent = @"Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject"", ""GeneratedProject.csproj"", ""{GUID1}""
+Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject"", ""src\GeneratedProject\GeneratedProject.csproj"", ""{GUID1}""
 EndProject
-Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject.Tests"", ""Tests\GeneratedProject.Tests.csproj"", ""{GUID2}""
+Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject.Tests"", ""tests\GeneratedProject.Tests\GeneratedProject.Tests.csproj"", ""{GUID2}""
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -166,13 +192,34 @@ Global
 		{GUID2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal";
-                        var guid1 = Guid.NewGuid().ToString().ToUpper();
-                        var guid2 = Guid.NewGuid().ToString().ToUpper();
-                        slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
-                        File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.sln"), slnContent);
+                            var guid2 = Guid.NewGuid().ToString().ToUpper();
+                            slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
 
-                        var integrationTestContent = lastDoc != null ? IntegrationTestGenerator.Generate(lastDoc) : "";
-                        File.WriteAllText(Path.Combine(testsDir, "IntegrationTests.cs"), integrationTestContent);
+                            var integrationTestContent = lastDoc != null ? IntegrationTestGenerator.Generate(lastDoc) : "";
+                            File.WriteAllText(Path.Combine(testsDir, "IntegrationTests.cs"), integrationTestContent);
+                        }
+                        else
+                        {
+                            slnContent = @"Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project(""{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"") = ""GeneratedProject"", ""src\GeneratedProject\GeneratedProject.csproj"", ""{GUID1}""
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{GUID1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{GUID1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{GUID1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{GUID1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal";
+                            slnContent = slnContent.Replace("{GUID1}", guid1);
+                        }
+
+                        File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.sln"), slnContent);
                     }
                 }
                 catch { }

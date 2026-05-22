@@ -53,11 +53,13 @@ namespace Cdd.OpenApi
                 var modelsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                     .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")));
 
+                var modelMembers = new List<MemberDeclarationSyntax>();
                 foreach (var schemaKvp in doc.Components.Schemas)
                 {
                     var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
-                    modelsNsNode = modelsNsNode.AddMembers(classNode);
+                    modelMembers.Add(classNode);
                 }
+                modelsNsNode = modelsNsNode.AddMembers(modelMembers.ToArray());
 
                 results.Add(new GeneratedCode
                 {
@@ -91,21 +93,21 @@ namespace Cdd.OpenApi
     public class AllowReservedAttribute : Attribute {}
     /// <summary>Auto-generated documentation for StyleAttribute.</summary>
     [AttributeUsage(AttributeTargets.All)]
-    public class StyleAttribute : Attribute { 
+    public class StyleAttribute : Attribute {
         /// <summary>Auto-generated documentation for StyleAttribute.</summary>
-        public StyleAttribute(string style) {} 
+        public StyleAttribute(string style) {}
     }
     /// <summary>Auto-generated documentation for ContentAttribute.</summary>
     [AttributeUsage(AttributeTargets.All)]
-    public class ContentAttribute : Attribute { 
+    public class ContentAttribute : Attribute {
         /// <summary>Auto-generated documentation for ContentAttribute.</summary>
-        public ContentAttribute(string mediaType, string schemaType) {} 
+        public ContentAttribute(string mediaType, string schemaType) {}
     }
     /// <summary>Auto-generated documentation for ExamplesAttribute.</summary>
     [AttributeUsage(AttributeTargets.All)]
-    public class ExamplesAttribute : Attribute { 
+    public class ExamplesAttribute : Attribute {
         /// <summary>Auto-generated documentation for ExamplesAttribute.</summary>
-        public ExamplesAttribute(params string[] args) {} 
+        public ExamplesAttribute(params string[] args) {}
     }
 }
 ";

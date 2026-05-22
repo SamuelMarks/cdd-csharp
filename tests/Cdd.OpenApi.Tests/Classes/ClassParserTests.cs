@@ -15,7 +15,7 @@ namespace Cdd.OpenApi.Tests.Classes
             /// <summary>
             /// A representation of a pet.
             /// </summary>
-            public class Pet 
+            public class Pet
             {
                 /// <summary>The pet's ID</summary>
                 public int Id { get; set; }
@@ -26,7 +26,7 @@ namespace Cdd.OpenApi.Tests.Classes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
 
@@ -57,13 +57,13 @@ namespace Cdd.OpenApi.Tests.Classes
         public void ToSchema_NoRequiredProperties_RequiredIsNull()
         {
             var code = @"
-            public class Pet 
+            public class Pet
             {
                 public int? Id { get; set; }
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Null(schema.Required);
@@ -73,13 +73,13 @@ namespace Cdd.OpenApi.Tests.Classes
         public void MapType_UnknownType_MapsToObject()
         {
             var code = @"
-            public class Container 
+            public class Container
             {
                 public CustomType Data { get; set; }
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Equal("object", schema.Properties!["Data"].Type);

@@ -11,12 +11,13 @@ namespace Cdd.OpenApi.Docstrings
         public static SyntaxTriviaList CreateTag(string tagName, string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return SyntaxFactory.TriviaList();
-            
+
             var lines = text.Split('\n');
             var trivia = new List<SyntaxTrivia>();
             trivia.Add(SyntaxFactory.Comment($"/// <{tagName}>"));
             trivia.Add(SyntaxFactory.EndOfLine("\n"));
-            foreach(var line in lines) {
+            foreach (var line in lines)
+            {
                 trivia.Add(SyntaxFactory.Comment($"/// {line}"));
                 trivia.Add(SyntaxFactory.EndOfLine("\n"));
             }
@@ -30,13 +31,15 @@ namespace Cdd.OpenApi.Docstrings
             if (string.IsNullOrWhiteSpace(text) && (attributes == null || attributes.Count == 0)) return SyntaxFactory.TriviaList();
             var attrs = string.Join(" ", attributes.Select(kvp => $"{kvp.Key}=\"{kvp.Value}\""));
             var openTag = string.IsNullOrWhiteSpace(attrs) ? $"<{tagName}>" : $"<{tagName} {attrs}>";
-            
+
             var trivia = new List<SyntaxTrivia>();
             trivia.Add(SyntaxFactory.Comment($"/// {openTag}"));
             trivia.Add(SyntaxFactory.EndOfLine("\n"));
-            if (!string.IsNullOrWhiteSpace(text)) {
+            if (!string.IsNullOrWhiteSpace(text))
+            {
                 var lines = text.Split('\n');
-                foreach(var line in lines) {
+                foreach (var line in lines)
+                {
                     trivia.Add(SyntaxFactory.Comment($"/// {line}"));
                     trivia.Add(SyntaxFactory.EndOfLine("\n"));
                 }

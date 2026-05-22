@@ -96,10 +96,11 @@ namespace Cdd.OpenApi.Tests
                 CddGenerator.GenerateAll(config);
 
                 Assert.True(File.Exists(Path.Combine(tempDir, ".github", "workflows", "ci.yml")));
-                Assert.True(File.Exists(Path.Combine(tempDir, "GeneratedProject.csproj")));
+                Assert.True(File.Exists(Path.Combine(tempDir, "src", "GeneratedProject", "GeneratedProject.csproj")));
                 Assert.True(File.Exists(Path.Combine(tempDir, "GeneratedProject.sln")));
-                Assert.True(File.Exists(Path.Combine(tempDir, "Tests", "GeneratedProject.Tests.csproj")));
-                Assert.True(File.Exists(Path.Combine(tempDir, "Tests", "IntegrationTests.cs")));
+                Assert.True(File.Exists(Path.Combine(tempDir, "tests", "GeneratedProject.Tests", "GeneratedProject.Tests.csproj")));
+                Assert.True(File.Exists(Path.Combine(tempDir, "tests", "GeneratedProject.Tests", "IntegrationTests.cs")));
+                Assert.True(File.Exists(Path.Combine(tempDir, "README.md")));
 
                 CddGenerator.GenerateSdk(config);
                 CddGenerator.GenerateSdkCli(config);
@@ -149,7 +150,7 @@ namespace Cdd.OpenApi.Tests
                 };
 
                 CddGenerator.GenerateAll(config);
-                Assert.True(File.Exists(Path.Combine(tempDir, "GeneratedProject.csproj")));
+                Assert.True(File.Exists(Path.Combine(tempDir, "src", "GeneratedProject", "GeneratedProject.csproj")));
             }
             finally
             {
@@ -184,6 +185,3 @@ namespace Cdd.OpenApi.Tests
         }
     }
 }
-
-
-

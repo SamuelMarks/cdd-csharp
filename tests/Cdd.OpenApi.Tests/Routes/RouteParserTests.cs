@@ -14,7 +14,7 @@ namespace Cdd.OpenApi.Tests.Routes
         public void ToPaths_ParsesControllerMethods_ToOpenApiPaths()
         {
             var code = @"
-            public class PetsController 
+            public class PetsController
             {
                 /// <summary>
                 /// Gets all pets.
@@ -30,7 +30,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 
@@ -67,13 +67,13 @@ namespace Cdd.OpenApi.Tests.Routes
         public void ToPaths_MethodWithNoAttribute_IsIgnored()
         {
             var code = @"
-            public class PetsController 
+            public class PetsController
             {
                 public void HelperMethod() {}
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 
@@ -84,7 +84,7 @@ namespace Cdd.OpenApi.Tests.Routes
         public void SetOperation_SetsAllVerbs()
         {
             var code = @"
-            public class PetsController 
+            public class PetsController
             {
                 [HttpPut] public void Put() {}
                 [HttpDelete] public void Delete() {}
@@ -95,7 +95,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var rootPath = paths["/"];
@@ -118,7 +118,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 
@@ -145,7 +145,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/users/{id}"].Delete;
@@ -171,7 +171,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/users"].Get;
@@ -226,7 +226,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/complex"].Get;
@@ -251,7 +251,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/content"].Get;
@@ -325,7 +325,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/srv"].Get;
@@ -364,7 +364,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/subscribe"].Post;
@@ -391,7 +391,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/links"].Get;
@@ -426,7 +426,7 @@ namespace Cdd.OpenApi.Tests.Routes
                 [Obsolete]
                 [HttpGet(""/meta"")]
                 public float Get(
-                    [FromQuery, Explode] string q1, 
+                    [FromQuery, Explode] string q1,
                     [FromQuery, Explode(true)] string q2,
                     [FromQuery, Explode(false)] string q3,
                     [FromQuery, Style(""form"")] string q4,
@@ -439,7 +439,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/meta"].Get;
@@ -470,7 +470,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/ex"].Get;
@@ -492,13 +492,13 @@ namespace Cdd.OpenApi.Tests.Routes
             public class EncodeApi
             {
                 [HttpPost(""/enc"")]
-                public void Post([FromBody] 
-                    [Encoding(""profileImage"", ""image/png"", Style=""form"", Explode=false, AllowReserved=false)] 
+                public void Post([FromBody]
+                    [Encoding(""profileImage"", ""image/png"", Style=""form"", Explode=false, AllowReserved=false)]
                     object body) {}
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var op = paths["/enc"].Post;
@@ -532,7 +532,7 @@ namespace Cdd.OpenApi.Tests.Routes
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 

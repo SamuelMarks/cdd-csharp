@@ -41,7 +41,7 @@ public class MyCli
 ";
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetRoot();
-            var classNode = root.GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
 

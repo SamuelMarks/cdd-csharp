@@ -14,6 +14,7 @@ namespace Cdd.OpenApi.Mocks
             var classDecl = SyntaxFactory.ClassDeclaration(name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
+            var members = new List<MemberDeclarationSyntax>();
             if (tests)
             {
                 classDecl = classDecl.AddBaseListTypes(
@@ -43,7 +44,7 @@ namespace Cdd.OpenApi.Mocks
                     methodDecl = methodDecl.WithBody(body)
                         .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None))
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-                    classDecl = classDecl.AddMembers(methodDecl);
+                    members.Add(methodDecl);
                 }
             }
             else
@@ -52,14 +53,14 @@ namespace Cdd.OpenApi.Mocks
                 {
                     var route = pathKvp.Key;
                     var pathItem = pathKvp.Value;
-                    if (pathItem.Get != null) classDecl = classDecl.AddMembers(CreateMockMethod("Get", route, pathItem.Get));
-                    if (pathItem.Post != null) classDecl = classDecl.AddMembers(CreateMockMethod("Post", route, pathItem.Post));
-                    if (pathItem.Put != null) classDecl = classDecl.AddMembers(CreateMockMethod("Put", route, pathItem.Put));
-                    if (pathItem.Delete != null) classDecl = classDecl.AddMembers(CreateMockMethod("Delete", route, pathItem.Delete));
+                    if (pathItem.Get != null) members.Add(CreateMockMethod("Get", route, pathItem.Get));
+                    if (pathItem.Post != null) members.Add(CreateMockMethod("Post", route, pathItem.Post));
+                    if (pathItem.Put != null) members.Add(CreateMockMethod("Put", route, pathItem.Put));
+                    if (pathItem.Delete != null) members.Add(CreateMockMethod("Delete", route, pathItem.Delete));
                 }
             }
 
-            return classDecl;
+            return classDecl.AddMembers(members.ToArray());
         }
 
         private static MethodDeclarationSyntax CreateMockMethod(string method, string route, OpenApiOperation op)

@@ -17,7 +17,7 @@ namespace Cdd.OpenApi.Tests
                 [HttpGet] public void M(decimal d, double db, float f, bool b, object o) {}
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             var p = paths["/"].Get?.Parameters;
@@ -40,7 +40,7 @@ namespace Cdd.OpenApi.Tests
                 public bool B {get;set;}
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             var p = schema.Properties;

@@ -16,7 +16,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class TestClient
             {
                 private HttpClient _client;
-                
+
                 /// <summary>
                 /// Get users
                 /// </summary>
@@ -91,7 +91,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -138,7 +138,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class TestClient
             {
                 private HttpClient _client;
-                
+
                 /// <response code=""200"">OK response</response>
                 /// <response code=""204"" header=""X-Limit"" link=""OtherOp"" header-examples=""ex1:100,ex2:200"" header-content=""application/json:integer"">No Content</response>
                 /// <server url=""http://s1"">S1</server>
@@ -150,7 +150,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -176,10 +176,10 @@ namespace Cdd.OpenApi.Tests.Clients
             public class TestClient
             {
                 private HttpClient _client;
-                
+
                 public async Task<string> GetUserAsync(
-                    [Obsolete] string oldId, 
-                    [AllowEmptyValue] string q = """", 
+                    [Obsolete] string oldId,
+                    [AllowEmptyValue] string q = """",
                     int x = 5)
                 {
                     await _client.GetAsync($""/user/{oldId}?q={q}&x={x}"");
@@ -188,7 +188,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -214,7 +214,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class EventClient
             {
                 private HttpClient _client;
-                
+
                 /// <callback name=""onWebhook"" expression=""{$request.query.url}"">
                 ///   Webhook details
                 /// </callback>
@@ -225,7 +225,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -245,7 +245,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class ComplexLinkClient
             {
                 private HttpClient _client;
-                
+
                 /// <response code=""200"" link=""GetDetails"" link-operationRef=""#/paths/~1details/get"" link-description=""Gets details"" link-requestBody=""$response.body#/info"" link-parameters=""id:$response.body#/id"" link-serverUrl=""https://internal.api.com"">
                 ///   OK
                 /// </response>
@@ -256,7 +256,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -284,7 +284,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class MetaClient
             {
                 private HttpClient _client;
-                
+
                 /// <description>Desc</description>
                 /// <externalDocs>https://api.com</externalDocs>
                 /// <tags>api,v1</tags>
@@ -297,7 +297,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -321,7 +321,7 @@ namespace Cdd.OpenApi.Tests.Clients
             public class ComplexExamplesClient
             {
                 private HttpClient _client;
-                
+
                 /// <param name=""id"">The id</param>
                 public async Task GetItAsync(
                     [Examples(""ex1"", ""one"", ""ex2"", ""two"")]
@@ -340,7 +340,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
@@ -368,7 +368,7 @@ namespace Cdd.OpenApi.Tests.Clients
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
 
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 

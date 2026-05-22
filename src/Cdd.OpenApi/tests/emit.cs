@@ -14,12 +14,13 @@ namespace Cdd.OpenApi.TestsModule
             var classDecl = SyntaxFactory.ClassDeclaration(name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
+            var members = new List<MemberDeclarationSyntax>();
             if (tests)
             {
                 var field = SyntaxFactory.FieldDeclaration(
                     SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName("IApi"))
-                    .WithVariables(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.VariableDeclarator("_api"))))
-                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.ProtectedKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
+                    .AddVariables(SyntaxFactory.VariableDeclarator("_api"))
+                ).AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
 
                 var ctor = SyntaxFactory.ConstructorDeclaration(name)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
@@ -32,20 +33,21 @@ namespace Cdd.OpenApi.TestsModule
                         ))
                     ));
 
-                classDecl = classDecl.AddMembers(field, ctor);
+                members.Add(field);
+                members.Add(ctor);
             }
 
             foreach (var pathKvp in paths)
             {
                 var route = pathKvp.Key;
                 var pathItem = pathKvp.Value;
-                if (pathItem.Get != null) classDecl = classDecl.AddMembers(CreateTestMethod("Get", route, pathItem.Get, tests));
-                if (pathItem.Post != null) classDecl = classDecl.AddMembers(CreateTestMethod("Post", route, pathItem.Post, tests));
-                if (pathItem.Put != null) classDecl = classDecl.AddMembers(CreateTestMethod("Put", route, pathItem.Put, tests));
-                if (pathItem.Delete != null) classDecl = classDecl.AddMembers(CreateTestMethod("Delete", route, pathItem.Delete, tests));
+                if (pathItem.Get != null) members.Add(CreateTestMethod("Get", route, pathItem.Get, tests));
+                if (pathItem.Post != null) members.Add(CreateTestMethod("Post", route, pathItem.Post, tests));
+                if (pathItem.Put != null) members.Add(CreateTestMethod("Put", route, pathItem.Put, tests));
+                if (pathItem.Delete != null) members.Add(CreateTestMethod("Delete", route, pathItem.Delete, tests));
             }
 
-            return classDecl;
+            return classDecl.AddMembers(members.ToArray());
         }
 
         private static MethodDeclarationSyntax CreateTestMethod(string method, string route, OpenApiOperation op, bool tests)

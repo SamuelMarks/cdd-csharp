@@ -10,15 +10,15 @@ namespace Cdd.OpenApi.Tests.Placeholders
         public void TestFunctions()
         {
             var code = @"
-            public class TestFunc 
-            { 
+            public class TestFunc
+            {
                 /// <summary>
                 /// Does a task
                 /// </summary>
-                public void DoTask() {} 
+                public void DoTask() {}
             }";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var methodNode = tree.GetRoot().GetDescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+            var methodNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
 
             var op = global::Cdd.OpenApi.Functions.Parse.ParseFunction(methodNode);
             Assert.Equal("DoTask", op.OperationId);
@@ -37,7 +37,7 @@ namespace Cdd.OpenApi.Tests.Placeholders
         {
             var code = "public class TestMock { public void GetUser() {} }";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
 
             var parsedPaths = global::Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
             Assert.NotEmpty(parsedPaths);
@@ -53,7 +53,7 @@ namespace Cdd.OpenApi.Tests.Placeholders
         {
             var code = "public class TestTests { public void GetUserTest() {} }";
             var tree = CSharpSyntaxTree.ParseText(code);
-            var classNode = tree.GetRoot().GetDescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
 
             var parsedPaths = global::Cdd.OpenApi.TestsModule.Parse.ToPaths(classNode);
             Assert.NotEmpty(parsedPaths);

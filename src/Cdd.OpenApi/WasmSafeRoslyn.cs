@@ -31,8 +31,10 @@ namespace Cdd.OpenApi
         public static IEnumerable<SyntaxNode> GetChildNodesSafe(this SyntaxNode node)
         {
             var children = node.ChildNodesAndTokens();
-            foreach(var child in children) {
-                if(child.IsNode) {
+            foreach (var child in children)
+            {
+                if (child.IsNode)
+                {
                     yield return child.AsNode()!;
                 }
             }
