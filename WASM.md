@@ -16,14 +16,14 @@ This enables `cdd-csharp` to be used in a unified CLI of all `cdd-*` projects wi
 
 ## Important Note on Stack Size
 
-When running `cdd-csharp.wasm` in a JavaScript engine (such as Node.js or a web browser), you may encounter a `Maximum call stack size exceeded` (or similar Stack Overflow) exception during startup or execution.
+When running `cdd-csharp.wasm` in a JavaScript engine (such as Node.js or a web browser), you may occasionally encounter a `Maximum call stack size exceeded` (or similar Stack Overflow) exception during startup or execution.
 
-This is a known behavior of the embedded `Microsoft.CodeAnalysis.CSharp` (Roslyn) compiler, which the CLI uses internally to parse and generate C# code. Roslyn's static initializers build deep syntax trees that exceed the default call stack limit of many JS engines (like V8, which defaults to ~1MB or 10,000 frames).
+This is a known behavior of the embedded `Microsoft.CodeAnalysis.CSharp` (Roslyn) compiler, which the CLI uses internally to parse and generate C# code. Specifically, the runtime uses deep recursion within WASM reflection, syntax tree analysis, and type instantiation inside Roslyn when loading standard libraries inside the WebAssembly VM, which exceed the default v8 call stack depth of ~10,000 frames. Note: Our custom code-generation relies entirely on `.NormalizeWhitespace().ToFullString()` now instead of hand-written formatters to help alleviate recursive pressure.
 
 **Workaround for Node.js:**
-Increase the stack size limit by passing the `--stack-size` flag when running Node.js:
+Increase the stack size limit significantly by passing the `--stack-size` flag when running Node.js (e.g. at least 100000):
 ```bash
-node --stack-size=10000 --experimental-wasi-unstable-preview1 your_wasi_script.js
+node --stack-size=100000 --experimental-wasi-unstable-preview1 your_wasi_script.mjs
 ```
 
 **Workaround for Browsers:**
