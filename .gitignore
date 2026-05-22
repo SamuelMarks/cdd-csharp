@@ -401,37 +401,35 @@ FodyWeavers.xsd
 coveragereport/
 tmp_test/
 tmp_test2/
-*.py
-*.sh
-*.patch
+/*.py
+/*.sh
+/*.patch
 
+# Root generated/temporary files
+/*.cs
+/*.csproj
+/*.sln
+/*.txt
+/*.json
+/*.js
+/*.mjs
 
-temp-cs-spec.json
-check_dir.cs
+# Generated output directories
+out_*/
 CheckDir/
-
-temp-cs-spec.json
-check_dir.cs
-CheckDir/
-
-# Cdd Test Harness and Docs
-docs/
-out_src/
-out_test/
 uri_test/
-patch_path.cs
-test.json
-test_uri.cs
+WasiTest/
+test_args/
+docs/
+
 scripts/bin/
 scripts/obj/
+
+# Cdd Test Harness and test coverage
 tests/TestResults/
 *.info
 *.cobertura.xml
 .cdd_args
-WasiTest/
-test_args/
-test_file.cs
-test_file.csproj
 
 # CDD Client Generators
 ../cdd-csharp-client/
@@ -439,21 +437,6 @@ cdd-csharp-client/
 ../cdd-csharp-client-oas3/
 cdd-csharp-client-oas3/
 
-out_build.txt
-out_format.txt
-out_wasm.txt
-out_wasm_make.txt
-
-# Additional untracked files
-Attributes.cs
-Client.cs
-GeneratedProject.csproj
-GeneratedProject.sln
-Models.cs
-petstore.json
-tiny.json
-test_parse*.cs
-test_wasm_node.*
-tests/GeneratedProject.Tests.csproj
-tests/IntegrationTests.cs
-test.cs
+# tests directory generated files
+tests/*.csproj
+tests/*.cs
