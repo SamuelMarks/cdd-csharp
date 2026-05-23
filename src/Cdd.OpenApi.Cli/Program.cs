@@ -89,7 +89,7 @@ namespace Cdd.OpenApi.Cli
                     if (args.Length < 3) return Error("Emit requires an output file path.");
                     if (!File.Exists(inputPath)) return Error($"Error: Input '{inputPath}' not found.");
                     var doc = new OpenApiParser().ParseJson(File.ReadAllText(inputPath));
-                    File.WriteAllText(args[2], new OpenApiEmitter().EmitJson(doc));
+                    File.WriteAllBytes(args[2], System.Text.Encoding.UTF8.GetBytes(new OpenApiEmitter().EmitJson(doc)));
                     Console.WriteLine($"Successfully emitted to '{args[2]}'.");
                     return 0;
                 }
@@ -341,7 +341,7 @@ namespace Cdd.OpenApi.Cli
 
             if (!string.IsNullOrEmpty(outputPath))
             {
-                File.WriteAllText(outputPath, outputJson);
+                File.WriteAllBytes(outputPath, System.Text.Encoding.UTF8.GetBytes(outputJson));
             }
             else
             {
@@ -365,7 +365,7 @@ namespace Cdd.OpenApi.Cli
             var codes = files.Select(f => File.ReadAllText(f));
             var doc = SpecGenerator.Generate(codes);
 
-            File.WriteAllText(outputPath, new OpenApiEmitter().EmitJson(doc));
+            File.WriteAllBytes(outputPath, System.Text.Encoding.UTF8.GetBytes(new OpenApiEmitter().EmitJson(doc)));
             Console.WriteLine($"Successfully generated spec at '{outputPath}'.");
             return 0;
         }

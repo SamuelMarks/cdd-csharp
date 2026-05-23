@@ -89,9 +89,9 @@ namespace Cdd.OpenApi
                     var dir = Path.GetDirectoryName(fullPath);
                     if (!string.IsNullOrEmpty(dir))
                     {
-                        try { Directory.CreateDirectory(dir); } catch { }
+                        if (!Directory.Exists(dir)) { try { Directory.CreateDirectory(dir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{dir}047", ex); } }
                     }
-                    File.WriteAllText(fullPath, code.Code);
+                    File.WriteAllBytes(fullPath, System.Text.Encoding.UTF8.GetBytes(code.Code));
                 }
             }
 
@@ -100,8 +100,8 @@ namespace Cdd.OpenApi
                 var ghDir = Path.Combine(outputDir, ".github", "workflows");
                 try
                 {
-                    Directory.CreateDirectory(ghDir);
-                    File.WriteAllText(Path.Combine(ghDir, "ci.yml"), "name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n");
+                    if (!Directory.Exists(ghDir)) { try { Directory.CreateDirectory(ghDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{ghDir}047", ex); } }
+                    File.WriteAllBytes(Path.Combine(ghDir, "ci.yml"), System.Text.Encoding.UTF8.GetBytes("name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n"));
                 }
                 catch { }
             }
@@ -125,7 +125,7 @@ namespace Cdd.OpenApi
                     description = System.Security.SecurityElement.Escape(description) ?? "Generated OpenApi SDK";
 
                     var readmeContent = $"# {title}\n\n{description}\n";
-                    File.WriteAllText(Path.Combine(outputDir, "README.md"), readmeContent);
+                    File.WriteAllBytes(Path.Combine(outputDir, "README.md"), System.Text.Encoding.UTF8.GetBytes(readmeContent));
 
                     var projContent = $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <PackageId>{title}</PackageId>\n    <Version>{version}</Version>\n    <Authors>{authors}</Authors>\n    <Description>{description}</Description>\n    <PackageReadmeFile>README.md</PackageReadmeFile>\n  </PropertyGroup>\n";
                     projContent += "  <ItemGroup>\n    <None Include=\"..\\..\\README.md\" Pack=\"true\" PackagePath=\"\\\" />\n  </ItemGroup>\n";
@@ -136,8 +136,8 @@ namespace Cdd.OpenApi
                     }
                     projContent += "</Project>";
                     var projectDir = Path.Combine(outputDir, "src", "GeneratedProject");
-                    Directory.CreateDirectory(projectDir);
-                    File.WriteAllText(Path.Combine(projectDir, "GeneratedProject.csproj"), projContent);
+                    if (!Directory.Exists(projectDir)) { try { Directory.CreateDirectory(projectDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{projectDir}047", ex); } }
+                    File.WriteAllBytes(Path.Combine(projectDir, "GeneratedProject.csproj"), System.Text.Encoding.UTF8.GetBytes(projContent));
 
                     if (type == GenerateType.Sdk || type == GenerateType.All)
                     {
@@ -147,7 +147,7 @@ namespace Cdd.OpenApi
                         if (config.CreateComposableTestsAndMocks)
                         {
                             var testsDir = Path.Combine(outputDir, "tests", "GeneratedProject.Tests");
-                            Directory.CreateDirectory(testsDir);
+                            if (!Directory.Exists(testsDir)) { try { Directory.CreateDirectory(testsDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{testsDir}047", ex); } }
 
                             var testProjContent = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -168,7 +168,7 @@ namespace Cdd.OpenApi
     <ProjectReference Include=""..\..\src\GeneratedProject\GeneratedProject.csproj"" />
   </ItemGroup>
 </Project>";
-                            File.WriteAllText(Path.Combine(testsDir, "GeneratedProject.Tests.csproj"), testProjContent);
+                            File.WriteAllBytes(Path.Combine(testsDir, "GeneratedProject.Tests.csproj"), System.Text.Encoding.UTF8.GetBytes(testProjContent));
 
                             slnContent = @"Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
@@ -196,7 +196,7 @@ EndGlobal";
                             slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
 
                             var integrationTestContent = lastDoc != null ? IntegrationTestGenerator.Generate(lastDoc) : "";
-                            File.WriteAllText(Path.Combine(testsDir, "IntegrationTests.cs"), integrationTestContent);
+                            File.WriteAllBytes(Path.Combine(testsDir, "IntegrationTests.cs"), System.Text.Encoding.UTF8.GetBytes(integrationTestContent));
                         }
                         else
                         {
@@ -219,7 +219,7 @@ EndGlobal";
                             slnContent = slnContent.Replace("{GUID1}", guid1);
                         }
 
-                        File.WriteAllText(Path.Combine(outputDir, "GeneratedProject.sln"), slnContent);
+                        File.WriteAllBytes(Path.Combine(outputDir, "GeneratedProject.sln"), System.Text.Encoding.UTF8.GetBytes(slnContent));
                     }
                 }
                 catch { }
