@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Version>0.0.1</Version>
-    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable Condition="'$(UseWasiSdk)' != 'true'">enable</Nullable>
     <Nullable Condition="'$(UseWasiSdk)' == 'true'">disable</Nullable>

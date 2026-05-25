@@ -18,7 +18,7 @@
     <AssemblyName>cdd-csharp</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cdd-csharp</ToolCommandName>
-    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable Condition="'$(UseWasiSdk)' != 'true'">enable</Nullable>
     <Nullable Condition="'$(UseWasiSdk)' == 'true'">disable</Nullable>
