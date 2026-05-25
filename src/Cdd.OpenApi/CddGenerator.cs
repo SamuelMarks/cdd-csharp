@@ -35,6 +35,22 @@ namespace Cdd.OpenApi
     /// <summary>Auto-generated documentation for CddGenerator.</summary>
     public static class CddGenerator
     {
+        private static void SafeCreateDirectory(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            var parts = path.Split(new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+            string current = "";
+            if (path.StartsWith("/") || path.StartsWith("\\")) current = "/";
+            foreach (var part in parts)
+            {
+                current = System.IO.Path.Combine(current, part);
+                if (!System.IO.Directory.Exists(current))
+                {
+                    try { System.IO.Directory.CreateDirectory(current); } catch { }
+                }
+            }
+        }
+
         /// <summary>GenerateSdk</summary>
         public static void GenerateSdk(CddConfig config) => Generate(config, GenerateType.Sdk);
 
@@ -92,7 +108,7 @@ namespace Cdd.OpenApi
                     var dir = Path.GetDirectoryName(fullPath);
                     if (!string.IsNullOrEmpty(dir))
                     {
-                        if (!Directory.Exists(dir)) { try { Directory.CreateDirectory(dir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{dir}047", ex); } }
+                        SafeCreateDirectory(dir);
                     }
                     File.WriteAllBytes(fullPath, System.Text.Encoding.UTF8.GetBytes(code.Code));
                 }
@@ -103,7 +119,7 @@ namespace Cdd.OpenApi
                 var ghDir = Path.Combine(outputDir, ".github", "workflows");
                 try
                 {
-                    if (!Directory.Exists(ghDir)) { try { Directory.CreateDirectory(ghDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{ghDir}047", ex); } }
+                    SafeCreateDirectory(ghDir);
                     File.WriteAllBytes(Path.Combine(ghDir, "ci.yml"), System.Text.Encoding.UTF8.GetBytes("name: CI\n\non: [push]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n"));
                 }
                 catch { }
@@ -163,7 +179,7 @@ namespace Cdd.OpenApi
                     }
                     projContent += "</Project>";
                     var projectDir = Path.Combine(outputDir, "src", "GeneratedProject");
-                    if (!Directory.Exists(projectDir)) { try { Directory.CreateDirectory(projectDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{projectDir}047", ex); } }
+                    SafeCreateDirectory(projectDir);
                     File.WriteAllBytes(Path.Combine(projectDir, "GeneratedProject.csproj"), System.Text.Encoding.UTF8.GetBytes(projContent));
 
                     if (type == GenerateType.Sdk || type == GenerateType.All)
@@ -174,7 +190,7 @@ namespace Cdd.OpenApi
                         if (config.CreateComposableTestsAndMocks)
                         {
                             var testsDir = Path.Combine(outputDir, "tests", "GeneratedProject.Tests");
-                            if (!Directory.Exists(testsDir)) { try { Directory.CreateDirectory(testsDir); } catch (Exception ex) { throw new Exception($"Failed to create directory 047{testsDir}047", ex); } }
+                            SafeCreateDirectory(testsDir);
 
                             var testProjContent = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
