@@ -71,7 +71,6 @@ namespace Cdd.OpenApi
                 {
                     sb.AppendLine();
                     indent--;
-                    if (indent < 0) indent = 0;
                     sb.Append(new string(' ', indent * 4));
                     sb.AppendLine("}");
                     sb.Append(new string(' ', indent * 4));

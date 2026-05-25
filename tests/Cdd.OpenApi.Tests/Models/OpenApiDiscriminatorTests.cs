@@ -83,5 +83,14 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.NotNull(result?.Discriminator);
             Assert.Equal("type", result.Discriminator.PropertyName);
         }
+
+        [Fact]
+        public void Discriminator_Deserialize_NullPropertyName()
+        {
+            var json = "{\"propertyName\": null}";
+            var result = JsonSerializer.Deserialize<OpenApiDiscriminator>(json);
+            Assert.NotNull(result);
+            Assert.Equal(string.Empty, result.PropertyName);
+        }
     }
 }

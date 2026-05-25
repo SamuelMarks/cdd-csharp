@@ -275,5 +275,326 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("AllowReserved", code);
             AssertHelper.ContainsNoWhitespace("application/json:integer", code);
         }
+        [Fact]
+        public void ToInterface_ExamplesParsing_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/ex"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "ExMethod",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Example = "10", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "p2", Example = "10.5", Schema = new OpenApiSchema { Type = "number" } },
+                            new OpenApiParameter { Name = "p3", Example = "invalid", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "p4", Example = "false", Schema = new OpenApiSchema { Type = "boolean" } },
+                            new OpenApiParameter { Name = "p5", Example = "true", Schema = new OpenApiSchema { Type = "boolean" } },
+                            new OpenApiParameter { Name = "p6", Example = null, Schema = new OpenApiSchema { Type = "string" } } // To hit the es == null branch but actually it will just not go into the if (p.Example != null) branch.
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IExApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("p1=10", code.Replace(" ", ""));
+            Assert.Contains("p2=10.5", code.Replace(" ", ""));
+            Assert.Contains("p4=false", code.Replace(" ", ""));
+            Assert.Contains("p5=true", code.Replace(" ", ""));
+        }
+
+        [Fact]
+        public void ToInterface_Emit_MissingBranches_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/missing-branches"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["400"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            },
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/xml"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        },
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "arrayNoItems",
+                                Schema = new OpenApiSchema { Type = "array", Items = null }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "arrayItemsNoRefNoType",
+                                Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "noTypeButItemsNoRef",
+                                Schema = new OpenApiSchema { Type = null, Items = new OpenApiSchema { Ref = null } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "noTypeItemsNull",
+                                Schema = new OpenApiSchema { Type = null, Items = null }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleNoSchema",
+                                Example = "foo",
+                                Schema = null
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleBoolFalse",
+                                Example = "false",
+                                Schema = new OpenApiSchema { Type = "boolean" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleDouble",
+                                Example = "1.5",
+                                Schema = new OpenApiSchema { Type = "number" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleEmpty",
+                                Examples = new Dictionary<string, OpenApiExample> { { "ex1", new OpenApiExample { Value = null } } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "explodeNoSchema",
+                                Explode = true,
+                                Schema = null
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "contentNoSchema",
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    { "application/json", new OpenApiMediaType { Schema = null } }
+                                }
+                            }
+                        }
+                    },
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "PostMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "array", Items = null }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyObj" } }
+                                }
+                            }
+                        }
+                    },
+                    Put = new OpenApiOperation
+                    {
+                        OperationId = "PutMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                                }
+                            }
+                        }
+                    },
+                    Delete = new OpenApiOperation
+                    {
+                        OperationId = "DeleteMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = null
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = null, Items = new OpenApiSchema { Ref = null } }
+                                }
+                            }
+                        }
+                    },
+                    Options = new OpenApiOperation
+                    {
+                        OperationId = "OptionsMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = null, Items = null }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = null, Items = null }
+                                }
+                            }
+                        },
+                        Callbacks = new Dictionary<string, OpenApiCallback>
+                        {
+                            ["cb1"] = new OpenApiCallback { ["exp1"] = new OpenApiPathItem { Post = new OpenApiOperation { Description = "PostDesc" } } },
+                            ["cb2"] = new OpenApiCallback { ["exp2"] = new OpenApiPathItem { Post = new OpenApiOperation(), Get = new OpenApiOperation { Description = "GetDesc" } } },
+                            ["cb3"] = new OpenApiCallback { ["exp3"] = new OpenApiPathItem { Post = null, Get = null } }
+                        }
+                    },
+                    Patch = new OpenApiOperation
+                    {
+                        OperationId = "PatchMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["400"] = new OpenApiResponse
+                            {
+                                Headers = new Dictionary<string, OpenApiHeader>
+                                {
+                                    ["X-Test-No-Schema"] = new OpenApiHeader
+                                    {
+                                        Content = new Dictionary<string, OpenApiMediaType>
+                                        {
+                                            ["application/json"] = new OpenApiMediaType { Schema = null }
+                                        }
+                                    }
+                                },
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IMissingBranchesApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("GetMissing", code);
+            Assert.Contains("PostMissing", code);
+            Assert.Contains("PutMissing", code);
+            Assert.Contains("DeleteMissing", code);
+            Assert.Contains("OptionsMissing", code);
+            Assert.Contains("PostDesc", code);
+            Assert.Contains("GetDesc", code);
+        }
+
+        [Fact]
+        public void ToInterface_EmptyCollections_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/empty"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "EmptyMethod",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "p1",
+                                Content = new Dictionary<string, OpenApiMediaType>(),
+                                Examples = new Dictionary<string, OpenApiExample>()
+                            }
+                        },
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Headers = new Dictionary<string, OpenApiHeader>
+                                {
+                                    ["X-Test"] = new OpenApiHeader
+                                    {
+                                        Examples = new Dictionary<string, OpenApiExample>(),
+                                        Content = new Dictionary<string, OpenApiMediaType>()
+                                    }
+                                }
+                            }
+                        },
+                        Servers = new List<OpenApiServer>
+                        {
+                            new OpenApiServer { Url = "http://empty", Description = null }
+                        },
+                        Callbacks = new Dictionary<string, OpenApiCallback>
+                        {
+                            ["emptyCb"] = new OpenApiCallback()
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IEmptyApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("EmptyMethod", code);
+        }
     }
 }

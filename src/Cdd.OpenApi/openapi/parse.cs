@@ -52,17 +52,24 @@ namespace Cdd.OpenApi.Parse
                                     var newParams = new System.Collections.Generic.List<OpenApiParameter>();
                                     foreach (var p in op.Parameters)
                                     {
-                                        if (p.In == "body" && p.Schema != null)
+                                        if (p.In == "body")
                                         {
-                                            op.RequestBody = new OpenApiRequestBody
+                                            if (p.Schema != null)
                                             {
-                                                Description = p.Description ?? "",
-                                                Required = p.Required,
-                                                Content = new System.Collections.Generic.Dictionary<string, OpenApiMediaType>
+                                                op.RequestBody = new OpenApiRequestBody
                                                 {
-                                                    ["application/json"] = new OpenApiMediaType { Schema = p.Schema }
-                                                }
-                                            };
+                                                    Description = p.Description ?? "",
+                                                    Required = p.Required,
+                                                    Content = new System.Collections.Generic.Dictionary<string, OpenApiMediaType>
+                                                    {
+                                                        ["application/json"] = new OpenApiMediaType { Schema = p.Schema }
+                                                    }
+                                                };
+                                            }
+                                            else
+                                            {
+                                                newParams.Add(p);
+                                            }
                                         }
                                         else if (p.In == "formData")
                                         {
@@ -87,9 +94,12 @@ namespace Cdd.OpenApi.Parse
                                         }
                                         else
                                         {
-                                            if (p.Schema == null && p.Type != null)
+                                            if (p.Schema == null)
                                             {
-                                                p.Schema = new OpenApiSchema { Type = p.Type, Format = p.Format, Items = p.Items };
+                                                if (p.Type != null)
+                                                {
+                                                    p.Schema = new OpenApiSchema { Type = p.Type, Format = p.Format, Items = p.Items };
+                                                }
                                             }
                                             newParams.Add(p);
                                         }

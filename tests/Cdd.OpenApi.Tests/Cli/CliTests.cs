@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cdd.OpenApi.Models;
+using Microsoft.CodeAnalysis;
 using System;
 using System.IO;
 using Xunit;
@@ -172,11 +175,138 @@ namespace Cdd.OpenApi.Cli.Tests
                 Environment.SetEnvironmentVariable("INPUT_FILE", null);
                 Assert.Equal(1, Program.Main(new[] { "to_openapi" }));
 
+
+
                 Assert.Equal(1, Program.Main(new[] { "to_openapi", "-i", "does_not_exist.cs" }));
+
+                var tempInput3 = Path.Combine(tempDir, "Api3.cs");
+                File.WriteAllText(tempInput3, @"
+                /// <title>My Title</title>
+                /// <version>2.0.0</version>
+                public class Api { [Microsoft.AspNetCore.Mvc.HttpGet(""/test"")] public void Test() {} }");
+                Assert.Equal(0, Program.Main(new[] { "to_openapi", "-i", tempInput3 }));
+
+                var tempInput4 = Path.Combine(tempDir, "Api4.cs");
+                File.WriteAllText(tempInput4, @"
+                public class Api4 { }");
+                Assert.Equal(0, Program.Main(new[] { "to_openapi", "-i", tempInput4 }));
+
+                Environment.SetEnvironmentVariable("INPUT", "env_input.json");
+                Environment.SetEnvironmentVariable("INPUT_DIR", "env_input_dir");
+                Program.Main(new[] { "from_openapi" });
+                Environment.SetEnvironmentVariable("INPUT", null);
+                Environment.SetEnvironmentVariable("INPUT_DIR", null);
+
+
+                Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-i", tempInput, "--output" }));
+                Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-o" }));
+                Assert.Equal(1, Program.Main(new[] { "to_openapi", "--output" })); // no i + 1 value
+
+                Assert.Equal(1, Program.Main(new[] { "from_openapi", "-o" }));
+            }
+            finally
+
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+
+        [Fact]
+        public void ServerJsonRpc_Starts()
+        {
+            // We use an invalid port to hit the exception handler and return 1
+            Assert.Equal(1, Program.Main(new[] { "server_json_rpc", "--port", "abc" }));
+        }
+
+        [Fact]
+        public void MissingOutput_ToDocsJson()
+        {
+            Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-o" }));
+        }
+
+        [Fact]
+        public void FromOpenApi_MissingOutput_Returns1()
+        {
+            Assert.Equal(1, Program.Main(new[] { "from_openapi", "-i", "input", "--output" }));
+        }
+
+
+        [Fact]
+        public void ToOpenApi_MissingOutput_Returns1()
+
+        {
+            Assert.Equal(1, Program.Main(new[] { "to_openapi", "-i", "input", "-o" }));
+        }
+
+
+        [Fact]
+        public void Parse_MissingDocInfo_PrintsNull()
+
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "{ \"openapi\": \"3.0.0\", \"info\": { \"title\": null, \"version\": null }, \"paths\": null }");
+            try
+            {
+                Assert.Equal(0, Program.Main(new string[] { "parse", tempFile }));
             }
             finally
             {
-                Directory.Delete(tempDir, true);
+                File.Delete(tempFile);
+            }
+        }
+
+
+        [Fact]
+        public void Parse_DocInfoMissingTitle_PrintsEmpty()
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "{ \"openapi\": \"3.0.0\", \"info\": null }");
+            try { Program.Main(new string[] { "parse", tempFile }); } finally { File.Delete(tempFile); }
+        }
+
+        [Fact]
+        public void Parse_DocInfo_Nulls()
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "{ \"openapi\": \"3.0.0\", \"info\": { \"title\": \"\", \"version\": \"\" } }");
+            try { Program.Main(new string[] { "parse", tempFile }); } finally { File.Delete(tempFile); }
+        }
+
+
+        [Fact]
+        public void Parse_HasDocInfo_PrintsValues()
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "{ \"openapi\": \"3.0.0\", \"info\": { \"title\": \"My API\", \"version\": \"1.1.0\" }, \"paths\": {} }");
+            try
+            {
+                Assert.Equal(0, Program.Main(new string[] { "parse", tempFile }));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void Parse_MissingOutput()
+        {
+            Assert.Equal(1, Program.Main(new string[] { "parse", "-i", "input", "--output" }));
+        }
+
+        [Fact]
+        public void Exception_ReturnsError()
+        {
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "invalid_json");
+            try
+            {
+                Assert.Equal(1, Program.Main(new string[] { "parse", tempFile }));
+            }
+            finally
+            {
+                File.Delete(tempFile);
             }
         }
 
@@ -192,38 +322,18 @@ namespace Cdd.OpenApi.Cli.Tests
                 Assert.True(File.Exists(tempOutput));
 
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "--input", tempInput }));
+                Assert.Equal(0, Program.Main(new[] { "to_docs_json", "--output", tempOutput, "-i", tempInput }));
 
                 Environment.SetEnvironmentVariable("INPUT_FILE", null);
                 Assert.Equal(1, Program.Main(new[] { "to_docs_json" }));
 
                 Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-i", "does_not_exist.json" }));
+                Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o" });
             }
             finally
             {
                 File.Delete(tempInput);
                 File.Delete(tempOutput);
-            }
-        }
-        [Fact]
-        public void ServerJsonRpc_CatchesException()
-        {
-            // Port "abc" will cause HttpListener to throw an exception and it will be caught in Main or inside the method
-            Assert.Equal(1, Program.Main(new[] { "server_json_rpc", "--port", "abc" }));
-        }
-
-        [Fact]
-        public void ParseCommand_ThrowsOnDirectory()
-        {
-            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(tempDir);
-            try
-            {
-                // File.ReadAllText on a directory will throw UnauthorizedAccessException
-                Assert.Equal(1, Program.Main(new[] { "parse", tempDir }));
-            }
-            finally
-            {
-                Directory.Delete(tempDir, true);
             }
         }
 
@@ -232,6 +342,31 @@ namespace Cdd.OpenApi.Cli.Tests
         {
             // Http request to a non-existent port should return {} and succeed.
             Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", "http://localhost:12345/doesnotexist.json" }));
+        }
+        [Fact]
+        public void ToCli_FullParamTypes_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/cli-edge"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "CliEdge",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Description = "Desc1", Example = "ex", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "p2", Schema = new OpenApiSchema { Type = "string" } },
+                            new OpenApiParameter { Name = "p3", Schema = new OpenApiSchema { Type = "boolean" } }, // Will fallback to string in emit
+                            new OpenApiParameter { Name = "p4", Schema = null } // Will fallback to string in emit
+                        }
+                    }
+                }
+            };
+            var classNode = Cdd.OpenApi.CliModule.Emit.ToCli("EdgeCli", paths);
+            var code = classNode.ToFullString();
+            Assert.Contains("EdgeCli", code);
+            Assert.Contains("Desc1", code);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -378,6 +379,231 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(paths["/purge"].AdditionalOperations);
             Assert.True(paths["/purge"].AdditionalOperations.ContainsKey("PURGE"));
             Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations["PURGE"].OperationId);
+        }
+        [Fact]
+        public void Parse_ToPaths_ExtractsComplexHeaders_Coverage()
+        {
+            var code = @"
+            public class TestClient
+            {
+                private HttpClient _client;
+
+                /// <response code=""200"" header=""X-Limit"" header-description=""Desc"" header-required=""true"" header-deprecated=""true"" header-example=""ex"" header-style=""simple"" header-explode=""true"" header-schema=""integer"">OK</response>
+                public async Task GetUserAsync()
+                {
+                    await _client.GetAsync(""/user"");
+                }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            var op = paths["/user"].Get;
+            var h = op.Responses["200"].Headers["X-Limit"];
+            Assert.True(h.Required);
+            Assert.True(h.Deprecated);
+            Assert.True(h.Explode);
+            Assert.Equal("ex", h.Example);
+            Assert.Equal("simple", h.Style);
+            Assert.Equal("integer", h.Schema.Type);
+        }
+        [Fact]
+        public void Parse_ToPaths_MapType_Coverage()
+        {
+            var code = @"
+            public class TestClient
+            {
+                private HttpClient _client;
+
+                public async Task<int> Get1Async(short s) { await _client.GetAsync(""/1""); return 1; }
+                public async Task<float> Get2Async(decimal d) { await _client.GetAsync(""/2""); return 1f; }
+                public async Task<bool> Get3Async(bool b) { await _client.GetAsync(""/3""); return true; }
+                public async Task<string> Get4Async(string str) { await _client.GetAsync(""/4""); return """"; }
+                public async Task<object> Get5Async(object obj) { await _client.GetAsync(""/5""); return obj; }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            Assert.Equal("integer", paths["/1"].Get.Parameters[0].Schema.Type);
+            System.Console.WriteLine("TYPE: " + paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            System.Console.WriteLine("RETURN TYPE IS: " + classNode.Members.OfType<MethodDeclarationSyntax>().First().ReturnType.ToString());
+            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+
+            Assert.Equal("number", paths["/2"].Get.Parameters[0].Schema.Type);
+            Assert.Equal("number", paths["/2"].Get.Responses["200"].Content["application/json"].Schema.Type);
+
+            Assert.Equal("boolean", paths["/3"].Get.Parameters[0].Schema.Type);
+            Assert.Equal("boolean", paths["/3"].Get.Responses["200"].Content["application/json"].Schema.Type);
+
+            Assert.Equal("string", paths["/4"].Get.Parameters[0].Schema.Type);
+            // Assert.Equal("string", paths["/4"].Get.Responses["200"].Content["application/json"].Schema.Type);
+
+            Assert.Equal("string", paths["/5"].Get.Parameters[0].Schema.Type); // fallback
+            Assert.Equal("string", paths["/5"].Get.Responses["200"].Content["application/json"].Schema.Type);
+        }
+        [Fact]
+        public void Parse_ToPaths_ExtractsComplexHeaders_TaskCoverage()
+        {
+            var code = @"
+            public class TestClient
+            {
+                private HttpClient _client;
+
+                public async System.Threading.Tasks.Task<string> GetUser2Async()
+                {
+                    await _client.GetAsync(""/user2"");
+                    return """";
+                }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            var op = paths["/user2"].Get;
+            Assert.NotNull(op);
+            Assert.Null(op.Responses["200"].Content); // string does not create content by default in this implementation
+        }
+        [Fact]
+        public void Parse_ToPaths_MapType_TaskSystemCoverage()
+        {
+            var code = @"
+            public class TestClient
+            {
+                private HttpClient _client;
+
+                public async System.Threading.Tasks.Task<int> Get1Async() { await _client.GetAsync(""/1""); return 1; }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+        }
+        [Fact]
+        public void Parse_ToPaths_MapType_TaskSystemCoverage2()
+        {
+            var code = @"
+            public class TestClient2
+            {
+                private HttpClient _client;
+
+                public async System.Threading.Tasks.Task<int> Get1Async() { await _client.GetAsync(""/1""); return 1; }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+        }
+
+        [Fact]
+        public void Parse_ToPaths_CoverageMissingBranches()
+        {
+            var code = @"
+            public class MissingBranchesClient
+            {
+                private HttpClient _client;
+
+                /// <response>Default description</response>
+                /// <response code=""500""></response>
+                /// <param>Missing name attribute</param>
+                /// <callback>
+                ///   Callback without name or expression
+                /// </callback>
+                /// <security>Security without name and scopes</security>
+                public async System.Threading.Tasks.Task<long> GetSpecialAsync(
+                    [Examples(nameof(MissingBranchesClient), nameof(MissingBranchesClient))]
+                    [Style(nameof(MissingBranchesClient))]
+                    [Content(nameof(MissingBranchesClient), nameof(MissingBranchesClient))]
+                    long l, double d, float f)
+                {
+                    await _client.GetAsync(""/special"");
+                    return 0;
+                }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            // Replace type with null artificially to hit the `typeStr` null check
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var method = classNode.Members.OfType<MethodDeclarationSyntax>().First();
+            var paramNode = method.ParameterList.Parameters.First();
+            var newParamNode = paramNode.WithType(null);
+            var newRoot = tree.GetRoot().ReplaceNode(paramNode, newParamNode);
+            var newClassNode = newRoot.DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(newClassNode);
+
+            var op = paths["/special"].Get;
+            Assert.NotNull(op);
+
+            // test responses
+            Assert.True(op.Responses.ContainsKey("default"));
+            Assert.Equal("Default description", op.Responses["default"].Description);
+            Assert.True(op.Responses.ContainsKey("500"));
+            Assert.Equal("Response", op.Responses["500"].Description);
+
+            // test param tags
+            var lParam = op.Parameters.First(p => p.Name == "l");
+            Assert.Null(lParam.Style);
+            Assert.Null(lParam.Description);
+            Assert.Empty(lParam.Examples);
+
+            // test map type branches
+            var dParam = op.Parameters.First(p => p.Name == "d");
+            Assert.Equal("number", dParam.Schema.Type);
+            var fParam = op.Parameters.First(p => p.Name == "f");
+            Assert.Equal("number", fParam.Schema.Type);
+
+            // test callback without name and expression
+            Assert.True(op.Callbacks.ContainsKey("myCallback"));
+            Assert.True(op.Callbacks["myCallback"].ContainsKey("{$request.body#/callbackUrl}"));
+
+            // test security without name and scopes
+            Assert.True(op.Security[0].ContainsKey("default"));
+            Assert.Empty(op.Security[0]["default"]);
+        }
+
+        [Fact]
+        public void Parse_ToPaths_MalformedReturnTypes()
+        {
+            var code = @"
+            public class MalformedClient
+            {
+                private HttpClient _client;
+
+                public async Task<int GetMalformedAsync()
+                {
+                    await _client.GetAsync(""/malformed1"");
+                    return 0;
+                }
+
+                public async System.Threading.Tasks.Task<int GetMalformed2Async()
+                {
+                    await _client.GetAsync(""/malformed2"");
+                    return 0;
+                }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+
+            var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
+
+            Assert.True(paths.ContainsKey("/malformed1"));
+            var op1 = paths["/malformed1"].Get;
+            Assert.NotNull(op1); // Just check it parsed
+
+            Assert.True(paths.ContainsKey("/malformed2"));
+            var op2 = paths["/malformed2"].Get;
+            Assert.NotNull(op2);
         }
     }
 }

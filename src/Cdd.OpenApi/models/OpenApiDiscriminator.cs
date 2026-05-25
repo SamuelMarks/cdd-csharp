@@ -44,7 +44,7 @@ namespace Cdd.OpenApi.Models
         {
             if (reader.TokenType == JsonTokenType.String)
             {
-                return new OpenApiDiscriminator { PropertyName = reader.GetString() ?? string.Empty };
+                return new OpenApiDiscriminator { PropertyName = reader.GetString()! };
             }
 
             if (reader.TokenType == JsonTokenType.StartObject)

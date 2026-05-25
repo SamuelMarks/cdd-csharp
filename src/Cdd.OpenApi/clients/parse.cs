@@ -68,28 +68,38 @@ namespace Cdd.OpenApi.Clients
                     routePath = string.Join("", parts);
                 }
 
-                if (!routePath.StartsWith("/")) routePath = "/" + routePath;
+                if (!routePath.StartsWith("/"))
+                {
+                    routePath = "/" + routePath;
+                }
 
                 var responses = new OpenApiResponses();
 
                 var defaultResponse = new OpenApiResponse { Description = "Success" };
                 var returnTypeStr = method.ReturnType.ToString();
-                if (returnTypeStr.StartsWith("Task<") && returnTypeStr.EndsWith(">"))
+                if (returnTypeStr.StartsWith("Task<"))
                 {
-                    returnTypeStr = returnTypeStr.Substring(5, returnTypeStr.Length - 6);
+                    if (returnTypeStr.EndsWith(">"))
+                    {
+                        returnTypeStr = returnTypeStr.Substring(5, returnTypeStr.Length - 6);
+                    }
                 }
-                else if (returnTypeStr.StartsWith("System.Threading.Tasks.Task<") && returnTypeStr.EndsWith(">"))
+                else if (returnTypeStr.StartsWith("System.Threading.Tasks.Task<"))
                 {
-                    returnTypeStr = returnTypeStr.Substring(28, returnTypeStr.Length - 29);
+                    if (returnTypeStr.EndsWith(">"))
+                    {
+                        returnTypeStr = returnTypeStr.Substring(28, returnTypeStr.Length - 29).Trim();
+                    }
                 }
 
-                if (returnTypeStr != "string" && returnTypeStr != "Task")
-                {
-                    defaultResponse.Content = new Dictionary<string, OpenApiMediaType>
+                if (returnTypeStr != "string")
+                    if (returnTypeStr != "Task")
+                    {
+                        defaultResponse.Content = new Dictionary<string, OpenApiMediaType>
                     {
                         { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = MapType(returnTypeStr) } } }
                     };
-                }
+                    }
 
                 var responseTags = Docstrings.Parse.GetTagsWithAttributes(method, "response");
                 bool has200 = false;
@@ -104,9 +114,20 @@ namespace Cdd.OpenApi.Clients
                     if (tag.Attributes.TryGetValue("header", out var hdr))
                     {
                         var headerObj = new OpenApiHeader { Description = tag.Attributes.TryGetValue("header-description", out var hd) ? hd : "Header " + hdr };
-                        if (tag.Attributes.TryGetValue("header-required", out var hr) && bool.TryParse(hr, out var hrb)) headerObj.Required = hrb;
-                        if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr) && bool.TryParse(hdpr, out var hdprb)) headerObj.Deprecated = hdprb;
-                        if (tag.Attributes.TryGetValue("header-example", out var he)) headerObj.Example = he;
+                        if (tag.Attributes.TryGetValue("header-required", out var hr))
+                            if (bool.TryParse(hr, out var hrb))
+                            {
+                                headerObj.Required = hrb;
+                            }
+                        if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr))
+                            if (bool.TryParse(hdpr, out var hdprb))
+                            {
+                                headerObj.Deprecated = hdprb;
+                            }
+                        if (tag.Attributes.TryGetValue("header-example", out var he))
+                        {
+                            headerObj.Example = he;
+                        }
 
                         if (tag.Attributes.TryGetValue("header-examples", out var hex))
                         {
@@ -118,10 +139,20 @@ namespace Cdd.OpenApi.Clients
                             }
                         }
 
-                        if (tag.Attributes.TryGetValue("header-style", out var hs)) headerObj.Style = hs;
-                        if (tag.Attributes.TryGetValue("header-explode", out var hexpl) && bool.TryParse(hexpl, out var hexplb)) headerObj.Explode = hexplb;
+                        if (tag.Attributes.TryGetValue("header-style", out var hs))
+                        {
+                            headerObj.Style = hs;
+                        }
+                        if (tag.Attributes.TryGetValue("header-explode", out var hexpl))
+                            if (bool.TryParse(hexpl, out var hexplb))
+                            {
+                                headerObj.Explode = hexplb;
+                            }
 
-                        if (tag.Attributes.TryGetValue("header-schema", out var hsch)) headerObj.Schema = new OpenApiSchema { Type = hsch };
+                        if (tag.Attributes.TryGetValue("header-schema", out var hsch))
+                        {
+                            headerObj.Schema = new OpenApiSchema { Type = hsch };
+                        }
 
                         if (tag.Attributes.TryGetValue("header-content", out var hcnt))
                         {
@@ -168,7 +199,7 @@ namespace Cdd.OpenApi.Clients
                         };
                     }
 
-                    if (code == "200" || code.StartsWith("2"))
+                    if (code.StartsWith("2"))
                     {
                         resp.Content = defaultResponse.Content;
                     }
@@ -234,7 +265,11 @@ namespace Cdd.OpenApi.Clients
                         exampleValue = param.Default.Value.ToString().Trim('"');
                     }
 
-                    if (isFromBody || ((httpMethod == "post" || httpMethod == "put" || httpMethod == "patch") && !routePath.Contains($"{{{paramName}}}")))
+                    bool isImplicitBody = false;
+                    if (httpMethod == "post" || httpMethod == "put" || httpMethod == "patch")
+                        if (!routePath.Contains($"{{{paramName}}}"))
+                            isImplicitBody = true;
+                    if (isFromBody || isImplicitBody)
 
                     {
                         operation.RequestBody = new OpenApiRequestBody
@@ -265,28 +300,31 @@ namespace Cdd.OpenApi.Clients
                         var styleAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Style");
 
                         var examplesAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Examples");
-                        if (examplesAttr != null && examplesAttr.ArgumentList != null)
-                        {
-                            paramObj.Examples = new Dictionary<string, OpenApiExample>();
-                            var args = examplesAttr.ArgumentList.Arguments;
-                            for (int i = 0; i < args.Count; i += 2)
+                        if (examplesAttr != null)
+                            if (examplesAttr.ArgumentList != null)
                             {
-                                if (i + 1 < args.Count)
+                                paramObj.Examples = new Dictionary<string, OpenApiExample>();
+                                var args = examplesAttr.ArgumentList.Arguments;
+                                for (int i = 0; i < args.Count; i += 2)
                                 {
-                                    var key = (args[i].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                                    var val = (args[i + 1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                                    if (key != null && val != null)
+                                    if (i + 1 < args.Count)
                                     {
-                                        paramObj.Examples[key] = new OpenApiExample { Value = val };
+                                        var key = (args[i].Expression as LiteralExpressionSyntax)?.Token.ValueText;
+                                        var val = (args[i + 1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
+                                        if (key != null)
+                                            if (val != null)
+                                            {
+                                                paramObj.Examples[key] = new OpenApiExample { Value = val };
+                                            }
                                     }
                                 }
                             }
-                        }
 
-                        if (styleAttr?.ArgumentList?.Arguments.Count > 0)
-                        {
-                            paramObj.Style = (styleAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                        }
+                        if (styleAttr?.ArgumentList != null)
+                            if (styleAttr.ArgumentList.Arguments.Count > 0)
+                            {
+                                paramObj.Style = (styleAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
+                            }
 
                         if (param.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.ToString() == "Explode"))
                             paramObj.Explode = true;
@@ -301,19 +339,21 @@ namespace Cdd.OpenApi.Clients
                             paramObj.Description = paramDoc.Text;
                         }
 
-                        var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content"); if (contentAttr?.ArgumentList?.Arguments.Count >= 2)
-                        {
-                            var mediaType = (contentAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            var schemaType = (contentAttr.ArgumentList.Arguments[1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            if (mediaType != null && schemaType != null)
+                        var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content"); if (contentAttr?.ArgumentList != null)
+                            if (contentAttr.ArgumentList.Arguments.Count >= 2)
                             {
-                                paramObj.Content = new Dictionary<string, OpenApiMediaType>
+                                var mediaType = (contentAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
+                                var schemaType = (contentAttr.ArgumentList.Arguments[1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
+                                if (mediaType != null)
+                                    if (schemaType != null)
+                                    {
+                                        paramObj.Content = new Dictionary<string, OpenApiMediaType>
                                 {
                                     { mediaType, new OpenApiMediaType { Schema = new OpenApiSchema { Type = schemaType } } }
                                 };
-                                paramObj.Schema = null;
+                                        paramObj.Schema = null;
+                                    }
                             }
-                        }
 
                         parameters.Add(paramObj);
                     }

@@ -28,9 +28,16 @@ namespace Cdd.OpenApi.Docstrings
 
         public static SyntaxTriviaList CreateTagWithAttributes(string tagName, IDictionary<string, string> attributes, string text)
         {
-            if (string.IsNullOrWhiteSpace(text) && (attributes == null || attributes.Count == 0)) return SyntaxFactory.TriviaList();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                if (attributes == null || attributes.Count == 0) return SyntaxFactory.TriviaList();
+            }
             var attrs = string.Join(" ", attributes.Select(kvp => $"{kvp.Key}=\"{kvp.Value}\""));
-            var openTag = string.IsNullOrWhiteSpace(attrs) ? $"<{tagName}>" : $"<{tagName} {attrs}>";
+            var openTag = $"<{tagName}>";
+            if (!string.IsNullOrWhiteSpace(attrs))
+            {
+                openTag = $"<{tagName} {attrs}>";
+            }
 
             var trivia = new List<SyntaxTrivia>();
             trivia.Add(SyntaxFactory.Comment($"/// {openTag}"));
@@ -61,7 +68,10 @@ namespace Cdd.OpenApi.Docstrings
 
         public static TNode WithTag<TNode>(TNode node, string tagName, string text) where TNode : SyntaxNode
         {
-            if (string.IsNullOrWhiteSpace(text)) return node;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return node;
+            }
             var tagTrivia = CreateTag(tagName, text);
             var existingTrivia = node.GetLeadingTrivia();
             return node.WithLeadingTrivia(tagTrivia.AddRange(existingTrivia));
@@ -69,7 +79,10 @@ namespace Cdd.OpenApi.Docstrings
 
         public static TNode WithTag<TNode>(TNode node, string tagName, IDictionary<string, string> attributes, string text) where TNode : SyntaxNode
         {
-            if (string.IsNullOrWhiteSpace(text) && (attributes == null || attributes.Count == 0)) return node;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                if (attributes == null || attributes.Count == 0) return node;
+            }
             var tagTrivia = CreateTagWithAttributes(tagName, attributes, text);
             var existingTrivia = node.GetLeadingTrivia();
             return node.WithLeadingTrivia(tagTrivia.AddRange(existingTrivia));

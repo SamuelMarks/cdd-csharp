@@ -265,9 +265,12 @@ namespace Cdd.OpenApi.Cli
                 {
                     inputPath = args[++i];
                 }
-                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
+                else if (args[i] == "-o" || args[i] == "--output")
                 {
-                    outputPath = args[++i];
+                    if (i + 1 < args.Length)
+                    {
+                        outputPath = args[++i];
+                    }
                 }
             }
 
@@ -306,9 +309,12 @@ namespace Cdd.OpenApi.Cli
                 {
                     inputPath = args[++i];
                 }
-                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
+                else if (args[i] == "-o" || args[i] == "--output")
                 {
-                    outputPath = args[++i];
+                    if (i + 1 < args.Length)
+                    {
+                        outputPath = args[++i];
+                    }
                 }
                 else if (args[i] == "--no-imports")
                 {

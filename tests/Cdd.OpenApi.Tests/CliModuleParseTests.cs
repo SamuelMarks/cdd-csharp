@@ -72,5 +72,40 @@ public class MyCli
             Assert.Equal("test", nameParam.Example);
             Assert.Null(nameParam.Description);
         }
+
+        [Fact]
+        public void ToPaths_HandlesNonStringCasesAndNoInitializer()
+        {
+            var code = @"
+public class MyCli
+{
+    public void Run(string command)
+    {
+        switch (command)
+        {
+            case ""post"":
+                int no_init; // Parameter without initializer
+                break;
+            case 123:
+                break;
+            case nameof(MyCli):
+                break;
+        }
+    }
+}
+";
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var root = tree.GetRoot();
+            var classNode = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+
+            var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
+
+            Assert.NotNull(paths);
+            Assert.True(paths.ContainsKey("/post"));
+            var postPath = paths["/post"];
+            var param = postPath.Parameters[0];
+            Assert.Equal("no-init", param.Name);
+            Assert.Null(param.Example);
+        }
     }
 }

@@ -194,5 +194,65 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.True(idProp.Discriminator?.Mapping?.ContainsKey("str"));
             Assert.Equal("123", idProp.Example);
         }
+        [Fact]
+        public void ToClass_EmptyDiscriminatorMapping_DoesNotEmitMapping()
+        {
+            var schema = new OpenApiSchema
+            {
+                Type = "object",
+                Discriminator = new OpenApiDiscriminator
+                {
+                    PropertyName = "petType",
+                    Mapping = new Dictionary<string, string>()
+                },
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["Id"] = new OpenApiSchema
+                    {
+                        Type = "integer",
+                        Discriminator = new OpenApiDiscriminator
+                        {
+                            PropertyName = "idType",
+                            Mapping = new Dictionary<string, string>()
+                        }
+                    }
+                }
+            };
+
+            var classNode = Cdd.OpenApi.Classes.Emit.ToClass("Pet", schema);
+            var code = classNode.ToFormattedString();
+            Assert.Contains("petType", code);
+            Assert.DoesNotContain("discriminator-mapping", code);
+        }
+        [Fact]
+        public void ToClass_NullDiscriminatorMapping_DoesNotEmitMapping()
+        {
+            var schema = new OpenApiSchema
+            {
+                Type = "object",
+                Discriminator = new OpenApiDiscriminator
+                {
+                    PropertyName = "petType",
+                    Mapping = null
+                },
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["Id"] = new OpenApiSchema
+                    {
+                        Type = "integer",
+                        Discriminator = new OpenApiDiscriminator
+                        {
+                            PropertyName = "idType",
+                            Mapping = null
+                        }
+                    }
+                }
+            };
+
+            var classNode = Cdd.OpenApi.Classes.Emit.ToClass("Pet", schema);
+            var code = classNode.ToFormattedString();
+            Assert.Contains("petType", code);
+            Assert.DoesNotContain("discriminator-mapping", code);
+        }
     }
 }

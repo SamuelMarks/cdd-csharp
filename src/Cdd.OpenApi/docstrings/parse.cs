@@ -132,7 +132,10 @@ namespace Cdd.OpenApi.Docstrings
                         .Where(t => !string.IsNullOrEmpty(t));
 
                     var varDesc = string.Join(" ", varTextLines);
-                    if (string.IsNullOrEmpty(varDesc)) varDesc = varAttrs.TryGetValue("description", out var vd) ? vd : null;
+                    if (string.IsNullOrEmpty(varDesc))
+                    {
+                        varDesc = varAttrs.TryGetValue("description", out var vd) ? vd : null;
+                    }
 
                     var enums = new List<string>();
                     foreach (var enumElem in enumElements)

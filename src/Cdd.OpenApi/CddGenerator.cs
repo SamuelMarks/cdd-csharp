@@ -54,9 +54,12 @@ namespace Cdd.OpenApi
             {
                 inputPaths.Add(config.InputPath);
             }
-            if (config.InputPaths != null && config.InputPaths.Any())
+            if (config.InputPaths != null)
             {
-                inputPaths.AddRange(config.InputPaths);
+                if (config.InputPaths.Any())
+                {
+                    inputPaths.AddRange(config.InputPaths);
+                }
             }
 
             if (!string.IsNullOrEmpty(config.InputDir) && Directory.Exists(config.InputDir))
@@ -110,19 +113,43 @@ namespace Cdd.OpenApi
             {
                 try
                 {
-                    var title = lastDoc?.Info?.Title ?? "GeneratedProject";
-                    if (string.IsNullOrWhiteSpace(title)) title = "GeneratedProject";
-                    var version = lastDoc?.Info?.Version ?? "1.0.0";
-                    if (string.IsNullOrWhiteSpace(version)) version = "1.0.0";
-                    var authors = lastDoc?.Info?.Contact?.Name ?? "Generated";
-                    if (string.IsNullOrWhiteSpace(authors)) authors = "Generated";
-                    var description = lastDoc?.Info?.Description ?? "Generated OpenApi SDK";
-                    if (string.IsNullOrWhiteSpace(description)) description = "Generated OpenApi SDK";
+                    var title = "GeneratedProject";
+                    if (lastDoc.Info != null)
+                    {
+                        if (lastDoc.Info.Title != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Title)) title = lastDoc.Info.Title;
+                        }
+                    }
+                    var version = "1.0.0";
+                    if (lastDoc.Info != null)
+                    {
+                        if (lastDoc.Info.Version != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Version)) version = lastDoc.Info.Version;
+                        }
+                    }
+                    var authors = "Generated";
+                    if (lastDoc.Info.Contact != null)
+                    {
+                        if (lastDoc.Info.Contact.Name != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Contact.Name)) authors = lastDoc.Info.Contact.Name;
+                        }
+                    }
+                    var description = "Generated OpenApi SDK";
+                    if (lastDoc.Info != null)
+                    {
+                        if (lastDoc.Info.Description != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Description)) description = lastDoc.Info.Description;
+                        }
+                    }
                     // Escape XML characters just in case
-                    title = System.Security.SecurityElement.Escape(title) ?? "GeneratedProject";
-                    version = System.Security.SecurityElement.Escape(version) ?? "1.0.0";
-                    authors = System.Security.SecurityElement.Escape(authors) ?? "Generated";
-                    description = System.Security.SecurityElement.Escape(description) ?? "Generated OpenApi SDK";
+                    title = System.Security.SecurityElement.Escape(title)!;
+                    version = System.Security.SecurityElement.Escape(version)!;
+                    authors = System.Security.SecurityElement.Escape(authors)!;
+                    description = System.Security.SecurityElement.Escape(description)!;
 
                     var readmeContent = $"# {title}\n\n{description}\n";
                     File.WriteAllBytes(Path.Combine(outputDir, "README.md"), System.Text.Encoding.UTF8.GetBytes(readmeContent));
@@ -195,7 +222,8 @@ EndGlobal";
                             var guid2 = Guid.NewGuid().ToString().ToUpper();
                             slnContent = slnContent.Replace("{GUID1}", guid1).Replace("{GUID2}", guid2);
 
-                            var integrationTestContent = lastDoc != null ? IntegrationTestGenerator.Generate(lastDoc) : "";
+                            var integrationTestContent = "";
+                            if (lastDoc != null) integrationTestContent = IntegrationTestGenerator.Generate(lastDoc);
                             File.WriteAllBytes(Path.Combine(testsDir, "IntegrationTests.cs"), System.Text.Encoding.UTF8.GetBytes(integrationTestContent));
                         }
                         else

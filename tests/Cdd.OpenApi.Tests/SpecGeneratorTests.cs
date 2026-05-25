@@ -267,16 +267,145 @@ namespace Cdd.OpenApi.Tests
         public void Generate_ClientMethods_ReturnsPaths()
         {
             var code = @"
-            public class MyClient
+            public class MyClient1
             {
                 public async Task DoSomething()
                 {
                     await this.client.GetAsync(""test"");
+                    await this.client.PatchAsync(""test""); // ends with Async, doesn't start with Get/Post/Put/Delete
+                    await this.client.GetSomething(""test""); // starts with Get, doesn't end with Async
+                    DoLocalAsync(); // not a member access
                 }
             }
             ";
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+        }
+
+
+        [Fact]
+        public void Generate_ClientMethods_OtherMethod()
+        {
+            var code = @"
+            public class MyClient
+            {
+                public async Task DoSomething()
+                {
+                    await GetAsync(""test""); // no member access
+                    await this.client.OtherAsync(""test"");
+                    await this.client.GetMethod(""test"");
+                }
+            }
+            ";
+            var doc = SpecGenerator.Generate(new[] { code });
+            Assert.NotNull(doc);
+        }
+
+
+        [Fact]
+        public void Generate_SecurityTags_ScopeNoColon2()
+        {
+            var code = @"
+            /// <security-name>OAuth2</security-name>
+            /// <security-type>oauth2</security-type>
+            /// <oauth-flow>clientCredentials</oauth-flow>
+            /// <oauth-scopes>read:pets:Read pets</oauth-scopes>
+            public class Program2
+            {
+                [Authorize]
+                [HttpGet]
+                public void Method() {}
+            }
+            ";
+
+            var doc = SpecGenerator.Generate(new[] { code });
+            var scheme = doc.Components.SecuritySchemes["OAuth2"];
+            Assert.Equal("Read pets", scheme.Flows.ClientCredentials.Scopes["read:pets"]);
+        }
+
+
+
+        [Fact]
+        public void Generate_EmptySecuritySchemes()
+        {
+            var code = @"
+            using Microsoft.AspNetCore.Mvc;
+            public class EmptyController
+            {
+                [HttpGet]
+                public void Empty() {}
+            }
+            ";
+            var doc = SpecGenerator.Generate(new[] { code });
+            Assert.NotNull(doc);
+        }
+
+        [Fact]
+        public void Generate_SecurityTags_ScopeNoColon3()
+        {
+            var code = @"
+            /// <security-name>OAuth2</security-name>
+            /// <security-type>oauth2</security-type>
+            /// <oauth-flow>clientCredentials</oauth-flow>
+            /// <oauth-scopes>admin:admin</oauth-scopes>
+            public class Program3
+            {
+                [Authorize]
+                [HttpGet]
+                public void Method() {}
+            }
+            ";
+
+            var doc = SpecGenerator.Generate(new[] { code });
+            var scheme = doc.Components.SecuritySchemes["OAuth2"];
+            Assert.Equal("admin", scheme.Flows.ClientCredentials.Scopes["admin"]);
+        }
+
+
+        [Fact]
+        public void Generate_EmptyComponents_SetsToNull()
+        {
+            var code = @"
+            using Microsoft.AspNetCore.Mvc;
+            public class MyController
+            {
+                [HttpGet]
+                public void Empty() {}
+            }
+            ";
+            var doc = SpecGenerator.Generate(new[] { code });
+            Assert.Null(doc.Components);
+        }
+
+        [Fact]
+        public void Generate_EmptyDoc_RemovesEmptyCollections()
+        {
+            var code = @"";
+            var doc = SpecGenerator.Generate(new[] { code });
+            Assert.NotNull(doc);
+            Assert.Null(doc.Paths);
+            Assert.Null(doc.Components);
+        }
+
+        [Fact]
+        public void Generate_SecurityTags_ScopeNoColon()
+        {
+            var code = @"
+            /// <security-name>OAuth2</security-name>
+            /// <security-type>oauth2</security-type>
+            /// <oauth-flow>clientCredentials</oauth-flow>
+            /// <oauth-scopes>admin</oauth-scopes>
+            public class Program
+            {
+                [Authorize]
+                [HttpGet]
+                public void Method() {}
+            }
+            ";
+
+            var doc = SpecGenerator.Generate(new[] { code });
+            var scheme = doc.Components.SecuritySchemes["OAuth2"];
+            Assert.Equal("Access to admin", scheme.Flows.ClientCredentials.Scopes["admin"]);
         }
     }
 }

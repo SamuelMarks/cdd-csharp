@@ -172,10 +172,13 @@ namespace Cdd.OpenApi
                                             // Handle case where scope might be like `read:pets:Read pets` meaning key="read:pets" and val="Read pets"
                                             // We will assume the last colon is the separator if there are multiple.
                                             var lastIdx = s.LastIndexOf(':');
-                                            if (lastIdx > 0 && lastIdx != idx)
+                                            if (lastIdx > 0)
                                             {
-                                                key = s.Substring(0, lastIdx).Trim();
-                                                val = s.Substring(lastIdx + 1).Trim();
+                                                if (lastIdx != idx)
+                                                {
+                                                    key = s.Substring(0, lastIdx).Trim();
+                                                    val = s.Substring(lastIdx + 1).Trim();
+                                                }
                                             }
                                             flow.Scopes[key] = val;
                                         }
@@ -258,9 +261,13 @@ namespace Cdd.OpenApi
             if (!doc.Paths!.Any()) doc.Paths = null;
             if (doc.Components != null)
             {
-                if (doc.Components.Schemas != null && !doc.Components.Schemas.Any()) doc.Components.Schemas = null;
-                if (doc.Components.SecuritySchemes != null && !doc.Components.SecuritySchemes.Any()) doc.Components.SecuritySchemes = null;
-
+                if (doc.Components.Schemas != null)
+                {
+                    if (!doc.Components.Schemas.Any())
+                    {
+                        doc.Components.Schemas = null;
+                    }
+                }
                 if (doc.Components.Schemas == null && doc.Components.SecuritySchemes == null)
                 {
                     doc.Components = null;

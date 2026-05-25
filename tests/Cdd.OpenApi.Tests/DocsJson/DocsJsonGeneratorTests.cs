@@ -194,5 +194,36 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(parsed);
             Assert.Empty(parsed[0].Operations);
         }
+        [Fact]
+        public void Generate_ParametersWithNullOrEmptyName_AreIgnored()
+        {
+            var doc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    {
+                        "/test",
+                        new OpenApiPathItem
+                        {
+                            Get = new OpenApiOperation
+                            {
+                                OperationId = "testEmptyParam",
+                                Parameters = new List<OpenApiParameter>
+                                {
+                                    null,
+                                    new OpenApiParameter { Name = "" },
+                                    new OpenApiParameter { Name = "validParam", Schema = new OpenApiSchema { Type = "string" } }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            var jsonStr = DocsJsonGenerator.Generate(doc, false, false);
+            var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
+            var snippet = parsed[0].Operations[0].Code.Snippet;
+            Assert.Contains("string validParam = \"example\";", snippet);
+            Assert.DoesNotContain("null validParam", snippet);
+        }
     }
 }

@@ -75,7 +75,8 @@ namespace Cdd.OpenApi.CliModule
 
                             helpStr += $" System.Console.WriteLine(\"  --{p.Name.ToLower()} <{p.Schema?.Type ?? "string"}> : {p.Description ?? "No description"}{exampleStr}\");";
 
-                            string varType = p.Schema?.Type == "integer" ? "int" : "string";
+                            string varType = "string";
+                            if (p.Schema != null && p.Schema.Type == "integer") varType = "int";
                             string varName = p.Name.Replace("-", "_");
                             caseStatements = caseStatements.Add(SyntaxFactory.ParseStatement($"{varType} {varName} = default;"));
                         }
@@ -83,7 +84,8 @@ namespace Cdd.OpenApi.CliModule
                         var loopCode = "for (int i = cmdIndex + 1; i < args.Length; i++) { ";
                         foreach (var p in op.Parameters)
                         {
-                            string varType = p.Schema?.Type == "integer" ? "int" : "string";
+                            string varType = "string";
+                            if (p.Schema != null && p.Schema.Type == "integer") varType = "int";
                             string varName = p.Name.Replace("-", "_");
                             string flagName = $"--{p.Name.ToLower()}";
                             if (varType == "int")

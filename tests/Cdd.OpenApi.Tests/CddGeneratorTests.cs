@@ -183,5 +183,107 @@ namespace Cdd.OpenApi.Tests
                 File.Delete(tempFile);
             }
         }
+
+
+        [Fact]
+        public void Generate_CodeGenerator_Branches()
+        {
+            CodeGenerator.Generate(new Cdd.OpenApi.Models.OpenApiDocument());
+        }
+
+
+        [Fact]
+        public void Test_CddGenerator_GenerateAll_NoInfo()
+        {
+            var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            System.IO.Directory.CreateDirectory(tempDir);
+            try
+            {
+                var inputPath = System.IO.Path.Combine(tempDir, "spec.json");
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""paths"": {} }");
+
+                var config = new CddConfig { InputPath = inputPath, OutputDir = tempDir, CreateComposableTestsAndMocks = true };
+                CddGenerator.GenerateAll(config);
+            }
+            finally
+            {
+                System.IO.Directory.Delete(tempDir, true);
+            }
+        }
+
+
+
+        [Fact]
+        public void Test_CddGenerator_SafeCreateDirectory_EmptyPath()
+        {
+            var config = new CddConfig { OutputDir = "/", InputPaths = new System.Collections.Generic.List<string> { "spec.json" }, NoGithubActions = true, NoInstallablePackage = true };
+            Assert.Throws<System.IO.FileNotFoundException>(() => CddGenerator.GenerateAll(config));
+        }
+
+
+        [Fact]
+        public void Test_CddGenerator_EmptyInputPaths()
+        {
+            var config = new CddConfig { InputPaths = new System.Collections.Generic.List<string>() };
+            Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config));
+        }
+
+        [Fact]
+        public void Test_CddGenerator_GenerateAll_EmptyInputPaths()
+        {
+            var config = new CddConfig { InputPaths = new System.Collections.Generic.List<string>() };
+            Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config));
+        }
+
+        [Fact]
+        public void Test_CddGenerator_GenerateServer_Branch()
+        {
+            var config = new CddConfig { OutputDir = "something", InputPaths = new System.Collections.Generic.List<string> { "spec.json" }, CreateComposableTestsAndMocks = false };
+            Assert.Throws<System.IO.FileNotFoundException>(() => CddGenerator.GenerateServer(config));
+        }
+
+        [Fact]
+        public void Test_CddGenerator_NullDocInfo()
+        {
+            var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            System.IO.Directory.CreateDirectory(tempDir);
+            try
+            {
+                var inputPath = System.IO.Path.Combine(tempDir, "spec.json");
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""paths"": {} }");
+
+                var config = new CddConfig { InputPath = inputPath, OutputDir = tempDir };
+                CddGenerator.GenerateAll(config);
+
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""info"": { ""title"": ""Title"" }, ""paths"": {} }");
+                CddGenerator.GenerateAll(config);
+
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""info"": { ""contact"": { ""name"": ""Name"" } }, ""paths"": {} }");
+                CddGenerator.GenerateAll(config);
+
+
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""info"": { ""title"": """", ""description"": ""   "", ""version"": """", ""contact"": { ""name"": ""   "" } }, ""paths"": {} }");
+                CddGenerator.GenerateAll(config);
+
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""paths"": {} }");
+                CddGenerator.GenerateAll(config);
+
+
+
+
+
+
+                System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""info"": { ""title"": ""<script>"", ""description"": ""<script>"", ""version"": ""<script>"", ""contact"": { ""name"": ""Name <script>"" } }, ""paths"": {} }");
+                CddGenerator.GenerateAll(config);
+
+
+                var config2 = new CddConfig { InputPaths = new System.Collections.Generic.List<string>() };
+                try { CddGenerator.GenerateAll(config2); } catch { }
+            }
+            finally
+            {
+                System.IO.Directory.Delete(tempDir, true);
+            }
+        }
     }
 }

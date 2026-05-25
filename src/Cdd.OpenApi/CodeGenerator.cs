@@ -33,12 +33,33 @@ namespace Cdd.OpenApi
     {
         private static TNode AddDocTags<TNode>(TNode node, OpenApiDocument doc) where TNode : SyntaxNode
         {
-            if (doc == null) return node;
 
-            if (!string.IsNullOrEmpty(doc.Self)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "self", doc.Self);
-            if (!string.IsNullOrEmpty(doc.JsonSchemaDialect)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "jsonSchemaDialect", doc.JsonSchemaDialect);
-            if (!string.IsNullOrEmpty(doc.Info?.TermsOfService)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "termsOfService", doc.Info.TermsOfService);
-            if (!string.IsNullOrEmpty(doc.Info?.License?.Identifier)) node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "license-identifier", doc.Info.License.Identifier);
+
+            if (!string.IsNullOrEmpty(doc.Self))
+            {
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "self", doc.Self);
+            }
+            if (!string.IsNullOrEmpty(doc.JsonSchemaDialect))
+            {
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "jsonSchemaDialect", doc.JsonSchemaDialect);
+            }
+            if (doc.Info != null)
+            {
+                if (!string.IsNullOrEmpty(doc.Info.TermsOfService))
+                {
+                    node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "termsOfService", doc.Info.TermsOfService);
+                }
+            }
+            if (doc.Info != null)
+            {
+                if (doc.Info.License != null)
+                {
+                    if (!string.IsNullOrEmpty(doc.Info.License.Identifier))
+                    {
+                        node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "license-identifier", doc.Info.License.Identifier);
+                    }
+                }
+            }
 
             return node;
         }
@@ -47,6 +68,7 @@ namespace Cdd.OpenApi
         public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false)
         {
             var results = new List<GeneratedCode>();
+            if (doc == null) return results;
 
             if (doc.Components?.Schemas != null)
             {

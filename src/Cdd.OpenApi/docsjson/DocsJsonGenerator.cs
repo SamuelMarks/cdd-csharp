@@ -99,7 +99,8 @@ namespace Cdd.OpenApi.DocsJson
                         {
                             foreach (var param in operation.Parameters)
                             {
-                                if (param == null || string.IsNullOrEmpty(param.Name)) continue;
+                                if (param == null) continue;
+                                if (string.IsNullOrEmpty(param.Name)) continue;
                                 var pName = param.Name;
                                 var pType = MapTypeToCSharp(param.Schema?.Type);
                                 var pValue = GetDefaultValueForType(pType);

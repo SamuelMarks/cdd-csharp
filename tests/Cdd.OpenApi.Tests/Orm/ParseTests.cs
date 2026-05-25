@@ -17,6 +17,8 @@ namespace Cdd.OpenApi.Tests.Orm
                 /// <summary>Represents a User</summary>
                 public DbSet<User> Users { get; set; }
                 public DbSet<Order> Orders { get; set; }
+                public string OtherProp { get; set; }
+                public DbSet<BrokenProp Broken { get; set; }
             }";
 
             var tree = CSharpSyntaxTree.ParseText(code);

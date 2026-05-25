@@ -84,5 +84,53 @@ namespace Cdd.OpenApi.Tests.Classes
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Equal("object", schema.Properties!["Data"].Type);
         }
+        [Fact]
+        public void MapType_MissingCases()
+        {
+            var code = @"
+            public class NumberContainer
+            {
+                public long L { get; set; }
+                public short S { get; set; }
+                public float F { get; set; }
+                public double D { get; set; }
+                public decimal Dec { get; set; }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
+
+            Assert.Equal("integer", schema.Properties!["L"].Type);
+            Assert.Equal("integer", schema.Properties!["S"].Type);
+            Assert.Equal("number", schema.Properties!["F"].Type);
+            Assert.Equal("number", schema.Properties!["D"].Type);
+            Assert.Equal("number", schema.Properties!["Dec"].Type);
+        }
+
+        [Fact]
+        public void ToSchema_PartialXml_EvaluatesToNullForMissing()
+        {
+            var code = @"
+            /// <xml-name>PetNode</xml-name>
+            public class PetXml
+            {
+                /// <xml-name>IdNode</xml-name>
+                public int Id { get; set; }
+            }";
+
+            var tree = CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
+            var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
+
+            Assert.Equal("PetNode", schema.Xml!.Name);
+            Assert.Null(schema.Xml.Attribute);
+            Assert.Null(schema.Xml.Wrapped);
+
+            var idProp = schema.Properties!["Id"];
+            Assert.Equal("IdNode", idProp.Xml!.Name);
+            Assert.Null(idProp.Xml.Attribute);
+            Assert.Null(idProp.Xml.Wrapped);
+        }
     }
 }

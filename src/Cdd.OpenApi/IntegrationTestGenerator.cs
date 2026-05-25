@@ -116,15 +116,21 @@ namespace Cdd.OpenApi
                                 if (p.Schema?.Type == "integer") dummyValue = "1";
                                 else if (p.Schema?.Type == "number") dummyValue = "123.45";
                                 else if (p.Schema?.Type == "boolean") dummyValue = "true";
-                                else if (p.Schema?.Type == "array" && p.Schema?.Items?.Ref != null)
+                                else if (p.Schema?.Type == "array")
                                 {
-                                    var refName = p.Schema.Items.Ref.Split('/').Last();
-                                    dummyValue = $"new List<{refName}>()";
-                                }
-                                else if (p.Schema?.Type == "array" && p.Schema?.Items?.Type != null)
-                                {
-                                    var itemType = p.Schema.Items.Type == "integer" ? "int" : (p.Schema.Items.Type == "number" ? "double" : (p.Schema.Items.Type == "boolean" ? "bool" : "string"));
-                                    dummyValue = $"new List<{itemType}>()";
+                                    if (p.Schema.Items != null)
+                                    {
+                                        if (p.Schema.Items.Ref != null)
+                                        {
+                                            var refName = p.Schema.Items.Ref.Split('/').Last();
+                                            dummyValue = $"new List<{refName}>()";
+                                        }
+                                        else if (p.Schema.Items.Type != null)
+                                        {
+                                            var itemType = p.Schema.Items.Type == "integer" ? "int" : (p.Schema.Items.Type == "number" ? "double" : (p.Schema.Items.Type == "boolean" ? "bool" : "string"));
+                                            dummyValue = $"new List<{itemType}>()";
+                                        }
+                                    }
                                 }
                                 else if (p.Schema?.Ref != null)
                                 {
@@ -150,15 +156,21 @@ namespace Cdd.OpenApi
                                 else if (schema.Type == "integer") dummyValue = "1";
                                 else if (schema.Type == "number") dummyValue = "123.45";
                                 else if (schema.Type == "boolean") dummyValue = "true";
-                                else if (schema.Type == "array" && schema.Items?.Ref != null)
+                                else if (schema.Type == "array")
                                 {
-                                    var refName = schema.Items.Ref.Split('/').Last();
-                                    dummyValue = $"new List<{refName}>()";
-                                }
-                                else if (schema.Type == "array" && schema.Items?.Type != null)
-                                {
-                                    var itemType = schema.Items.Type == "integer" ? "int" : (schema.Items.Type == "number" ? "double" : (schema.Items.Type == "boolean" ? "bool" : "string"));
-                                    dummyValue = $"new List<{itemType}>()";
+                                    if (schema.Items != null)
+                                    {
+                                        if (schema.Items.Ref != null)
+                                        {
+                                            var refName = schema.Items.Ref.Split('/').Last();
+                                            dummyValue = $"new List<{refName}>()";
+                                        }
+                                        else if (schema.Items.Type != null)
+                                        {
+                                            var itemType = schema.Items.Type == "integer" ? "int" : (schema.Items.Type == "number" ? "double" : (schema.Items.Type == "boolean" ? "bool" : "string"));
+                                            dummyValue = $"new List<{itemType}>()";
+                                        }
+                                    }
                                 }
                             }
                             args.Add(dummyValue);

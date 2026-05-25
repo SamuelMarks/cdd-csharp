@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 using Cdd.OpenApi.Docstrings;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Docstrings
 {
@@ -126,6 +127,83 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Equal("desc2", servers.ElementAt(1).Description);
             Assert.Equal("s3", servers.ElementAt(2).Url);
             Assert.Single(servers.ElementAt(2).Variables);
+        }
+
+        [Fact]
+        public void Emit_WithTag_NullOrEmptyText_ReturnsNode()
+        {
+            var classNode = SyntaxFactory.ClassDeclaration("TestClass");
+            var classWithDocs = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null);
+            Assert.Same(classNode, classWithDocs);
+        }
+
+        [Fact]
+        public void Emit_WithTagWithAttributes_NullOrEmptyTextAndNoAttributes_ReturnsNode()
+        {
+            var classNode = SyntaxFactory.ClassDeclaration("TestClass");
+
+            // Null text, null attributes
+            var result1 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null, null);
+            Assert.Same(classNode, result1);
+
+            // Null text, empty attributes
+            var emptyAttrs = new Dictionary<string, string>();
+            var result2 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", emptyAttrs, null);
+            Assert.Same(classNode, result2);
+        }
+
+        [Fact]
+        public void Emit_WithTagWithAttributes_NullOrEmptyTextWithAttributes_AddsTag()
+        {
+            var classNode = SyntaxFactory.ClassDeclaration("TestClass");
+
+            var attrs = new Dictionary<string, string> { { "a", "b" } };
+            var result = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", attrs, null);
+
+            var code = result.ToFullString();
+            Assert.Contains("<mytag a=\"b\">", code);
+            Assert.Contains("</mytag>", code);
+        }
+
+        [Fact]
+        public void Emit_CreateTagWithAttributes_NullOrEmptyTextAndNoAttributes_ReturnsEmpty()
+        {
+            var result1 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", null, null);
+            Assert.Empty(result1);
+
+            var emptyAttrs = new Dictionary<string, string>();
+            var result2 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", emptyAttrs, null);
+            Assert.Empty(result2);
+
+            var validAttrs = new Dictionary<string, string> { { "a", "b" } };
+            var result3 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", validAttrs, null);
+            Assert.NotEmpty(result3);
+        }
+        [Fact]
+        public void Parse_GetServers_EdgeCases()
+        {
+            var code = @"
+            /// <server>Default server</server>
+            /// <server url=""""><variable default=""def""><enum></enum></variable></server>
+            /// <server url=""http://url""><variable name=""v"" description=""Desc""></variable></server>
+            public class B {}
+            ";
+
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+
+            var servers = Cdd.OpenApi.Docstrings.Parse.GetServers(classNode).ToList();
+            Assert.Equal(3, servers.Count);
+
+            Assert.Equal("/", servers[0].Url);
+            Assert.Equal("Default server", servers[0].Description);
+
+            Assert.Equal("", servers[1].Url);
+            var v1 = servers[1].Variables["var"];
+            Assert.Equal("def", v1.Default);
+
+            var v2 = servers[2].Variables["v"];
+            Assert.Equal("Desc", v2.Description);
         }
     }
 }

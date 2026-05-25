@@ -343,5 +343,578 @@ namespace Cdd.OpenApi.Tests.Clients
             AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<int>", code);
             AssertHelper.ContainsNoWhitespace("request.Headers.Add(\"myHeader\", myHeader.ToString());", code);
         }
+        [Fact]
+        public void ToClient_NullableAndEmpty_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/empty"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetEmpty",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "p1",
+                                Content = new Dictionary<string, OpenApiMediaType>(),
+                                Examples = new Dictionary<string, OpenApiExample>(),
+                                Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/RefOnly" } }
+                            }
+                        },
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Headers = new Dictionary<string, OpenApiHeader>
+                                {
+                                    ["X-Test"] = new OpenApiHeader
+                                    {
+                                        Examples = new Dictionary<string, OpenApiExample>(),
+                                        Content = new Dictionary<string, OpenApiMediaType>()
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Items = new OpenApiSchema { Type = "integer" } }
+                                }
+                            }
+                        },
+                        Servers = new List<OpenApiServer>
+                        {
+                            new OpenApiServer { Url = "http://empty", Description = null }
+                        },
+                        Callbacks = new Dictionary<string, OpenApiCallback>
+                        {
+                            ["emptyCb"] = new OpenApiCallback()
+                        }
+                    },
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "PostEmpty",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/ResRefOnly" } }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Type = "string" } }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IEmptyApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("GetEmpty", code);
+            Assert.Contains("PostEmpty", code);
+        }
+        [Fact]
+        public void ToClient_FullTypes_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/types"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetTypes",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/MyObj" }
+                                    }
+                                }
+                            }
+                        },
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Schema = new OpenApiSchema { Ref = "#/components/schemas/MyObj2" } },
+                            new OpenApiParameter { Name = "p2", Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyObj3" } } },
+                            new OpenApiParameter { Name = "p3", Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Type = "integer" } } },
+                            new OpenApiParameter { Name = "p4", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "p5", Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyObj4" } } }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("ITypesApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            var noSpaceCode = code.Replace(" ", "");
+            Assert.Contains("MyObj", noSpaceCode);
+            Assert.Contains("MyObj2p1", noSpaceCode);
+            Assert.Contains("List<MyObj3>p2", noSpaceCode);
+            Assert.Contains("List<int>p3", noSpaceCode);
+            Assert.Contains("intp4", noSpaceCode);
+            Assert.Contains("List<MyObj4>p5", noSpaceCode);
+        }
+        [Fact]
+        public void ToClient_Params_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/params"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetParams",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Explode = true, Schema = new OpenApiSchema { Type = "string" } },
+                            new OpenApiParameter { Name = "p2", Explode = false, Schema = new OpenApiSchema { Type = "string" } }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IParamsApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("GetParams", code);
+            Assert.Contains("[Explode]", code); // p1 should have explode
+        }
+        [Fact]
+        public void ToClient_Params_Edge_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/params-edge"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetParamsEdge",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", AllowEmptyValue = false, Schema = new OpenApiSchema { Type = "string" } },
+                            new OpenApiParameter { Name = "p2", Deprecated = false, Schema = new OpenApiSchema { Type = "string" } },
+                            new OpenApiParameter { Name = "p3", AllowReserved = false, Schema = new OpenApiSchema { Type = "string" } }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IParamsEdgeApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("GetParamsEdge", code);
+        }
+        [Fact]
+        public void ToClient_FullTypes_ArrayRef_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/types2"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetTypes2",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyObj5" } }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("ITypes2Api", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("List<MyObj5>", code);
+        }
+        [Fact]
+        public void ToClient_FullTypes_ReqBody_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/types3"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetTypes3",
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Ref = "#/components/schemas/MyObj6" }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("ITypes3Api", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("MyObj6 body", code);
+        }
+        [Fact]
+        public void ToClient_Params_Examples_Content_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/params2"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetParams2",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "p1",
+                                Example = "hello",
+                                Schema = new OpenApiSchema { Type = "string" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "p2",
+                                Example = "true",
+                                Schema = new OpenApiSchema { Type = "boolean" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "p3",
+                                Example = "10",
+                                Schema = new OpenApiSchema { Type = "integer" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "p4",
+                                Example = "10.5",
+                                Schema = new OpenApiSchema { Type = "number" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "p5",
+                                Example = "invalid",
+                                Schema = new OpenApiSchema { Type = "integer" }
+                            }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IParams2Api", paths);
+            var code = interfaceNode.ToFormattedString();
+            Assert.Contains("p1=\"hello\"", code.Replace(" ", ""));
+            Assert.Contains("p2=true", code.Replace(" ", ""));
+            Assert.Contains("p3=10", code.Replace(" ", ""));
+            Assert.Contains("p4=10.5", code.Replace(" ", ""));
+            Assert.Contains("p5=null", code.Replace(" ", ""));
+        }
+        [Fact]
+        public void ToClient_Params_RefTypes_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/params-ref"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetParamsRef",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Schema = new OpenApiSchema { Ref = "#/components/schemas/MyObjRef" } },
+                            new OpenApiParameter { Name = "p2", Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyObjRefArray" } } },
+                            new OpenApiParameter { Name = "p3", Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Type = "integer" } } },
+                            new OpenApiParameter { Name = "p4", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "p5", Schema = new OpenApiSchema { Items = new OpenApiSchema { Ref = "#/components/schemas/MyObjRefItem" } } }
+                        }
+                    }
+                }
+            };
+            var interfaceNode = Cdd.OpenApi.Clients.Emit.ToClient("IParamsRefApi", paths);
+            var code = interfaceNode.ToFormattedString();
+            var noSpaceCode = code.Replace(" ", "");
+            Assert.Contains("MyObjRefp1", noSpaceCode);
+            Assert.Contains("List<MyObjRefArray>p2", noSpaceCode);
+            Assert.Contains("List<int>p3", noSpaceCode);
+            Assert.Contains("intp4", noSpaceCode);
+            Assert.Contains("List<MyObjRefItem>p5", noSpaceCode);
+        }
+
+        [Fact]
+        public void ToClient_Emit_MissingBranches_Coverage()
+        {
+            var paths = new OpenApiPaths
+            {
+                ["/missing-branches"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["400"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            },
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/xml"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        },
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter
+                            {
+                                Name = "arrayNoItems",
+                                Schema = new OpenApiSchema { Type = "array", Items = null }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "arrayItemsNoRefNoType",
+                                Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "noTypeButItemsNoRef",
+                                Schema = new OpenApiSchema { Type = null, Items = new OpenApiSchema { Ref = null } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "noTypeItemsNull",
+                                Schema = new OpenApiSchema { Type = null, Items = null }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleNoSchema",
+                                Example = "foo",
+                                Schema = null
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleBoolFalse",
+                                Example = "false",
+                                Schema = new OpenApiSchema { Type = "boolean" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleDouble",
+                                Example = "1.5",
+                                Schema = new OpenApiSchema { Type = "number" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "exampleEmpty",
+                                Examples = new Dictionary<string, OpenApiExample> { { "ex1", new OpenApiExample { Value = null } } }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "explodeNoSchema",
+                                Explode = true,
+                                Schema = null
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "contentNoSchema",
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    { "application/json", new OpenApiMediaType { Schema = null } }
+                                }
+                            }
+                        }
+                    },
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "PostMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "array", Items = null }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyObj" } }
+                                }
+                            }
+                        }
+                    },
+                    Put = new OpenApiOperation
+                    {
+                        OperationId = "PutMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = null, Type = null } }
+                                }
+                            }
+                        }
+                    },
+                    Delete = new OpenApiOperation
+                    {
+                        OperationId = "DeleteMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = null
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = null, Items = new OpenApiSchema { Ref = null } }
+                                }
+                            }
+                        }
+                    },
+                    Options = new OpenApiOperation
+                    {
+                        OperationId = "OptionsMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = null, Items = null }
+                                    }
+                                }
+                            }
+                        },
+                        RequestBody = new OpenApiRequestBody
+                        {
+                            Content = new Dictionary<string, OpenApiMediaType>
+                            {
+                                ["application/json"] = new OpenApiMediaType
+                                {
+                                    Schema = new OpenApiSchema { Type = null, Items = null }
+                                }
+                            }
+                        },
+                        Callbacks = new Dictionary<string, OpenApiCallback>
+                        {
+                            ["cb1"] = new OpenApiCallback { ["exp1"] = new OpenApiPathItem { Post = new OpenApiOperation { Description = "PostDesc" } } },
+                            ["cb2"] = new OpenApiCallback { ["exp2"] = new OpenApiPathItem { Post = new OpenApiOperation(), Get = new OpenApiOperation { Description = "GetDesc" } } },
+                            ["cb3"] = new OpenApiCallback { ["exp3"] = new OpenApiPathItem { Post = null, Get = null } }
+                        }
+                    },
+                    Patch = new OpenApiOperation
+                    {
+                        OperationId = "PatchMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["400"] = new OpenApiResponse
+                            {
+                                Headers = new Dictionary<string, OpenApiHeader>
+                                {
+                                    ["X-Test-No-Schema"] = new OpenApiHeader
+                                    {
+                                        Content = new Dictionary<string, OpenApiMediaType>
+                                        {
+                                            ["application/json"] = new OpenApiMediaType { Schema = null }
+                                        }
+                                    }
+                                },
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/path-with-{unclosed"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        OperationId = "GetUnclosed",
+                        Parameters = new List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "p1", Schema = new OpenApiSchema { Type = "string" } }
+                        },
+                        Responses = new OpenApiResponses()
+                    }
+                }
+            };
+
+            var classNode = Cdd.OpenApi.Clients.Emit.ToClient("MissingBranchesClient", paths);
+            var code = classNode.ToFormattedString();
+            Assert.Contains("GetMissing", code);
+            Assert.Contains("PostMissing", code);
+            Assert.Contains("PutMissing", code);
+            Assert.Contains("DeleteMissing", code);
+            Assert.Contains("OptionsMissing", code);
+            Assert.Contains("PostDesc", code);
+            Assert.Contains("GetDesc", code);
+        }
     }
 }

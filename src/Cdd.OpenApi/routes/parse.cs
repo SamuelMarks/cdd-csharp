@@ -36,7 +36,7 @@ namespace Cdd.OpenApi.Routes
                     if (arg != null)
                     {
                         routePath = arg.Token.ValueText;
-                        if (!routePath.StartsWith("/")) routePath = "/" + routePath;
+                        routePath = "/" + routePath.TrimStart('/');
                     }
                 }
 
@@ -44,21 +44,36 @@ namespace Cdd.OpenApi.Routes
 
                 var defaultResponse = new OpenApiResponse { Description = "Success" };
                 var returnTypeStr = method.ReturnType.ToString();
-                if (returnTypeStr.StartsWith("Task<") && returnTypeStr.EndsWith(">"))
+                if (returnTypeStr.StartsWith("Task<"))
                 {
-                    returnTypeStr = returnTypeStr.Substring(5, returnTypeStr.Length - 6);
+                    if (returnTypeStr.EndsWith(">"))
+                    {
+                        returnTypeStr = returnTypeStr.Substring(5, returnTypeStr.Length - 6);
+                    }
                 }
-                else if (returnTypeStr.StartsWith("System.Threading.Tasks.Task<") && returnTypeStr.EndsWith(">"))
+                else if (returnTypeStr.StartsWith("System.Threading.Tasks.Task<"))
                 {
-                    returnTypeStr = returnTypeStr.Substring(28, returnTypeStr.Length - 29);
+                    if (returnTypeStr.EndsWith(">"))
+                    {
+                        returnTypeStr = returnTypeStr.Substring(28, returnTypeStr.Length - 29);
+                    }
                 }
 
-                if (returnTypeStr != "void" && returnTypeStr != "Task" && returnTypeStr != "IActionResult" && returnTypeStr != "Microsoft.AspNetCore.Mvc.IActionResult")
+                if (returnTypeStr != "void")
                 {
-                    defaultResponse.Content = new Dictionary<string, OpenApiMediaType>
+                    if (returnTypeStr != "Task")
                     {
-                        { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = MapType(returnTypeStr) } } }
-                    };
+                        if (returnTypeStr != "IActionResult")
+                        {
+                            if (returnTypeStr != "Microsoft.AspNetCore.Mvc.IActionResult")
+                            {
+                                defaultResponse.Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    { "application/json", new OpenApiMediaType { Schema = new OpenApiSchema { Type = MapType(returnTypeStr) } } }
+                                };
+                            }
+                        }
+                    }
                 }
 
                 var responseTags = Docstrings.Parse.GetTagsWithAttributes(method, "response");
@@ -75,9 +90,24 @@ namespace Cdd.OpenApi.Routes
                     if (tag.Attributes.TryGetValue("header", out var hdr))
                     {
                         var headerObj = new OpenApiHeader { Description = tag.Attributes.TryGetValue("header-description", out var hd) ? hd : "Header " + hdr };
-                        if (tag.Attributes.TryGetValue("header-required", out var hr) && bool.TryParse(hr, out var hrb)) headerObj.Required = hrb;
-                        if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr) && bool.TryParse(hdpr, out var hdprb)) headerObj.Deprecated = hdprb;
-                        if (tag.Attributes.TryGetValue("header-example", out var he)) headerObj.Example = he;
+                        if (tag.Attributes.TryGetValue("header-required", out var hr))
+                        {
+                            if (bool.TryParse(hr, out var hrb))
+                            {
+                                headerObj.Required = hrb;
+                            }
+                        }
+                        if (tag.Attributes.TryGetValue("header-deprecated", out var hdpr))
+                        {
+                            if (bool.TryParse(hdpr, out var hdprb))
+                            {
+                                headerObj.Deprecated = hdprb;
+                            }
+                        }
+                        if (tag.Attributes.TryGetValue("header-example", out var he))
+                        {
+                            headerObj.Example = he;
+                        }
 
                         if (tag.Attributes.TryGetValue("header-examples", out var hex))
                         {
@@ -89,10 +119,22 @@ namespace Cdd.OpenApi.Routes
                             }
                         }
 
-                        if (tag.Attributes.TryGetValue("header-style", out var hs)) headerObj.Style = hs;
-                        if (tag.Attributes.TryGetValue("header-explode", out var hexpl) && bool.TryParse(hexpl, out var hexplb)) headerObj.Explode = hexplb;
+                        if (tag.Attributes.TryGetValue("header-style", out var hs))
+                        {
+                            headerObj.Style = hs;
+                        }
+                        if (tag.Attributes.TryGetValue("header-explode", out var hexpl))
+                        {
+                            if (bool.TryParse(hexpl, out var hexplb))
+                            {
+                                headerObj.Explode = hexplb;
+                            }
+                        }
 
-                        if (tag.Attributes.TryGetValue("header-schema", out var hsch)) headerObj.Schema = new OpenApiSchema { Type = hsch };
+                        if (tag.Attributes.TryGetValue("header-schema", out var hsch))
+                        {
+                            headerObj.Schema = new OpenApiSchema { Type = hsch };
+                        }
 
                         if (tag.Attributes.TryGetValue("header-content", out var hcnt))
                         {
@@ -180,8 +222,14 @@ namespace Cdd.OpenApi.Routes
                     operation.Security = new List<IDictionary<string, IList<string>>>();
                     foreach (var sec in securityTags)
                     {
-                        var name = sec.Attributes.TryGetValue("name", out var n) ? n : "default";
-                        var scopes = sec.Attributes.TryGetValue("scopes", out var s) ? s.Split(',').Select(st => st.Trim()).ToList() : new List<string>();
+                        string name = "default";
+                        if (sec.Attributes.ContainsKey("name")) name = sec.Attributes["name"];
+                        sec.Attributes.TryGetValue("scopes", out var s);
+                        List<string> scopes = new List<string>();
+                        if (s != null)
+                        {
+                            scopes = s.Split(',').Select(st => st.Trim()).ToList();
+                        }
                         operation.Security.Add(new Dictionary<string, IList<string>> { { name, scopes } });
                     }
                 }
@@ -193,13 +241,30 @@ namespace Cdd.OpenApi.Routes
                     var inType = routePath.Contains($"{{{param.Identifier.Text}}}") ? "path" : "query";
 
                     var attrs = param.AttributeLists.SelectMany(al => al.Attributes).Select(a => a.Name.ToString()).ToList();
-                    if (attrs.Contains("FromRoute")) inType = "path";
-                    else if (attrs.Contains("FromQuery")) inType = "query";
-                    else if (attrs.Contains("FromBody")) inType = "body";
-                    else if (attrs.Contains("FromHeader")) inType = "header";
+
+                    var inTypeDict = new Dictionary<string, string>
+                    {
+                        { "FromRoute", "path" },
+                        { "FromQuery", "query" },
+                        { "FromBody", "body" },
+                        { "FromHeader", "header" }
+                    };
+
+                    foreach (var attr in attrs)
+                    {
+                        if (inTypeDict.TryGetValue(attr, out var mappedType))
+                        {
+                            inType = mappedType;
+                        }
+                    }
 
                     if (inType == "body")
                     {
+                        string? paramTypeStr = null;
+                        if (param.Type != null)
+                        {
+                            paramTypeStr = param.Type.ToString();
+                        }
                         var reqBody = new OpenApiRequestBody
                         {
                             Description = "Request body for " + param.Identifier.Text,
@@ -209,49 +274,80 @@ namespace Cdd.OpenApi.Routes
                                 {
                                     "application/json", new OpenApiMediaType
                                     {
-                                        Schema = new OpenApiSchema { Type = MapType(param.Type?.ToString()) }
+                                        Schema = new OpenApiSchema { Type = MapType(paramTypeStr) }
                                     }
                                 }
                             }
                         };
 
                         var encodingAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString().Contains("Encoding"));
-                        if (encodingAttr != null && encodingAttr.ArgumentList != null && encodingAttr.ArgumentList.Arguments.Count >= 2)
+                        if (encodingAttr != null)
                         {
-                            var propName = (encodingAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            var contentType = (encodingAttr.ArgumentList.Arguments[1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            if (propName != null && contentType != null)
+                            if (encodingAttr.ArgumentList != null)
                             {
-                                var encObj = new OpenApiEncoding { ContentType = contentType };
-
-                                var styleArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "Style");
-                                if (styleArg != null) encObj.Style = (styleArg.Expression as LiteralExpressionSyntax)?.Token.ValueText;
-
-                                var explodeArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "Explode");
-                                if (explodeArg != null)
+                                if (encodingAttr.ArgumentList.Arguments.Count >= 2)
                                 {
-                                    if (explodeArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.Explode = true;
-                                    else if (explodeArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) encObj.Explode = false;
-                                }
-
-                                var allowReservedArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a => a.NameEquals?.Name.Identifier.Text == "AllowReserved");
-                                if (allowReservedArg != null)
-                                {
-                                    if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.AllowReserved = true;
-                                    else if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression) encObj.AllowReserved = false;
-                                }
-
-                                if (!reqBody.Content.TryGetValue("application/x-www-form-urlencoded", out var urlEncoded))
-                                {
-                                    urlEncoded = new OpenApiMediaType
+                                    string? propName = null;
+                                    string? contentType = null;
+                                    if (encodingAttr.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax propLit) propName = propLit.Token.ValueText;
+                                    if (encodingAttr.ArgumentList.Arguments[1].Expression is LiteralExpressionSyntax cntLit) contentType = cntLit.Token.ValueText;
+                                    if (propName != null)
                                     {
-                                        Schema = new OpenApiSchema { Type = "object" },
-                                        Encoding = new Dictionary<string, OpenApiEncoding>()
-                                    };
-                                    reqBody.Content["application/x-www-form-urlencoded"] = urlEncoded;
+                                        if (contentType != null)
+                                        {
+                                            var encObj = new OpenApiEncoding { ContentType = contentType };
+
+                                            var styleArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a =>
+                                            {
+                                                if (a.NameEquals != null) return a.NameEquals.Name.Identifier.Text == "Style";
+                                                return false;
+                                            });
+                                            if (styleArg != null)
+                                            {
+                                                if (styleArg.Expression is LiteralExpressionSyntax styleLiteral)
+                                                {
+                                                    encObj.Style = styleLiteral.Token.ValueText;
+                                                }
+                                            }
+
+                                            var explodeArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a =>
+                                            {
+                                                if (a.NameEquals != null) return a.NameEquals.Name.Identifier.Text == "Explode";
+                                                return false;
+                                            });
+                                            if (explodeArg != null)
+                                            {
+                                                if (explodeArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.Explode = true;
+                                                else encObj.Explode = false;
+                                            }
+
+                                            var allowReservedArg = encodingAttr.ArgumentList.Arguments.FirstOrDefault(a =>
+                                            {
+                                                if (a.NameEquals != null) return a.NameEquals.Name.Identifier.Text == "AllowReserved";
+                                                return false;
+                                            });
+                                            if (allowReservedArg != null)
+                                            {
+                                                if (allowReservedArg.Expression.Kind() == Microsoft.CodeAnalysis.CSharp.SyntaxKind.TrueLiteralExpression) encObj.AllowReserved = true;
+                                                else encObj.AllowReserved = false;
+                                            }
+
+                                            var hasUrlEncoded = reqBody.Content.TryGetValue("application/x-www-form-urlencoded", out var urlEncoded);
+                                            if (!hasUrlEncoded)
+                                            {
+                                                urlEncoded = new OpenApiMediaType
+                                                {
+                                                    Schema = new OpenApiSchema { Type = "object" },
+                                                    Encoding = new Dictionary<string, OpenApiEncoding>()
+                                                };
+                                                reqBody.Content["application/x-www-form-urlencoded"] = urlEncoded;
+                                            }
+                                            var encodings = urlEncoded.Encoding!;
+                                            encodings[propName] = encObj;
+                                            urlEncoded.Encoding = encodings;
+                                        }
+                                    }
                                 }
-                                if (urlEncoded.Encoding == null) urlEncoded.Encoding = new Dictionary<string, OpenApiEncoding>();
-                                urlEncoded.Encoding[propName] = encObj;
                             }
                         }
 
@@ -259,12 +355,17 @@ namespace Cdd.OpenApi.Routes
                     }
                     else
                     {
+                        string? paramTypeStr = null;
+                        if (param.Type != null)
+                        {
+                            paramTypeStr = param.Type.ToString();
+                        }
                         var paramObj = new OpenApiParameter
                         {
                             Name = param.Identifier.Text,
                             In = inType,
                             Required = true,
-                            Schema = new OpenApiSchema { Type = MapType(param.Type?.ToString()) }
+                            Schema = new OpenApiSchema { Type = MapType(paramTypeStr) }
                         };
 
                         if (attrs.Contains("Obsolete")) paramObj.Deprecated = true;
@@ -279,37 +380,52 @@ namespace Cdd.OpenApi.Routes
                         {
                             paramObj.Examples = new Dictionary<string, OpenApiExample>();
                             var args = examplesAttr.ArgumentList.Arguments;
-                            for (int i = 0; i < args.Count; i += 2)
+                            int argCount = args.Count;
+                            for (int i = 0; i < argCount; i += 2)
                             {
-                                if (i + 1 < args.Count)
+                                if (i + 1 < argCount)
                                 {
-                                    var key = (args[i].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                                    var val = (args[i + 1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                                    if (key != null && val != null)
+                                    string? key = null;
+                                    string? val = null;
+                                    if (args[i].Expression is LiteralExpressionSyntax keyLit) key = keyLit.Token.ValueText;
+                                    if (args[i + 1].Expression is LiteralExpressionSyntax valLit) val = valLit.Token.ValueText;
+
+                                    if (key != null)
                                     {
-                                        paramObj.Examples[key] = new OpenApiExample { Value = val };
+                                        if (val != null)
+                                        {
+                                            paramObj.Examples[key] = new OpenApiExample { Value = val };
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        if (styleAttr != null && styleAttr.ArgumentList != null && styleAttr.ArgumentList.Arguments.Any())
+                        if (styleAttr != null)
                         {
-                            var arg = styleAttr.ArgumentList.Arguments.First().Expression as LiteralExpressionSyntax;
-                            if (arg != null) paramObj.Style = arg.Token.ValueText;
+                            if (styleAttr.ArgumentList != null)
+                            {
+                                if (styleAttr.ArgumentList.Arguments.Any())
+                                {
+                                    if (styleAttr.ArgumentList.Arguments.First().Expression is LiteralExpressionSyntax arg)
+                                    {
+                                        paramObj.Style = arg.Token.ValueText;
+                                    }
+                                }
+                            }
                         }
 
                         var explodeAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString().Contains("Explode"));
                         if (explodeAttr != null)
                         {
-                            if (explodeAttr.ArgumentList != null && explodeAttr.ArgumentList.Arguments.Any())
+                            paramObj.Explode = true;
+                            if (explodeAttr.ArgumentList != null && explodeAttr.ArgumentList.Arguments.Count > 0)
                             {
-                                var arg = explodeAttr.ArgumentList.Arguments.First().Expression;
-                                if (arg is LiteralExpressionSyntax lit) paramObj.Explode = lit.Token.ValueText.ToLower() == "true";
-                            }
-                            else
-                            {
-                                paramObj.Explode = true;
+                                var argExpr = explodeAttr.ArgumentList.Arguments.First().Expression as LiteralExpressionSyntax;
+                                if (argExpr != null)
+                                {
+                                    paramObj.Explode = argExpr.Token.ValueText.ToLower() == "true";
+                                }
                             }
                         }
 
@@ -319,24 +435,46 @@ namespace Cdd.OpenApi.Routes
                         }
 
                         var paramTags = Docstrings.Parse.GetTagsWithAttributes(method, "param");
-                        var paramDoc = paramTags.FirstOrDefault(t => t.Attributes.TryGetValue("name", out var n) && n == param.Identifier.Text);
-                        if (paramDoc.Text != null && !string.IsNullOrWhiteSpace(paramDoc.Text))
+                        var paramDoc = paramTags.FirstOrDefault(t =>
                         {
-                            paramObj.Description = paramDoc.Text;
+                            bool matches = false;
+                            if (t.Attributes.TryGetValue("name", out var n))
+                            {
+                                matches = n == param.Identifier.Text;
+                            }
+                            return matches;
+                        });
+                        if (paramDoc.Text != null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(paramDoc.Text))
+                            {
+                                paramObj.Description = paramDoc.Text;
+                            }
                         }
 
                         var contentAttr = param.AttributeLists.SelectMany(a => a.Attributes).FirstOrDefault(a => a.Name.ToString() == "Content");
-                        if (contentAttr?.ArgumentList?.Arguments.Count >= 2)
+                        if (contentAttr != null)
                         {
-                            var mediaType = (contentAttr.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            var schemaType = (contentAttr.ArgumentList.Arguments[1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
-                            if (mediaType != null && schemaType != null)
+                            if (contentAttr.ArgumentList != null)
                             {
-                                paramObj.Content = new Dictionary<string, OpenApiMediaType>
+                                if (contentAttr.ArgumentList.Arguments.Count >= 2)
                                 {
-                                    { mediaType, new OpenApiMediaType { Schema = new OpenApiSchema { Type = schemaType } } }
-                                };
-                                paramObj.Schema = null;
+                                    string? mediaType = null;
+                                    string? schemaType = null;
+                                    if (contentAttr.ArgumentList.Arguments[0].Expression is LiteralExpressionSyntax mlit) mediaType = mlit.Token.ValueText;
+                                    if (contentAttr.ArgumentList.Arguments[1].Expression is LiteralExpressionSyntax slit) schemaType = slit.Token.ValueText;
+                                    if (mediaType != null)
+                                    {
+                                        if (schemaType != null)
+                                        {
+                                            paramObj.Content = new Dictionary<string, OpenApiMediaType>
+                                            {
+                                                { mediaType, new OpenApiMediaType { Schema = new OpenApiSchema { Type = schemaType } } }
+                                            };
+                                            paramObj.Schema = null;
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -357,8 +495,10 @@ namespace Cdd.OpenApi.Routes
                     operation.Callbacks = new Dictionary<string, OpenApiCallback>();
                     foreach (var ct in callbackTags)
                     {
-                        var name = ct.Attributes.TryGetValue("name", out var n) ? n : "myCallback";
-                        var expression = ct.Attributes.TryGetValue("expression", out var e) ? e : "{$request.body#/callbackUrl}";
+                        string name = "myCallback";
+                        if (ct.Attributes.ContainsKey("name")) name = ct.Attributes["name"];
+                        string expression = "{$request.body#/callbackUrl}";
+                        if (ct.Attributes.ContainsKey("expression")) expression = ct.Attributes["expression"];
 
                         var cb = new OpenApiCallback();
                         cb[expression] = new OpenApiPathItem

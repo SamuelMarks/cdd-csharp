@@ -519,6 +519,31 @@ namespace Cdd.OpenApi.Tests.Routes
         }
 
         [Fact]
+        public void MapType_MissingBranches_Coverage()
+        {
+            var code = @"
+            using Microsoft.AspNetCore.Mvc;
+            public class TypeApi
+            {
+                [HttpPost(""/t"")]
+                public void Post(long p1, short p2, double p3, decimal p4, bool p5, string p6, object p7) {}
+            }";
+
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
+            var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
+            var op = paths["/t"].Post;
+
+            Assert.Equal("integer", op.Parameters.First(p => p.Name == "p1").Schema.Type);
+            Assert.Equal("integer", op.Parameters.First(p => p.Name == "p2").Schema.Type);
+            Assert.Equal("number", op.Parameters.First(p => p.Name == "p3").Schema.Type);
+            Assert.Equal("number", op.Parameters.First(p => p.Name == "p4").Schema.Type);
+            Assert.Equal("boolean", op.Parameters.First(p => p.Name == "p5").Schema.Type);
+            Assert.Equal("string", op.Parameters.First(p => p.Name == "p6").Schema.Type);
+            Assert.Equal("string", op.Parameters.First(p => p.Name == "p7").Schema.Type);
+        }
+
+        [Fact]
         public void ToPaths_WithQueryAndAdditionalOperations_ParsesThem()
         {
             var code = @"
