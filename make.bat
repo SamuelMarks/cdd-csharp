@@ -9,6 +9,7 @@ if "%COMMAND%"=="all" goto help
 if "%COMMAND%"=="install_base" goto install_base
 if "%COMMAND%"=="install_deps" goto install_deps
 if "%COMMAND%"=="build_docs" goto build_docs
+if "%COMMAND%"=="docs" goto docs
 if "%COMMAND%"=="build" goto build
 if "%COMMAND%"=="test" goto test
 if "%COMMAND%"=="run" goto run
@@ -21,6 +22,7 @@ echo Available tasks:
 echo   install_base  - Install .NET runtime
 echo   install_deps  - Restore dependencies
 echo   build_docs    - Build API docs
+echo   docs          - Build API docs and link to docs/html
 echo   build         - Build CLI binary
 echo   test          - Run tests
 echo   run           - Run the CLI
@@ -39,9 +41,16 @@ goto end
 
 :build_docs
 set DOCS_DIR=%2
-if "%DOCS_DIR%"=="" set DOCS_DIR=docs
+if "%DOCS_DIR%"=="" set DOCS_DIR=docs\_site
 dotnet tool restore
-dotnet docfx build docs/docfx.json -o %DOCS_DIR%
+dotnet docfx metadata docs\docfx.json
+dotnet docfx build docs\docfx.json -o %DOCS_DIR%
+goto end
+
+:docs
+call :build_docs
+if exist docs\html rmdir /S /Q docs\html >nul 2>&1
+mklink /J docs\html docs\_site
 goto end
 
 :build

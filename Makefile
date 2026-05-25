@@ -1,6 +1,6 @@
 # Makefile for cdd-csharp
 
-.PHONY: help all install_base install_deps build_docs build test run build_wasm build_docker run_docker
+.PHONY: help all install_base install_deps build_docs docs build test run build_wasm build_docker run_docker
 
 all: help
 
@@ -9,6 +9,7 @@ help:
 	@echo "  install_base  - Install .NET runtime (if needed, usually managed via dotnet-install)"
 	@echo "  install_deps  - Restore dependencies"
 	@echo "  build_docs    - Build API docs (default docs output or specify DOCS_DIR=path)"
+	@echo "  docs          - Build API docs and link to docs/html"
 	@echo "  build         - Build CLI binary (default bin output or specify BIN_DIR=path)"
 	@echo "  test          - Run tests"
 	@echo "  run           - Run the CLI, args passed after 'run' (e.g. make run ARGS=\"--version\")"
@@ -22,10 +23,15 @@ install_base:
 install_deps:
 	dotnet restore CddOpenApi.slnx
 
-DOCS_DIR ?= docs
+DOCS_DIR ?= docs/_site
 build_docs:
 	dotnet tool restore || true
+	dotnet docfx metadata docs/docfx.json
 	dotnet docfx build docs/docfx.json -o $(DOCS_DIR) || echo "DocFX not configured completely yet, but script runs"
+
+docs: build_docs
+	rm -rf docs/html
+	ln -sfn _site docs/html
 
 BIN_DIR ?= bin/Release/net8.0/linux-x64/publish
 build:
