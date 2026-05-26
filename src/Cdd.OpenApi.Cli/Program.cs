@@ -28,7 +28,6 @@ namespace Cdd.OpenApi.Cli
 
         internal static int Main(string[] args)
         {
-            Console.WriteLine("ARGS: " + string.Join(", ", args));
             if (args.Length < 1)
             {
                 args = LoadFallbackArgs();
