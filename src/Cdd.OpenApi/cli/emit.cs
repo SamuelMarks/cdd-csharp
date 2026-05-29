@@ -10,6 +10,12 @@ namespace Cdd.OpenApi.CliModule
     /// <summary>Auto-generated documentation for Emit.</summary>
     public static class Emit
     {
+        private static string ToSnakeCase(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return string.Concat(text.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
+        }
+
         /// <summary>Auto-generated documentation for ToCli.</summary>
         public static ClassDeclarationSyntax ToCli(string className, OpenApiPaths paths)
         {
@@ -54,7 +60,7 @@ namespace Cdd.OpenApi.CliModule
                     var op = opKvp.Value;
                     if (op == null) continue;
                     var operationId = op.OperationId ?? (opKvp.Key + routePath.Replace("/", "").Replace("{", "").Replace("}", ""));
-                    var commandName = operationId.ToLower();
+                    var commandName = ToSnakeCase(operationId);
 
                     var description = op.Summary ?? "No description";
 

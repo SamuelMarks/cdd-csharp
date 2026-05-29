@@ -27,3 +27,9 @@ repos:
         entry: dotnet test CddOpenApi.slnx
         language: system
         pass_filenames: false
+
+    -   id: web-ui-tests
+        name: Run Web UI C# Tests
+        entry: python3 run_web_ui_test.py
+        language: system
+        pass_filenames: false

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><body>
+<script type="module">
+import { WASI, File, OpenFile, ConsoleStdout } from 'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/dist/index.js';
+
+async function run() {
+    try {
+        let args = ["cdd-csharp.wasm"];
+        let env = [];
+        let fds = [
+            new OpenFile(new File([])),
+            ConsoleStdout.lineBuffered(msg => console.log(msg)),
+            ConsoleStdout.lineBuffered(msg => console.error(msg)),
+        ];
+        let wasi = new WASI(args, env, fds);
+
+        let response = await fetch('bin/cdd-csharp.wasm');
+        let wasmBuffer = await response.arrayBuffer();
+        let wasmModule = await WebAssembly.compile(wasmBuffer);
+        let instance = await WebAssembly.instantiate(wasmModule, {
+            "wasi_snapshot_preview1": wasi.wasiImport
+        });
+
+        wasi.start(instance);
+        console.log("WASI started successfully!");
+    } catch (err) {
+        console.error("WASI execution failed:", err);
+    }
+}
+run();
+</script>
+</body></html>

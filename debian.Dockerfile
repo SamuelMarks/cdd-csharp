@@ -10,4 +10,4 @@ COPY --from=build /app/out .
 ENV LISTEN=0.0.0.0
 ENV PORT=8082
 EXPOSE 8082
-ENTRYPOINT ["./cdd-csharp", "server_json_rpc"]
+ENTRYPOINT ["./cdd-csharp", "serve_json_rpc"]

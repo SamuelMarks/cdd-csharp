@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable Condition="'$(UseWasiSdk)' != 'true'">enable</Nullable>
     <Nullable Condition="'$(UseWasiSdk)' == 'true'">disable</Nullable>
+    <NoWarn Condition="'$(UseWasiSdk)' == 'true'">$(NoWarn);CS8632</NoWarn>
+    <NoWarn>$(NoWarn);NU1904</NoWarn>
     <PublishTrimmed>false</PublishTrimmed>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>

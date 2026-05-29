@@ -40,5 +40,5 @@ cdd-csharp to_docs_json --no-imports --no-wrapping -i spec.json -o docs.json
 ### Start as a JSON-RPC Server
 Expose all functionality over a JSON-RPC API:
 ```bash
-cdd-csharp serve_json_rpc --port 8080 --listen 127.0.0.1
+cdd-csharp serve_json_rpc -p 8080 -l 127.0.0.1
 ```

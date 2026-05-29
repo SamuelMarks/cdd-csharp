@@ -208,10 +208,10 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void Generate_DocNull_ReturnsEmpty()
         {
-            var generated = IntegrationTestGenerator.Generate(null);
+            var generated = IntegrationTestGenerator.Generate(null!);
             Assert.Contains("http://localhost:8080/", generated);
 
-            var doc1 = new OpenApiDocument { Servers = new System.Collections.Generic.List<OpenApiServer> { new OpenApiServer { Url = null } } };
+            var doc1 = new OpenApiDocument { Servers = new System.Collections.Generic.List<OpenApiServer> { new OpenApiServer { Url = null! } } };
             IntegrationTestGenerator.Generate(doc1);
 
             var doc2 = new OpenApiDocument { Servers = null, BasePath = null };

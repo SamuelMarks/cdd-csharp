@@ -133,7 +133,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
         public void Emit_WithTag_NullOrEmptyText_ReturnsNode()
         {
             var classNode = SyntaxFactory.ClassDeclaration("TestClass");
-            var classWithDocs = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null);
+            var classWithDocs = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null!);
             Assert.Same(classNode, classWithDocs);
         }
 
@@ -143,12 +143,12 @@ namespace Cdd.OpenApi.Tests.Docstrings
             var classNode = SyntaxFactory.ClassDeclaration("TestClass");
 
             // Null text, null attributes
-            var result1 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null, null);
+            var result1 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", null!, null!);
             Assert.Same(classNode, result1);
 
             // Null text, empty attributes
             var emptyAttrs = new Dictionary<string, string>();
-            var result2 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", emptyAttrs, null);
+            var result2 = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", emptyAttrs, null!);
             Assert.Same(classNode, result2);
         }
 
@@ -158,7 +158,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             var classNode = SyntaxFactory.ClassDeclaration("TestClass");
 
             var attrs = new Dictionary<string, string> { { "a", "b" } };
-            var result = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", attrs, null);
+            var result = Cdd.OpenApi.Docstrings.Emit.WithTag(classNode, "mytag", attrs, null!);
 
             var code = result.ToFullString();
             Assert.Contains("<mytag a=\"b\">", code);
@@ -168,15 +168,15 @@ namespace Cdd.OpenApi.Tests.Docstrings
         [Fact]
         public void Emit_CreateTagWithAttributes_NullOrEmptyTextAndNoAttributes_ReturnsEmpty()
         {
-            var result1 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", null, null);
+            var result1 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", null!, null!);
             Assert.Empty(result1);
 
             var emptyAttrs = new Dictionary<string, string>();
-            var result2 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", emptyAttrs, null);
+            var result2 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", emptyAttrs, null!);
             Assert.Empty(result2);
 
             var validAttrs = new Dictionary<string, string> { { "a", "b" } };
-            var result3 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", validAttrs, null);
+            var result3 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", validAttrs, null!);
             Assert.NotEmpty(result3);
         }
         [Fact]

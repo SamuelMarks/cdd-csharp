@@ -333,7 +333,7 @@ namespace Cdd.OpenApi.Routes
                                             }
 
                                             var hasUrlEncoded = reqBody.Content.TryGetValue("application/x-www-form-urlencoded", out var urlEncoded);
-                                            if (!hasUrlEncoded)
+                                            if (!hasUrlEncoded || urlEncoded == null)
                                             {
                                                 urlEncoded = new OpenApiMediaType
                                                 {
@@ -342,7 +342,8 @@ namespace Cdd.OpenApi.Routes
                                                 };
                                                 reqBody.Content["application/x-www-form-urlencoded"] = urlEncoded;
                                             }
-                                            var encodings = urlEncoded.Encoding!;
+                                            if (urlEncoded.Encoding == null) urlEncoded.Encoding = new Dictionary<string, OpenApiEncoding>();
+                                            var encodings = urlEncoded.Encoding;
                                             encodings[propName] = encObj;
                                             urlEncoded.Encoding = encodings;
                                         }

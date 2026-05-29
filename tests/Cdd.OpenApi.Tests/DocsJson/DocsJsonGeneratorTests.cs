@@ -210,7 +210,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
                                 OperationId = "testEmptyParam",
                                 Parameters = new List<OpenApiParameter>
                                 {
-                                    null,
+                                    null!,
                                     new OpenApiParameter { Name = "" },
                                     new OpenApiParameter { Name = "validParam", Schema = new OpenApiSchema { Type = "string" } }
                                 }

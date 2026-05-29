@@ -31,7 +31,7 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void AddDocTags_DocNull()
         {
-            CodeGenerator.Generate(null);
+            CodeGenerator.Generate(null!);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Cdd.OpenApi.Tests
             };
             CodeGenerator.Generate(doc2);
 
-            CodeGenerator.Generate(null);
+            CodeGenerator.Generate(null!);
 
             var doc3 = new OpenApiDocument { Paths = new OpenApiPaths() }; // Count = 0
             CodeGenerator.Generate(doc3);

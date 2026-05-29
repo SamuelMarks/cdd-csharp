@@ -84,7 +84,7 @@ namespace Cdd.OpenApi
                     results.Add(new GeneratedCode
                     {
                         FileName = $"src/Models/{schemaKvp.Key}.cs",
-                        Code = singleModelNs.NormalizeWhitespace().ToFullString()
+                        Code = WasmSafeRoslyn.FormatSafe(singleModelNs)
                     });
                 }
 
@@ -94,7 +94,7 @@ namespace Cdd.OpenApi
                     var dbContextNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
                         .AddMembers(dbContextNode);
-                    results.Add(new GeneratedCode { FileName = "src/Data/AppDbContext.cs", Code = dbContextNsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Data/AppDbContext.cs", Code = WasmSafeRoslyn.FormatSafe(dbContextNsNode) });
                 }
             }
 
@@ -141,7 +141,7 @@ namespace Cdd.OpenApi
                     var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Api"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")))
                         .AddMembers(interfaceNode);
-                    results.Add(new GeneratedCode { FileName = "src/Api/IApi.cs", Code = nsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Api/IApi.cs", Code = WasmSafeRoslyn.FormatSafe(nsNode) });
                 }
 
                 if (type == GenerateType.All || type == GenerateType.Sdk)
@@ -152,7 +152,7 @@ namespace Cdd.OpenApi
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
                                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
                         .AddMembers(clientNode);
-                    results.Add(new GeneratedCode { FileName = "src/Client/Client.cs", Code = clientNsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Client/Client.cs", Code = WasmSafeRoslyn.FormatSafe(clientNsNode) });
                 }
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli)
@@ -161,7 +161,7 @@ namespace Cdd.OpenApi
                     cliNode = AddDocTags(cliNode, doc);
                     var cliNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                         .AddMembers(cliNode);
-                    results.Add(new GeneratedCode { FileName = "src/Cli/ApiClientCli.cs", Code = cliNsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Cli/ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
                 }
 
                 if (type == GenerateType.All)
@@ -171,14 +171,14 @@ namespace Cdd.OpenApi
                     var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                         .AddMembers(mockNode);
-                    results.Add(new GeneratedCode { FileName = "src/Mocks/ApiMock.cs", Code = mockNsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Mocks/ApiMock.cs", Code = WasmSafeRoslyn.FormatSafe(mockNsNode) });
 
                     var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests("ApiTests", doc.Paths, tests);
                     testsNode = AddDocTags(testsNode, doc);
                     var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                         .AddMembers(testsNode);
-                    results.Add(new GeneratedCode { FileName = "src/Tests/ApiTests.cs", Code = testsNsNode.NormalizeWhitespace().ToFullString() });
+                    results.Add(new GeneratedCode { FileName = "src/Tests/ApiTests.cs", Code = WasmSafeRoslyn.FormatSafe(testsNsNode) });
                 }
             }
 

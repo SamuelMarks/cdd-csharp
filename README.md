@@ -21,7 +21,7 @@ The CLI—at a minimum—has:
 - `cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | --input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests]`
 - `cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]`
 - `cdd-csharp to_docs_json --no-imports --no-wrapping -i spec.json`
-- `cdd-csharp serve_json_rpc --port 8080 --listen 0.0.0.0`
+- `cdd-csharp serve_json_rpc -p 8080 -l 0.0.0.0`
 
 ## SDK Example
 

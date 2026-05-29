@@ -441,3 +441,5 @@ cdd-csharp-client-oas3/
 # tests directory generated files
 tests/*.csproj
 tests/*.cs
+wasi-sdk-20.0-macos.tar.gz
+wasi-sdk-20.0/

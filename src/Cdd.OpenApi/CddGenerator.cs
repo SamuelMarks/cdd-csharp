@@ -130,7 +130,7 @@ namespace Cdd.OpenApi
                 try
                 {
                     var title = "GeneratedProject";
-                    if (lastDoc.Info != null)
+                    if (lastDoc != null && lastDoc.Info != null)
                     {
                         if (lastDoc.Info.Title != null)
                         {
@@ -138,7 +138,7 @@ namespace Cdd.OpenApi
                         }
                     }
                     var version = "1.0.0";
-                    if (lastDoc.Info != null)
+                    if (lastDoc != null && lastDoc.Info != null)
                     {
                         if (lastDoc.Info.Version != null)
                         {
@@ -146,7 +146,7 @@ namespace Cdd.OpenApi
                         }
                     }
                     var authors = "Generated";
-                    if (lastDoc.Info.Contact != null)
+                    if (lastDoc != null && lastDoc.Info != null && lastDoc.Info.Contact != null)
                     {
                         if (lastDoc.Info.Contact.Name != null)
                         {
@@ -154,7 +154,7 @@ namespace Cdd.OpenApi
                         }
                     }
                     var description = "Generated OpenApi SDK";
-                    if (lastDoc.Info != null)
+                    if (lastDoc != null && lastDoc.Info != null)
                     {
                         if (lastDoc.Info.Description != null)
                         {

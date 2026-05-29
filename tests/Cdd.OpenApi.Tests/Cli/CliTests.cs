@@ -216,7 +216,7 @@ namespace Cdd.OpenApi.Cli.Tests
         public void ServerJsonRpc_Starts()
         {
             // We use an invalid port to hit the exception handler and return 1
-            Assert.Equal(1, Program.Main(new[] { "server_json_rpc", "--port", "abc" }));
+            Assert.Equal(1, Program.Main(new[] { "serve_json_rpc", "--port", "abc" }));
         }
 
         [Fact]
