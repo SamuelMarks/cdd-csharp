@@ -37,7 +37,7 @@ namespace Cdd.OpenApi
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"namespace {ns.Name}\n{{");
-            foreach (var usingDir in ns.Usings) sb.AppendLine(usingDir.NormalizeWhitespace().ToFullString());
+            foreach (var usingDir in ns.Usings) sb.AppendLine(WasmSafeFormatter.Format(usingDir));
             foreach (var member in ns.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
             return sb.ToString();
@@ -51,15 +51,15 @@ namespace Cdd.OpenApi
             if (member is PropertyDeclarationSyntax propNode) return FormatPropertySafe(propNode);
             if (member is ConstructorDeclarationSyntax ctorNode) return FormatConstructorSafe(ctorNode);
             if (member is FieldDeclarationSyntax fieldNode) return FormatFieldSafe(fieldNode);
-            return member.NormalizeWhitespace().ToFullString();
+            return WasmSafeFormatter.Format(member);
         }
 
         private static string FormatClassSafe(ClassDeclarationSyntax classNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in classNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in classNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", classNode.Modifiers.Select(m => m.Text));
-            var baseList = classNode.BaseList != null ? $" : {classNode.BaseList.NormalizeWhitespace().ToFullString()}" : "";
+            var baseList = classNode.BaseList != null ? $" : {WasmSafeFormatter.Format(classNode.BaseList)}" : "";
             sb.AppendLine($"{modifiers} class {classNode.Identifier.Text}{baseList}\n{{");
             foreach (var member in classNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -69,9 +69,9 @@ namespace Cdd.OpenApi
         private static string FormatInterfaceSafe(InterfaceDeclarationSyntax interfaceNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in interfaceNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in interfaceNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", interfaceNode.Modifiers.Select(m => m.Text));
-            var baseList = interfaceNode.BaseList != null ? $" : {interfaceNode.BaseList.NormalizeWhitespace().ToFullString()}" : "";
+            var baseList = interfaceNode.BaseList != null ? $" : {WasmSafeFormatter.Format(interfaceNode.BaseList)}" : "";
             sb.AppendLine($"{modifiers} interface {interfaceNode.Identifier.Text}{baseList}\n{{");
             foreach (var member in interfaceNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -81,18 +81,18 @@ namespace Cdd.OpenApi
         private static string FormatMethodSafe(MethodDeclarationSyntax methodNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in methodNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in methodNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", methodNode.Modifiers.Select(m => m.Text));
-            var returnType = methodNode.ReturnType.NormalizeWhitespace().ToFullString();
-            var parameters = methodNode.ParameterList.NormalizeWhitespace().ToFullString();
+            var returnType = WasmSafeFormatter.Format(methodNode.ReturnType);
+            var parameters = WasmSafeFormatter.Format(methodNode.ParameterList);
             sb.AppendLine($"{modifiers} {returnType} {methodNode.Identifier.Text}{parameters}");
             if (methodNode.Body != null)
             {
                 sb.AppendLine("{");
-                foreach (var stmt in methodNode.Body.Statements) sb.AppendLine(stmt.NormalizeWhitespace().ToFullString());
+                foreach (var stmt in methodNode.Body.Statements) sb.AppendLine(WasmSafeFormatter.Format(stmt));
                 sb.AppendLine("}");
             }
-            else if (methodNode.ExpressionBody != null) sb.AppendLine($"=> {methodNode.ExpressionBody.Expression.NormalizeWhitespace().ToFullString()};");
+            else if (methodNode.ExpressionBody != null) sb.AppendLine($"=> {WasmSafeFormatter.Format(methodNode.ExpressionBody.Expression)};");
             else sb.AppendLine(";");
             return sb.ToString();
         }
@@ -100,18 +100,18 @@ namespace Cdd.OpenApi
         private static string FormatConstructorSafe(ConstructorDeclarationSyntax ctorNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in ctorNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in ctorNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", ctorNode.Modifiers.Select(m => m.Text));
-            var parameters = ctorNode.ParameterList.NormalizeWhitespace().ToFullString();
-            var init = ctorNode.Initializer != null ? $" : {ctorNode.Initializer.NormalizeWhitespace().ToFullString()}" : "";
+            var parameters = WasmSafeFormatter.Format(ctorNode.ParameterList);
+            var init = ctorNode.Initializer != null ? $" : {WasmSafeFormatter.Format(ctorNode.Initializer)}" : "";
             sb.AppendLine($"{modifiers} {ctorNode.Identifier.Text}{parameters}{init}");
             if (ctorNode.Body != null)
             {
                 sb.AppendLine("{");
-                foreach (var stmt in ctorNode.Body.Statements) sb.AppendLine(stmt.NormalizeWhitespace().ToFullString());
+                foreach (var stmt in ctorNode.Body.Statements) sb.AppendLine(WasmSafeFormatter.Format(stmt));
                 sb.AppendLine("}");
             }
-            else if (ctorNode.ExpressionBody != null) sb.AppendLine($"=> {ctorNode.ExpressionBody.Expression.NormalizeWhitespace().ToFullString()};");
+            else if (ctorNode.ExpressionBody != null) sb.AppendLine($"=> {WasmSafeFormatter.Format(ctorNode.ExpressionBody.Expression)};");
             else sb.AppendLine(";");
             return sb.ToString();
         }
@@ -119,30 +119,30 @@ namespace Cdd.OpenApi
         private static string FormatPropertySafe(PropertyDeclarationSyntax propNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in propNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in propNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", propNode.Modifiers.Select(m => m.Text));
-            var type = propNode.Type.NormalizeWhitespace().ToFullString();
+            var type = WasmSafeFormatter.Format(propNode.Type);
             sb.Append($"{modifiers} {type} {propNode.Identifier.Text}");
             if (propNode.AccessorList != null)
             {
                 sb.AppendLine("\n{");
-                foreach (var acc in propNode.AccessorList.Accessors) sb.AppendLine(acc.NormalizeWhitespace().ToFullString());
+                foreach (var acc in propNode.AccessorList.Accessors) sb.AppendLine(WasmSafeFormatter.Format(acc));
                 sb.AppendLine("}");
             }
-            else if (propNode.ExpressionBody != null) sb.AppendLine($" => {propNode.ExpressionBody.Expression.NormalizeWhitespace().ToFullString()};");
+            else if (propNode.ExpressionBody != null) sb.AppendLine($" => {WasmSafeFormatter.Format(propNode.ExpressionBody.Expression)};");
             else sb.AppendLine(";");
 
-            if (propNode.Initializer != null) sb.AppendLine($" = {propNode.Initializer.Value.NormalizeWhitespace().ToFullString()};");
+            if (propNode.Initializer != null) sb.AppendLine($" = {WasmSafeFormatter.Format(propNode.Initializer.Value)};");
             return sb.ToString();
         }
 
         private static string FormatFieldSafe(FieldDeclarationSyntax fieldNode)
         {
             var sb = new System.Text.StringBuilder();
-            foreach (var attr in fieldNode.AttributeLists) sb.AppendLine(attr.NormalizeWhitespace().ToFullString());
+            foreach (var attr in fieldNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", fieldNode.Modifiers.Select(m => m.Text));
-            var type = fieldNode.Declaration.Type.NormalizeWhitespace().ToFullString();
-            var vars = string.Join(", ", fieldNode.Declaration.Variables.Select(v => v.NormalizeWhitespace().ToFullString()));
+            var type = WasmSafeFormatter.Format(fieldNode.Declaration.Type);
+            var vars = string.Join(", ", fieldNode.Declaration.Variables.Select(v => WasmSafeFormatter.Format(v)));
             sb.AppendLine($"{modifiers} {type} {vars};");
             return sb.ToString();
         }

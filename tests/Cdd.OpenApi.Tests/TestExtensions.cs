@@ -5,7 +5,7 @@ namespace Cdd.OpenApi.Tests
     {
         public static string ToFormattedString(this Microsoft.CodeAnalysis.SyntaxNode node)
         {
-            return node.NormalizeWhitespace().ToFullString();
+            return WasmSafeFormatter.Format(node);
         }
     }
 }

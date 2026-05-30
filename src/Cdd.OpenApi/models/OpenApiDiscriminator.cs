@@ -58,7 +58,7 @@ namespace Cdd.OpenApi.Models
                     }
                     if (document.RootElement.TryGetProperty("mapping", out var mapping))
                     {
-                        discriminator.Mapping = JsonSerializer.Deserialize<IDictionary<string, string>>(mapping.GetRawText(), options);
+                        discriminator.Mapping = JsonSerializer.Deserialize(mapping.GetRawText(), Cdd.OpenApi.Parse.OpenApiJsonContext.Default.DictionaryStringString);
                     }
                     if (document.RootElement.TryGetProperty("defaultMapping", out var defMapping))
                     {
@@ -88,7 +88,7 @@ namespace Cdd.OpenApi.Models
             if (value.Mapping != null)
             {
                 writer.WritePropertyName("mapping");
-                JsonSerializer.Serialize(writer, value.Mapping, options);
+                JsonSerializer.Serialize(writer, value.Mapping, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.DictionaryStringString);
             }
             if (value.DefaultMapping != null)
             {

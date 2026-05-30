@@ -26,9 +26,9 @@ namespace Cdd.OpenApi.Tests.Emit
             var json = emitter.EmitJson(doc);
 
             // Assert
-            Assert.Contains("\"openapi\": \"3.2.0\"", json);
-            Assert.Contains("\"title\": \"Test API\"", json);
-            Assert.Contains("\"paths\": {}", json);
+            Assert.Contains("\"openapi\":\"3.2.0\"", json);
+            Assert.Contains("\"title\":\"Test API\"", json);
+            Assert.Contains("\"paths\":{}", json);
         }
     }
 }

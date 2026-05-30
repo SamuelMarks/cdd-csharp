@@ -23,7 +23,7 @@ namespace Cdd.OpenApi.Parse
 
             try
             {
-                var document = JsonSerializer.Deserialize<OpenApiDocument>(jsonContent, FallbackOptions);
+                var document = JsonSerializer.Deserialize(jsonContent, OpenApiJsonContext.Default.OpenApiDocument);
                 if (document != null)
                 {
                     if (document.Definitions != null)
@@ -131,12 +131,5 @@ namespace Cdd.OpenApi.Parse
             }
         }
 
-        private static readonly JsonSerializerOptions FallbackOptions = new JsonSerializerOptions
-        {
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = true
-        };
     }
 }

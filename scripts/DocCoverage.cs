@@ -28,16 +28,18 @@ namespace DocCoverage {
 
                 foreach (var node in nodes) {
                     var isPublic = false;
-                    if (node is BaseTypeDeclarationSyntax btd && btd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) isPublic = true;
-                    if (node is MethodDeclarationSyntax md && md.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) isPublic = true;
-                    if (node is PropertyDeclarationSyntax pd && pd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) isPublic = true;
-                    if (node is DelegateDeclarationSyntax dd && dd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) isPublic = true;
-                    if (node is ConstructorDeclarationSyntax cd && cd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) isPublic = true;
+                    string name = "";
+                    if (node is BaseTypeDeclarationSyntax btd && btd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) { isPublic = true; name = btd.Identifier.Text; }
+                    if (node is MethodDeclarationSyntax md && md.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) { isPublic = true; name = md.Identifier.Text; }
+                    if (node is PropertyDeclarationSyntax pd && pd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) { isPublic = true; name = pd.Identifier.Text; }
+                    if (node is DelegateDeclarationSyntax dd && dd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) { isPublic = true; name = dd.Identifier.Text; }
+                    if (node is ConstructorDeclarationSyntax cd && cd.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) { isPublic = true; name = cd.Identifier.Text; }
 
                     if (isPublic) {
                         totalPublic++;
                         var hasDocs = node.GetLeadingTrivia().Any(t => t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) || t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia));
                         if (hasDocs) documented++;
+                        else Console.WriteLine($"Missing doc: {file} - {name}");
                     }
                 }
             }

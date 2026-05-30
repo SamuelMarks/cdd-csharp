@@ -20,13 +20,7 @@ namespace Cdd.OpenApi.Emit
                 throw new ArgumentNullException(nameof(document));
             }
 
-            return JsonSerializer.Serialize(document, FallbackOptions);
+            return JsonSerializer.Serialize(document, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.OpenApiDocument);
         }
-
-        private static readonly JsonSerializerOptions FallbackOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
     }
 }

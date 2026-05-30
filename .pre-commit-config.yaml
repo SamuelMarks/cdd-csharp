@@ -33,3 +33,9 @@ repos:
         entry: python3 run_web_ui_test.py
         language: system
         pass_filenames: false
+
+    -   id: wasm-lint
+        name: Lint WASM-breaking methods
+        entry: python3 scripts/lint_wasm.py
+        language: system
+        pass_filenames: false

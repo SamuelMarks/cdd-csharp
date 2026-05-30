@@ -10,7 +10,7 @@ namespace Cdd.OpenApi.Tests
         {
             var p = new Process();
             p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --no-build --project ../../../../../src/Cdd.OpenApi.Cli -f net10.0 --version";
+            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 --version";
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.Start();

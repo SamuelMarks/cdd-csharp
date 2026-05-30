@@ -1,0 +1,48 @@
+using System.Text.Json;
+using Xunit;
+
+namespace Cdd.OpenApi.Tests
+{
+    public class BrowserInteropTests
+    {
+        [Fact]
+        public void GenerateFromOpenApi_ValidSpec_ReturnsJsonDictionary()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk");
+            Assert.Contains("Client.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_AllTarget_ReturnsJsonDictionary()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "all");
+            Assert.Contains("Attributes.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_SdkCliTarget_ReturnsJsonDictionary()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk_cli");
+            Assert.Contains("Attributes.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_ServerTarget_ReturnsJsonDictionary()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_server");
+            Assert.Contains("Attributes.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_InvalidSpec_ReturnsErrorJson()
+        {
+            string spec = "invalid json";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk");
+            Assert.Contains("error", result);
+        }
+    }
+}
