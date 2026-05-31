@@ -41,7 +41,7 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Build WASM
-      run: dotnet workload install wasm-tools-net8 && make build_wasm
+      run: dotnet workload install wasm-tools wasm-tools-net8 && make build_wasm
 
     - name: Create Release
       uses: ncipollo/release-action@v1
