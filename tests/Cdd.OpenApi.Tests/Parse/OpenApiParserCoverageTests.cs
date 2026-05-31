@@ -25,7 +25,7 @@ namespace Cdd.OpenApi.Tests.Parse
                 }
             }";
             var parser = new OpenApiParser();
-            var doc = parser.ParseJson(json); System.Console.WriteLine("P IN IS: " + doc.Paths["/test"].Post.Parameters[0].In);
+            var doc = parser.ParseJson(json); // System.Console.WriteLine("P IN IS: " + doc.Paths["/test"].Post.Parameters[0].In);
             var op = doc.Paths["/test"].Post;
 
             Assert.Null(op.RequestBody);

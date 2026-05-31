@@ -429,8 +429,8 @@ namespace Cdd.OpenApi.Tests.Clients
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
             Assert.Equal("integer", paths["/1"].Get.Parameters[0].Schema.Type);
-            System.Console.WriteLine("TYPE: " + paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
-            System.Console.WriteLine("RETURN TYPE IS: " + classNode.Members.OfType<MethodDeclarationSyntax>().First().ReturnType.ToString());
+            // System.Console.WriteLine("TYPE: " + paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            // System.Console.WriteLine("RETURN TYPE IS: " + classNode.Members.OfType<MethodDeclarationSyntax>().First().ReturnType.ToString());
             Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
 
             Assert.Equal("number", paths["/2"].Get.Parameters[0].Schema.Type);
