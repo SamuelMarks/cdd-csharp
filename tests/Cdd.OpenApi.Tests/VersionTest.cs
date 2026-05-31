@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System;
 using Xunit;
 
 namespace Cdd.OpenApi.Tests
@@ -8,18 +8,19 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void VersionCommand_OutputsCorrectVersion()
         {
-            var p = new Process();
-            p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 --version";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.Start();
-
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            Assert.Equal(0, p.ExitCode);
-            Assert.Equal("0.0.1\n", output.Replace("\r", ""));
+            var sw = new System.IO.StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(sw);
+            try
+            {
+                var exitCode = Cdd.OpenApi.Cli.Program.Main(new[] { "--version" });
+                Assert.Equal(0, exitCode);
+                Assert.Equal("0.0.1\n", sw.ToString().Replace("\r", ""));
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
         }
     }
 }

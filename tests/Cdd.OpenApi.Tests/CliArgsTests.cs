@@ -1,16 +1,27 @@
+using System;
 using System.IO;
 using Xunit;
-using System.Reflection;
-using System.Threading;
-using System.Diagnostics;
 
 namespace Cdd.OpenApi.Tests
 {
     [Collection("Cli")]
     public class CliArgsTests
     {
-        // Simple manual validation since the CLI directly executes logic
-        // We will execute the compiled CLI process directly to ensure it works end-to-end
+        private (int ExitCode, string Output) RunMain(string[] args)
+        {
+            var sw = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(sw);
+            try
+            {
+                var exitCode = Cdd.OpenApi.Cli.Program.Main(args);
+                return (exitCode, sw.ToString());
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+        }
 
         [Fact]
         public void FromOpenApi_ValidArgs_GeneratesCode()
@@ -21,17 +32,9 @@ namespace Cdd.OpenApi.Tests
             var specPath = Path.Combine(tmpDir, "spec.json");
             File.WriteAllText(specPath, "{\"openapi\":\"3.2.0\",\"paths\":{},\"info\":{\"title\":\"\",\"version\":\"\"}}");
 
-            var p = new Process();
-            p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 from_openapi -i {specPath} -o {tmpDir}";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.Start();
+            var (exitCode, output) = RunMain(new[] { "from_openapi", "-i", specPath, "-o", tmpDir });
 
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            Assert.Equal(0, p.ExitCode);
+            Assert.Equal(0, exitCode);
             Assert.Contains("Successfully generated C# code", output);
 
             Directory.Delete(tmpDir, true);
@@ -46,30 +49,23 @@ namespace Cdd.OpenApi.Tests
             var specPath = Path.Combine(tmpDir, "spec.json");
             File.WriteAllText(specPath, "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}");
 
-            var p = new Process();
-            p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 from_openapi -i {specPath} -o {tmpDir} --tests";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.Start();
+            var (exitCode, output) = RunMain(new[] { "from_openapi", "-i", specPath, "-o", tmpDir, "--tests" });
 
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            Assert.Equal(0, p.ExitCode);
+            Assert.Equal(0, exitCode);
             Assert.Contains("Successfully generated C# code", output);
-            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src/Tests/ApiTests.cs")));
-            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src/Mocks/ApiMock.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src", "Tests", "ApiTests.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src", "Mocks", "ApiMock.cs")));
 
-            var testsContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "src/Tests/ApiTests.cs"));
+            var testsContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "src", "Tests", "ApiTests.cs"));
             Assert.Contains("IApi", testsContent);
             Assert.Contains("_api", testsContent);
 
-            var mockContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "src/Mocks/ApiMock.cs"));
-            Assert.Contains("IApi", mockContent); // Should implement IApi
+            var mockContent = File.ReadAllText(Path.Combine(tmpDir, "src", "GeneratedProject", "src", "Mocks", "ApiMock.cs"));
+            Assert.Contains("IApi", mockContent);
 
             Directory.Delete(tmpDir, true);
         }
+
         [Fact]
         public void FromOpenApi_ToSdk_ValidArgs_GeneratesCode()
         {
@@ -79,19 +75,11 @@ namespace Cdd.OpenApi.Tests
             var specPath = Path.Combine(tmpDir, "spec.json");
             File.WriteAllText(specPath, "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}");
 
-            var p = new Process();
-            p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 from_openapi to_sdk -i {specPath} -o {tmpDir}";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.Start();
+            var (exitCode, output) = RunMain(new[] { "from_openapi", "to_sdk", "-i", specPath, "-o", tmpDir });
 
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            Assert.Equal(0, p.ExitCode);
+            Assert.Equal(0, exitCode);
             Assert.Contains("Successfully generated C# code", output);
-            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src/Client/Client.cs")));
+            Assert.True(File.Exists(Path.Combine(tmpDir, "src", "GeneratedProject", "src", "Client", "Client.cs")));
 
             Directory.Delete(tmpDir, true);
         }
@@ -107,17 +95,9 @@ namespace Cdd.OpenApi.Tests
 
             var outPath = Path.Combine(tmpDir, "spec.json");
 
-            var p = new Process();
-            p.StartInfo.FileName = "dotnet";
-            p.StartInfo.Arguments = $"run --project ../../../../../src/Cdd.OpenApi.Cli --framework net10.0 to_openapi -i {tmpDir} -o {outPath}";
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.Start();
+            var (exitCode, output) = RunMain(new[] { "to_openapi", "-i", tmpDir, "-o", outPath });
 
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit();
-
-            Assert.Equal(0, p.ExitCode);
+            Assert.Equal(0, exitCode);
             Assert.Contains("Successfully generated spec", output);
             Assert.True(File.Exists(outPath));
 
