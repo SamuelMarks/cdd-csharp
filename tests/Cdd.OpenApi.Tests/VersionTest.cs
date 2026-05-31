@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests
 {
+    [Collection("Cli")]
     public class VersionTest
     {
         [Fact]
