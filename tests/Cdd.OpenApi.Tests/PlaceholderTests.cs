@@ -61,6 +61,9 @@ namespace Cdd.OpenApi.Tests.Placeholders
             var paths = new OpenApiPaths();
             paths.Add("/test", new OpenApiPathItem { Get = new OpenApiOperation(), Post = new OpenApiOperation(), Put = new OpenApiOperation(), Delete = new OpenApiOperation() });
             global::Cdd.OpenApi.TestsModule.Emit.ToTests("TestTests", paths);
+            global::Cdd.OpenApi.TestsModule.Emit.ToTests("TestTests", paths, true);
+            global::Cdd.OpenApi.TestsModule.Emit.ToClientTests("TestClientTests", paths);
+            global::Cdd.OpenApi.TestsModule.Emit.ToClientTests("TestClientTests", paths, true);
         }
     }
 }

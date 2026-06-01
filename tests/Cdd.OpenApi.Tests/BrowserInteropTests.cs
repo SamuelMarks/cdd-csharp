@@ -44,5 +44,21 @@ namespace Cdd.OpenApi.Tests
             var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk");
             Assert.Contains("error", result);
         }
+
+        [Fact]
+        public void GenerateFromOpenApi_WithTests_ReturnsIntegrationTests()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi --tests", "to_sdk");
+            Assert.Contains("tests/IntegrationTests.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_WithGenerateTestsTrue_ReturnsIntegrationTests()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk", true);
+            Assert.Contains("tests/IntegrationTests.cs", result);
+        }
     }
 }

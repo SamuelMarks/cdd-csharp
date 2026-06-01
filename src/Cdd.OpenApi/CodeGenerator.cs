@@ -153,6 +153,16 @@ namespace Cdd.OpenApi
                                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
                         .AddMembers(clientNode);
                     results.Add(new GeneratedCode { FileName = "src/Client/Client.cs", Code = WasmSafeRoslyn.FormatSafe(clientNsNode) });
+
+                    if (tests)
+                    {
+                        var clientTestsNode = Cdd.OpenApi.TestsModule.Emit.ToClientTests("ApiClientTests", doc.Paths, tests);
+                        clientTestsNode = AddDocTags(clientTestsNode, doc);
+                        var clientTestsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Client")))
+                            .AddMembers(clientTestsNode);
+                        results.Add(new GeneratedCode { FileName = "src/Tests/ApiClientTests.cs", Code = WasmSafeRoslyn.FormatSafe(clientTestsNsNode) });
+                    }
                 }
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli)
