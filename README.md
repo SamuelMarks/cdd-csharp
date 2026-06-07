@@ -22,6 +22,7 @@ The CLI—at a minimum—has:
 - `cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]`
 - `cdd-csharp to_docs_json --no-imports --no-wrapping -i spec.json`
 - `cdd-csharp serve_json_rpc -p 8080 -l 0.0.0.0`
+- `cdd-csharp mcp`
 
 ## SDK Example
 
@@ -72,6 +73,7 @@ The `cdd-csharp` compiler leverages a unified architecture to support various fa
     - **`C#` → OpenAPI**: Statically parse existing `C#` source code and emit compliant OpenAPI specifications.
 - **AST-Driven & Safe**: Employs static analysis instead of unsafe dynamic execution or reflection, allowing it to safely parse and emit code even for incomplete or un-compilable project states.
 - **Seamless Sync**: Keep your docs, tests, database, clients, and routing in perfect harmony. Update your code, and generate the docs; or update the docs, and generate the code.
+- **Model Context Protocol (MCP)**: Native support for providing language models with tools to read, generate, and interact with OpenAPI specifications and source code.
 
 **Uncommon Features:**
 

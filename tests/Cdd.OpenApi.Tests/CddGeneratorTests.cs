@@ -285,5 +285,27 @@ namespace Cdd.OpenApi.Tests
                 System.IO.Directory.Delete(tempDir, true);
             }
         }
+        [Fact]
+        public void SafeCreateDirectory_WithBackslash()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            // Create a path that starts with \ just for coverage of SafeCreateDirectory
+            var config = new CddConfig
+            {
+                InputPath = tempDir, // We'll just put a valid thing so it parses
+                OutputDir = tempDir.Replace("/", "\\"),
+                NoInstallablePackage = true,
+                NoGithubActions = true
+            };
+            File.WriteAllText(tempDir, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
+            try
+            {
+                CddGenerator.GenerateAll(config);
+            }
+            finally
+            {
+                if (File.Exists(tempDir)) File.Delete(tempDir);
+            }
+        }
     }
 }

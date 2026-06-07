@@ -12,7 +12,6 @@ namespace Cdd.OpenApi.CliModule
     {
         private static string ToSnakeCase(string text)
         {
-            if (string.IsNullOrEmpty(text)) return text;
             return string.Concat(text.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
         }
 
@@ -122,6 +121,13 @@ namespace Cdd.OpenApi.CliModule
                     switchStatement = switchStatement.AddSections(SyntaxFactory.SwitchSection(new SyntaxList<SwitchLabelSyntax>().Add(caseLabel), caseStatements));
                 }
             }
+
+            var mcpLabel = SyntaxFactory.CaseSwitchLabel(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("mcp")));
+            var mcpStatements = new SyntaxList<StatementSyntax>()
+                .Add(SyntaxFactory.ParseStatement("var mcpServer = new McpServer();"))
+                .Add(SyntaxFactory.ParseStatement("mcpServer.Run();"))
+                .Add(SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0))));
+            switchStatement = switchStatement.AddSections(SyntaxFactory.SwitchSection(new SyntaxList<SwitchLabelSyntax>().Add(mcpLabel), mcpStatements));
 
             var defaultLabel = SyntaxFactory.DefaultSwitchLabel();
             var defaultStatements = new SyntaxList<StatementSyntax>()

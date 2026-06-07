@@ -60,5 +60,29 @@ namespace Cdd.OpenApi.Tests
             var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk", true);
             Assert.Contains("tests/IntegrationTests.cs", result);
         }
+
+        [Fact]
+        public void GenerateFromOpenApi_NullCommand_NoTests()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, null, "to_sdk");
+            Assert.Contains("Client.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_WithTests_TargetServer_NoIntegrationTests()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi --tests", "to_server");
+            Assert.DoesNotContain("tests/IntegrationTests.cs", result);
+        }
+
+        [Fact]
+        public void GenerateFromOpenApi_WithTests_TargetAll_ReturnsIntegrationTests()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi --tests", "all");
+            Assert.Contains("tests/IntegrationTests.cs", result);
+        }
     }
 }

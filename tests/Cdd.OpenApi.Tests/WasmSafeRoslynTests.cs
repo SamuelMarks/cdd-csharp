@@ -54,5 +54,41 @@ namespace Cdd.OpenApi.Tests
             var result = WasmSafeRoslyn.FormatSafe(SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName("N")).AddMembers(del));
             Assert.Contains("public delegate void D();", result);
         }
+        [Fact]
+        public void WasmSafeFormatter_ExtraClosingBraces_DoesNotCrash()
+        {
+            string code = "public class A { } } }";
+            var node = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseCompilationUnit(code);
+            string formatted = Cdd.OpenApi.WasmSafeFormatter.Format(node);
+            Assert.Contains("}", formatted);
+        }
+
+        [Fact]
+        public void WasmSafeRoslyn_FormatsAttributesAndExpressionBodies()
+        {
+            string code = @"
+namespace N {
+    [Serializable]
+    public class C {
+        [Obsolete]
+        private int _f;
+
+        [Obsolete]
+        public C() {}
+
+        public int M() => 1;
+    }
+
+    [Obsolete]
+    public interface I : IBase {}
+}
+";
+            var ns = ParseMember<Microsoft.CodeAnalysis.CSharp.Syntax.NamespaceDeclarationSyntax>(code);
+            var result = WasmSafeRoslyn.FormatSafe(ns);
+            Assert.Contains("[Serializable]", result);
+            Assert.Contains("[Obsolete]", result);
+            Assert.Contains("=> 1;", result);
+            Assert.Contains(":IBase", result);
+        }
     }
 }

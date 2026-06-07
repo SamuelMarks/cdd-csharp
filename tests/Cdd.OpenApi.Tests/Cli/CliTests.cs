@@ -213,6 +213,85 @@ namespace Cdd.OpenApi.Cli.Tests
 
 
         [Fact]
+        public void McpCommand_Starts()
+        {
+            var originalIn = Console.In;
+            try
+            {
+                Console.SetIn(new StringReader(""));
+                Assert.Equal(0, Program.Main(new[] { "mcp" }));
+            }
+            finally
+            {
+                Console.SetIn(originalIn);
+            }
+        }
+
+        [Fact]
+        public void EnvVars_Are_Respected()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDir);
+            var tempInput = Path.Combine(tempDir, "spec.json");
+            File.WriteAllText(tempInput, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
+
+            try
+            {
+                Environment.SetEnvironmentVariable("CDD_NO_GITHUB_ACTIONS", "true");
+                Environment.SetEnvironmentVariable("NO_INSTALLABLE_PACKAGE", "true");
+                Environment.SetEnvironmentVariable("CDD_TESTS", "true");
+                Environment.SetEnvironmentVariable("CDD_NO_IMPORTS", "true");
+                Environment.SetEnvironmentVariable("NO_WRAPPING", "true");
+
+                // from_openapi
+                Assert.Equal(0, Program.Main(new[] { "from_openapi", "to_sdk", "-i", tempInput, "-o", tempDir }));
+
+                // to_docs_json
+                var tempOutput = Path.Combine(tempDir, "docs.json");
+                Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempOutput }));
+
+                // to test paths starting with /
+                Environment.SetEnvironmentVariable("CDD_INPUT", "/some/path");
+                Environment.SetEnvironmentVariable("CDD_OUTPUT", "/some/path");
+                Program.Main(new[] { "to_openapi" });
+                Program.Main(new[] { "to_docs_json" });
+
+                // alternate branch coverage for OR conditions
+                Environment.SetEnvironmentVariable("CDD_INPUT", null);
+                Environment.SetEnvironmentVariable("CDD_OUTPUT", null);
+                Environment.SetEnvironmentVariable("CDD_NO_GITHUB_ACTIONS", null);
+                Environment.SetEnvironmentVariable("NO_GITHUB_ACTIONS", "true");
+                Environment.SetEnvironmentVariable("NO_INSTALLABLE_PACKAGE", null);
+                Environment.SetEnvironmentVariable("CDD_NO_INSTALLABLE_PACKAGE", "true");
+                Environment.SetEnvironmentVariable("CDD_TESTS", null);
+                Environment.SetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS", "true");
+                Environment.SetEnvironmentVariable("CDD_NO_IMPORTS", null);
+                Environment.SetEnvironmentVariable("NO_IMPORTS", "true");
+                Environment.SetEnvironmentVariable("NO_WRAPPING", null);
+                Environment.SetEnvironmentVariable("CDD_NO_WRAPPING", "true");
+
+                Assert.Equal(0, Program.Main(new[] { "from_openapi", "to_sdk", "-i", tempInput, "-o", tempDir }));
+                Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempOutput }));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CDD_NO_GITHUB_ACTIONS", null);
+                Environment.SetEnvironmentVariable("NO_GITHUB_ACTIONS", null);
+                Environment.SetEnvironmentVariable("NO_INSTALLABLE_PACKAGE", null);
+                Environment.SetEnvironmentVariable("CDD_NO_INSTALLABLE_PACKAGE", null);
+                Environment.SetEnvironmentVariable("CDD_TESTS", null);
+                Environment.SetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS", null);
+                Environment.SetEnvironmentVariable("CDD_NO_IMPORTS", null);
+                Environment.SetEnvironmentVariable("NO_IMPORTS", null);
+                Environment.SetEnvironmentVariable("NO_WRAPPING", null);
+                Environment.SetEnvironmentVariable("CDD_NO_WRAPPING", null);
+                Environment.SetEnvironmentVariable("CDD_INPUT", null);
+                Environment.SetEnvironmentVariable("CDD_OUTPUT", null);
+                Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
         public void ServerJsonRpc_Starts()
         {
             // We use an invalid port to hit the exception handler and return 1

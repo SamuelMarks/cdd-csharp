@@ -40,7 +40,7 @@ namespace Cdd.OpenApi
             if (string.IsNullOrEmpty(path)) return;
             var parts = path.Split(new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
             string current = "";
-            if (path.StartsWith("/") || path.StartsWith("\\")) current = "/";
+            if (path.StartsWith("/")) current = "/";
             foreach (var part in parts)
             {
                 current = System.IO.Path.Combine(current, part);
@@ -130,36 +130,17 @@ namespace Cdd.OpenApi
                 try
                 {
                     var title = "GeneratedProject";
-                    if (lastDoc != null && lastDoc.Info != null)
-                    {
-                        if (lastDoc.Info.Title != null)
-                        {
-                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Title)) title = lastDoc.Info.Title;
-                        }
-                    }
                     var version = "1.0.0";
-                    if (lastDoc != null && lastDoc.Info != null)
-                    {
-                        if (lastDoc.Info.Version != null)
-                        {
-                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Version)) version = lastDoc.Info.Version;
-                        }
-                    }
                     var authors = "Generated";
-                    if (lastDoc != null && lastDoc.Info != null && lastDoc.Info.Contact != null)
-                    {
-                        if (lastDoc.Info.Contact.Name != null)
-                        {
-                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Contact.Name)) authors = lastDoc.Info.Contact.Name;
-                        }
-                    }
                     var description = "Generated OpenApi SDK";
-                    if (lastDoc != null && lastDoc.Info != null)
+
+                    if (lastDoc.Info != null)
                     {
-                        if (lastDoc.Info.Description != null)
-                        {
-                            if (!string.IsNullOrWhiteSpace(lastDoc.Info.Description)) description = lastDoc.Info.Description;
-                        }
+                        var info = lastDoc.Info;
+                        if (!string.IsNullOrWhiteSpace(info.Title)) title = info.Title;
+                        if (!string.IsNullOrWhiteSpace(info.Version)) version = info.Version;
+                        if (info.Contact != null && !string.IsNullOrWhiteSpace(info.Contact.Name)) authors = info.Contact.Name;
+                        if (!string.IsNullOrWhiteSpace(info.Description)) description = info.Description;
                     }
                     // Escape XML characters just in case
                     title = System.Security.SecurityElement.Escape(title)!;
@@ -175,7 +156,7 @@ namespace Cdd.OpenApi
 
                     if (type == GenerateType.All || type == GenerateType.Server)
                     {
-                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n";
+                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n  <ItemGroup>\n    <FrameworkReference Include=\"Microsoft.AspNetCore.App\" />\n  </ItemGroup>\n";
                     }
                     projContent += "</Project>";
                     var projectDir = Path.Combine(outputDir, "src", "GeneratedProject");

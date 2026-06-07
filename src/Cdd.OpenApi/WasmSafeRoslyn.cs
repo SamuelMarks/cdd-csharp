@@ -71,7 +71,7 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             foreach (var attr in interfaceNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", interfaceNode.Modifiers.Select(m => m.Text));
-            var baseList = interfaceNode.BaseList != null ? $" : {WasmSafeFormatter.Format(interfaceNode.BaseList)}" : "";
+            var baseList = interfaceNode.BaseList != null ? $" {WasmSafeFormatter.Format(interfaceNode.BaseList)}" : "";
             sb.AppendLine($"{modifiers} interface {interfaceNode.Identifier.Text}{baseList}\n{{");
             foreach (var member in interfaceNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");

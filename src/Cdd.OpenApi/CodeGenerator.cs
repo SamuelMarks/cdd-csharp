@@ -172,6 +172,22 @@ namespace Cdd.OpenApi
                     var cliNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                         .AddMembers(cliNode);
                     results.Add(new GeneratedCode { FileName = "src/Cli/ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
+
+                    var mcpServerNode = Cdd.OpenApi.Mcp.Emit.ToMcpServer("McpServer", doc.Paths);
+                    var mcpServerNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.IO")))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Text.Json.Serialization")))
+                        .AddMembers(mcpServerNode);
+                    results.Add(new GeneratedCode { FileName = "src/Cli/McpServer.cs", Code = WasmSafeRoslyn.FormatSafe(mcpServerNsNode) });
+
+                    var mcpModelsNode = Cdd.OpenApi.Mcp.Emit.ToMcpModels();
+                    var mcpModelsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli.Models"))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Collections.Generic")))
+                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Text.Json.Serialization")))
+                        .AddMembers(mcpModelsNode.ToArray());
+                    results.Add(new GeneratedCode { FileName = "src/Cli/McpModels.cs", Code = WasmSafeRoslyn.FormatSafe(mcpModelsNsNode) });
                 }
 
                 if (type == GenerateType.All)

@@ -331,6 +331,31 @@ namespace Cdd.OpenApi.Routes
                 }
             }
 
+
+            // Dynamic SSE endpoint definitions for Server Integration
+            var sseMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpSseEndpoint")
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpGet"))
+                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/sse")))
+                        )))
+                )));
+            sseMethod = Docstrings.Emit.WithSummary(sseMethod, "Establishes a Model Context Protocol SSE stream.");
+            members.Add(sseMethod);
+
+            var msgMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpMessageEndpoint")
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
+                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/messages")))
+                        )))
+                )))
+                .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body")).WithType(SyntaxFactory.ParseTypeName("object")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromBody"))))))
+                .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("sessionId")).WithType(SyntaxFactory.ParseTypeName("string")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromQuery"))))));
+            msgMethod = Docstrings.Emit.WithSummary(msgMethod, "Receives JSON-RPC messages for an active MCP session.");
+            members.Add(msgMethod);
             return interfaceNode.AddMembers(members.ToArray());
         }
 

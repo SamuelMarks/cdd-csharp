@@ -541,6 +541,42 @@ namespace Cdd.OpenApi.Clients
                 }
             }
 
+
+            var mcpClassDecl = SyntaxFactory.ClassDeclaration("NativeMcpAdapter")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddMembers(
+                    SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(className))
+                        .AddVariables(SyntaxFactory.VariableDeclarator("_client")))
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)),
+                    SyntaxFactory.ConstructorDeclaration("NativeMcpAdapter")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("client")).WithType(SyntaxFactory.ParseTypeName(className)))
+                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, SyntaxFactory.IdentifierName("_client"), SyntaxFactory.IdentifierName("client"))))),
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>"), "GetTools")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))),
+                                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<string>"), "ExecuteToolAsync")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                        .AddParameterListParameters(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("toolName")).WithType(SyntaxFactory.ParseTypeName("string")),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.Dictionary<string, object>"))
+                        )
+                        .WithBody(SyntaxFactory.Block(
+                            SyntaxFactory.ReturnStatement(SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task"), SyntaxFactory.IdentifierName("FromResult"))).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("")))))
+                        )),
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>"), "GetResources")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList()))))
+                );
+
+            var mcpPropDecl = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("NativeMcpAdapter"), "Mcp")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("NativeMcpAdapter")).WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(SyntaxFactory.ThisExpression()))))))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+
+            members.Add(mcpClassDecl);
+            members.Add(mcpPropDecl);
             return classNode.AddMembers(members.ToArray());
         }
 

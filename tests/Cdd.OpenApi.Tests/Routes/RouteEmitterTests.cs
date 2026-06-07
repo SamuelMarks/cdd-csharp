@@ -41,6 +41,10 @@ namespace Cdd.OpenApi.Tests.Routes
 
             AssertHelper.ContainsNoWhitespace("[HttpPost(\"/pets\")]", code);
             AssertHelper.ContainsNoWhitespace("void CreatePet();", code);
+
+            // Assert MCP endpoints are generated
+            Assert.Contains("McpSseEndpoint", code);
+            Assert.Contains("McpMessageEndpoint", code);
         }
 
         [Fact]

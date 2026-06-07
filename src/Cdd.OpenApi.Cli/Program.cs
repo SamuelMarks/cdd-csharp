@@ -51,7 +51,7 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (command == "--version" || command == "-v" || command == "version")
                 {
-                    Console.WriteLine("0.0.1");
+                    Console.WriteLine("0.0.2");
                     return 0;
                 }
 
@@ -70,6 +70,10 @@ namespace Cdd.OpenApi.Cli
                 else if (command == "serve_json_rpc")
                 {
                     return CddCli.ServeJsonRpc(args);
+                }
+                else if (command == "mcp")
+                {
+                    return CddCli.ServeMcp(args);
                 }
 
                 var inputPath = args.Length > 1 ? args[1] : string.Empty;
@@ -111,6 +115,7 @@ namespace Cdd.OpenApi.Cli
             Console.WriteLine("  to_openapi      Generate an OpenAPI specification from source code.");
             Console.WriteLine("  to_docs_json    Generate JSON documentation with code snippets for an OpenAPI specification.");
             Console.WriteLine("  serve_json_rpc  Expose CLI interface as a JSON-RPC server.");
+            Console.WriteLine("  mcp             Run Meta-MCP server over stdio.");
             Console.WriteLine("\nOptions:");
             Console.WriteLine("  --help, -h      Show this message");
             Console.WriteLine("  --version, -v   Show version information");
