@@ -557,7 +557,7 @@ namespace Cdd.OpenApi.Clients
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                         .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))),
                                         SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<string>"), "ExecuteToolAsync")
-                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                         .AddParameterListParameters(
                             SyntaxFactory.Parameter(SyntaxFactory.Identifier("toolName")).WithType(SyntaxFactory.ParseTypeName("string")),
                             SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.Dictionary<string, object>"))

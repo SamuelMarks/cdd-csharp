@@ -39,3 +39,9 @@ repos:
         entry: python3 scripts/lint_wasm.py
         language: system
         pass_filenames: false
+
+    -   id: petstore-tests
+        name: Run Petstore Integration Tests
+        entry: bash scripts/run_petstore_tests.sh
+        language: system
+        pass_filenames: false
