@@ -30,6 +30,7 @@ namespace Cdd.OpenApi
 
         /// <summary>CreateComposableTestsAndMocks</summary>
         public bool CreateComposableTestsAndMocks { get; set; } = false;
+        public bool Mcp { get; set; } = false;
     }
 
     /// <summary>Auto-generated documentation for CddGenerator.</summary>

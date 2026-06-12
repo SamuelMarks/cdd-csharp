@@ -172,6 +172,7 @@ namespace Cdd.OpenApi.Cli
             config.NoGithubActions = Environment.GetEnvironmentVariable("CDD_NO_GITHUB_ACTIONS") == "true" || Environment.GetEnvironmentVariable("NO_GITHUB_ACTIONS") == "true";
             config.NoInstallablePackage = Environment.GetEnvironmentVariable("CDD_NO_INSTALLABLE_PACKAGE") == "true" || Environment.GetEnvironmentVariable("NO_INSTALLABLE_PACKAGE") == "true";
             config.CreateComposableTestsAndMocks = Environment.GetEnvironmentVariable("CDD_TESTS") == "true" || Environment.GetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS") == "true";
+            config.Mcp = Environment.GetEnvironmentVariable("CDD_MCP") == "true" || Environment.GetEnvironmentVariable("MCP") == "true";
 
             string? inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
             if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
@@ -205,11 +206,15 @@ namespace Cdd.OpenApi.Cli
                 {
                     config.CreateComposableTestsAndMocks = true;
                 }
+                else if (args[i] == "--mcp")
+                {
+                    config.CreateComposableTestsAndMocks = true;
+                }
             }
 
             if (string.IsNullOrEmpty(config.InputPath) && string.IsNullOrEmpty(config.InputDir) && !config.InputPaths.Any())
             {
-                Console.Error.WriteLine("Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | --input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  --input-dir                 Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.");
+                Console.Error.WriteLine("Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | --input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  --input-dir                 Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  --mcp                       Generate Model Context Protocol (MCP) server and adapter.");
                 return 1;
             }
 
