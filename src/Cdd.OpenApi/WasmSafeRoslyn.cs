@@ -59,7 +59,7 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             foreach (var attr in classNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", classNode.Modifiers.Select(m => m.Text));
-            var baseList = classNode.BaseList != null ? $" : {WasmSafeFormatter.Format(classNode.BaseList)}" : "";
+            var baseList = classNode.BaseList != null ? $" {WasmSafeFormatter.Format(classNode.BaseList)}" : "";
             sb.AppendLine($"{modifiers} class {classNode.Identifier.Text}{baseList}\n{{");
             foreach (var member in classNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -103,7 +103,7 @@ namespace Cdd.OpenApi
             foreach (var attr in ctorNode.AttributeLists) sb.AppendLine(WasmSafeFormatter.Format(attr));
             var modifiers = string.Join(" ", ctorNode.Modifiers.Select(m => m.Text));
             var parameters = WasmSafeFormatter.Format(ctorNode.ParameterList);
-            var init = ctorNode.Initializer != null ? $" : {WasmSafeFormatter.Format(ctorNode.Initializer)}" : "";
+            var init = ctorNode.Initializer != null ? $" {WasmSafeFormatter.Format(ctorNode.Initializer)}" : "";
             sb.AppendLine($"{modifiers} {ctorNode.Identifier.Text}{parameters}{init}");
             if (ctorNode.Body != null)
             {

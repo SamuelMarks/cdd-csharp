@@ -208,7 +208,7 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (args[i] == "--mcp")
                 {
-                    config.CreateComposableTestsAndMocks = true;
+                    config.Mcp = true;
                 }
             }
 
@@ -445,7 +445,7 @@ namespace Cdd.OpenApi.Cli
 
                     if (method == "version")
                     {
-                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.2" };
+                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.3" };
                         byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
                         response.OutputStream.Write(buf, 0, buf.Length);
                     }

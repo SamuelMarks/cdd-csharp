@@ -20,6 +20,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
                         {
                             Get = new OpenApiOperation
                             {
+                                Tags = new List<string> { "myDocsTag" },
                                 OperationId = "getPets",
                                 Parameters = new List<OpenApiParameter>
                                 {

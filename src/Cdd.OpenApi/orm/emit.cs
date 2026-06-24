@@ -32,20 +32,61 @@ namespace Cdd.OpenApi.Orm
 
             classNode = classNode.AddMembers(constructorNode);
 
+            var onModelCreatingMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "OnModelCreating")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.ProtectedKeyword), SyntaxFactory.Token(SyntaxKind.OverrideKeyword))
+                .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("modelBuilder")).WithType(SyntaxFactory.ParseTypeName("ModelBuilder")))
+                .WithBody(SyntaxFactory.Block(
+                    SyntaxFactory.ExpressionStatement(SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.BaseExpression(), SyntaxFactory.IdentifierName("OnModelCreating"))
+                    ).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("modelBuilder"))))
+                ));
+
+            var statements = new List<StatementSyntax>();
+            foreach (var schemaKvp in schemas)
+            {
+                var schemaName = schemaKvp.Key;
+                var schema = schemaKvp.Value;
+                bool hasId = false;
+
+                if (schema.Properties != null)
+                {
+                    foreach (var prop in schema.Properties)
+                    {
+                        var propNameLower = prop.Key.ToLowerInvariant();
+                        if (propNameLower == "id") hasId = true;
+
+                        var isObject = prop.Value.Type == "object" || prop.Value.Type == "array" || (prop.Value.Type == null && prop.Value.Ref == null);
+                        if (isObject)
+                        {
+                            statements.Add(SyntaxFactory.ParseStatement($"modelBuilder.Entity<{schemaName}>().Ignore(e => e.{prop.Key});"));
+                        }
+                    }
+                }
+
+                if (!hasId)
+                {
+                    statements.Add(SyntaxFactory.ParseStatement($"modelBuilder.Entity<{schemaName}>().HasNoKey();"));
+                }
+            }
+
+            if (statements.Any())
+            {
+                onModelCreatingMethod = onModelCreatingMethod.WithBody(SyntaxFactory.Block(statements.Prepend(
+                    SyntaxFactory.ExpressionStatement(SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.BaseExpression(), SyntaxFactory.IdentifierName("OnModelCreating"))
+                    ).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("modelBuilder"))))
+                )));
+                classNode = classNode.AddMembers(onModelCreatingMethod);
+            }
+
             var members = new List<MemberDeclarationSyntax>();
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
                 var propNode = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName($"DbSet<{schemaName}>"), schemaName + "s")
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                    .AddAccessorListAccessors(
-                        SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                        SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                    );
-
-                propNode = propNode.WithInitializer(
-                    SyntaxFactory.EqualsValueClause(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Set<{schemaName}>")))
-                ).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+                    .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Set<{schemaName}>"))))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
 
                 members.Add(propNode);
             }

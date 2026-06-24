@@ -68,14 +68,14 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("public class User", userClass.Code);
             Assert.Contains("int Id", userClass.Code);
 
-            var interfaceFile = generatedFiles.Find(f => f.FileName == "src/Api/IApi.cs");
+            var interfaceFile = generatedFiles.Find(f => f.FileName == "src/Api/IDefaultApi.cs");
             Assert.NotNull(interfaceFile);
-            Assert.Contains("interface IApi", interfaceFile.Code);
+            Assert.Contains("interface IDefaultApi", interfaceFile.Code);
             Assert.Contains("GetUser", interfaceFile.Code);
 
-            var clientFile = generatedFiles.Find(f => f.FileName == "src/Client/Client.cs");
+            var clientFile = generatedFiles.Find(f => f.FileName == "src/Client/DefaultApiClient.cs");
             Assert.NotNull(clientFile);
-            Assert.Contains("class ApiClient", clientFile.Code);
+            Assert.Contains("class DefaultApiClient", clientFile.Code);
             Assert.Contains("GetUserAsync", clientFile.Code);
         }
     }

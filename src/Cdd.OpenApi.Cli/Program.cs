@@ -51,7 +51,7 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (command == "--version" || command == "-v" || command == "version")
                 {
-                    Console.WriteLine("0.0.2");
+                    Console.WriteLine("0.0.3");
                     return 0;
                 }
 
@@ -66,6 +66,10 @@ namespace Cdd.OpenApi.Cli
                 else if (command == "to_docs_json")
                 {
                     return CddCli.GenerateDocsJson(args);
+                }
+                else if (command == "sync")
+                {
+                    return SyncCommand.Run(args);
                 }
                 else if (command == "serve_json_rpc")
                 {

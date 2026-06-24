@@ -66,6 +66,40 @@ namespace Cdd.OpenApi.Tests
         }
 
         [Fact]
+        public void GroupPathsByTag_AllOperations_CreatesCorrectGroups()
+        {
+            var opDelete = new OpenApiOperation { Tags = new List<string> { "delete" } };
+            var opOptions = new OpenApiOperation { Tags = new List<string> { "options" } };
+            var opHead = new OpenApiOperation { Tags = new List<string> { "head" } };
+            var opPatch = new OpenApiOperation { Tags = new List<string> { "patch" } };
+            var opTrace = new OpenApiOperation { Tags = new List<string> { "trace" } };
+            var opQuery = new OpenApiOperation { Tags = new List<string> { "query" } };
+            var opAdditional = new OpenApiOperation { Tags = new List<string> { "additional" } };
+
+            var doc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/all-ops"] = new OpenApiPathItem
+                    {
+                        Delete = opDelete,
+                        Options = opOptions,
+                        Head = opHead,
+                        Patch = opPatch,
+                        Trace = opTrace,
+                        Query = opQuery,
+                        AdditionalOperations = new Dictionary<string, OpenApiOperation>
+                        {
+                            { "x-custom", opAdditional }
+                        }
+                    }
+                }
+            };
+            var codes = CodeGenerator.Generate(doc);
+            Assert.NotEmpty(codes);
+        }
+
+        [Fact]
         public void AddDocTags_CoversBranches()
         {
             var doc = new OpenApiDocument

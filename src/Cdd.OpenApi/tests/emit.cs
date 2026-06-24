@@ -18,14 +18,15 @@ namespace Cdd.OpenApi.TestsModule
             var members = new List<MemberDeclarationSyntax>();
             if (tests)
             {
+                var interfaceName = $"I{name.Replace("Tests", "")}";
                 var field = SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName("IApi"))
+                    SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(interfaceName))
                     .AddVariables(SyntaxFactory.VariableDeclarator("_api"))
                 ).AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
 
                 var ctor = SyntaxFactory.ConstructorDeclaration(name)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("api")).WithType(SyntaxFactory.ParseTypeName("IApi")))
+                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("api")).WithType(SyntaxFactory.ParseTypeName(interfaceName)))
                     .WithBody(SyntaxFactory.Block(
                         SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,
@@ -62,14 +63,15 @@ namespace Cdd.OpenApi.TestsModule
             var members = new List<MemberDeclarationSyntax>();
             if (tests)
             {
+                var clientName = name.Replace("Tests", "");
                 var field = SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName("ApiClient"))
+                    SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(clientName))
                     .AddVariables(SyntaxFactory.VariableDeclarator("_client"))
                 ).AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword));
 
                 var ctor = SyntaxFactory.ConstructorDeclaration(name)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("client")).WithType(SyntaxFactory.ParseTypeName("ApiClient")))
+                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("client")).WithType(SyntaxFactory.ParseTypeName(clientName)))
                     .WithBody(SyntaxFactory.Block(
                         SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,

@@ -22,6 +22,7 @@ namespace Cdd.OpenApi.Tests
                     {
                         Get = new OpenApiOperation
                         {
+                            Tags = new List<string> { "mytag" },
                             Parameters = new List<OpenApiParameter>
                             {
                                 new OpenApiParameter { Name = "p1", Schema = new OpenApiSchema { Type = "integer" } },

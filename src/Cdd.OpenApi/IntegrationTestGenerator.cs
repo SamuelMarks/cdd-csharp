@@ -29,7 +29,7 @@ namespace Cdd.OpenApi
             sb.AppendLine("{");
             sb.AppendLine("    public class IntegrationTests");
             sb.AppendLine("    {");
-            sb.AppendLine("        private readonly ApiClient _client;");
+            sb.AppendLine("        private readonly HttpClient _httpClient;");
             sb.AppendLine();
             sb.AppendLine("        public IntegrationTests()");
             sb.AppendLine("        {");
@@ -56,10 +56,9 @@ namespace Cdd.OpenApi
 
             var fullUrl = "http://localhost:8080" + basePath;
 
-            sb.AppendLine($"            var httpClient = new HttpClient {{ BaseAddress = new Uri(\"{fullUrl}\") }};");
-            sb.AppendLine("            httpClient.DefaultRequestHeaders.Add(\"api_key\", \"special-key\");");
-            sb.AppendLine("            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(\"Bearer\", \"special-key\");");
-            sb.AppendLine("            _client = new ApiClient(httpClient);");
+            sb.AppendLine($"            _httpClient = new HttpClient {{ BaseAddress = new Uri(\"{fullUrl}\") }};");
+            sb.AppendLine("            _httpClient.DefaultRequestHeaders.Add(\"api_key\", \"special-key\");");
+            sb.AppendLine("            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(\"Bearer\", \"special-key\");");
             sb.AppendLine("        }");
 
             if (doc?.Paths != null)
@@ -101,6 +100,17 @@ namespace Cdd.OpenApi
                         if (!methodName.EndsWith("Async")) methodName += "Async";
 
                         var testMethodName = "Test" + methodName;
+
+                        var tag = "Default";
+                        if (operation.Tags != null && operation.Tags.Count > 0)
+                        {
+                            tag = operation.Tags[0];
+                        }
+                        if (tag.Length > 0)
+                        {
+                            tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
+                        }
+                        var clientName = $"{tag}ApiClient";
 
                         sb.AppendLine();
                         sb.AppendLine("        [Fact]");
@@ -180,7 +190,8 @@ namespace Cdd.OpenApi
 
                         sb.AppendLine("            try");
                         sb.AppendLine("            {");
-                        sb.AppendLine($"                var response = await _client.{methodName}({argsString});");
+                        sb.AppendLine($"                var client = new {clientName}(_httpClient);");
+                        sb.AppendLine($"                var response = await client.{methodName}({argsString});");
                         sb.AppendLine("            }");
                         sb.AppendLine("            catch (HttpRequestException ex)");
                         sb.AppendLine("            {");

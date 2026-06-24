@@ -134,7 +134,7 @@ namespace Cdd.OpenApi.Tests.Cli
                 var req = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"version\"}", Encoding.UTF8, "application/json");
                 var res = await client.PostAsync($"http://localhost:{port}/", req);
                 var content = await res.Content.ReadAsStringAsync();
-                Assert.Contains("0.0.2", content);
+                Assert.Contains("0.0.3", content);
 
                 // Add branch coverage for error handling
                 var reqErr = new StringContent("invalid json", Encoding.UTF8, "application/json");

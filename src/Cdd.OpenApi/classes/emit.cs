@@ -90,6 +90,10 @@ namespace Cdd.OpenApi.Classes
                     {
                         attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Required")));
                     }
+                    if (csharpType == "object" || csharpType == "object?")
+                    {
+                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("System.ComponentModel.DataAnnotations.Schema.NotMapped")));
+                    }
 
                     if (attributes.Any())
                     {

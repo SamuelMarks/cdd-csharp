@@ -17,11 +17,12 @@ namespace Cdd.OpenApi.Mocks
             var members = new List<MemberDeclarationSyntax>();
             if (tests)
             {
+                var interfaceName = $"I{name.Replace("Mock", "")}";
                 classDecl = classDecl.AddBaseListTypes(
-                    SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IApi"))
+                    SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(interfaceName))
                 );
 
-                var interfaceNode = Routes.Emit.ToInterface("IApi", paths);
+                var interfaceNode = Routes.Emit.ToInterface(interfaceName, paths);
                 foreach (var member in interfaceNode.Members.OfType<MethodDeclarationSyntax>())
                 {
                     var methodDecl = member.WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>());

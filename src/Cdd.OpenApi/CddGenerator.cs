@@ -30,6 +30,8 @@ namespace Cdd.OpenApi
 
         /// <summary>CreateComposableTestsAndMocks</summary>
         public bool CreateComposableTestsAndMocks { get; set; } = false;
+
+        /// <summary>Mcp</summary>
         public bool Mcp { get; set; } = false;
     }
 
@@ -149,22 +151,43 @@ namespace Cdd.OpenApi
                     authors = System.Security.SecurityElement.Escape(authors)!;
                     description = System.Security.SecurityElement.Escape(description)!;
 
-                    var readmeContent = $"# {title}\n\n{description}\n";
+                    var readmeContent = $"# {title}\n\n{description}\n\n";
+                    if (type == GenerateType.All || type == GenerateType.Server)
+                    {
+                        readmeContent += "## Server Modes\n\n" +
+                                         "- `start` (No DB configured): **Stub Mode**. Server runs using traditional scaffolds, endpoints return `NotImplementedError` or empty bodies.\n" +
+                                         "- `start` (With `DATABASE_URL`): **Production Mode**. Uses actual ORM interactions against a real database.\n" +
+                                         "- `start --ephemeral`: **Sandbox Mode**. Uses actual ORM interactions against a fresh, throwaway database.\n" +
+                                         "- `start --ephemeral --seed`: **Full Mock Mode**. Ephemeral database, automatically populated with a localized fake data graph.\n";
+                    }
                     File.WriteAllBytes(Path.Combine(outputDir, "README.md"), System.Text.Encoding.UTF8.GetBytes(readmeContent));
 
-                    var projContent = $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <PackageId>{title}</PackageId>\n    <Version>{version}</Version>\n    <Authors>{authors}</Authors>\n    <Description>{description}</Description>\n    <PackageReadmeFile>README.md</PackageReadmeFile>\n  </PropertyGroup>\n";
+                    var projContent = $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <PackageId>{title}</PackageId>\n    <Version>{version}</Version>\n    <Authors>{authors}</Authors>\n    <Description>{description}</Description>\n    <PackageReadmeFile>README.md</PackageReadmeFile>\n    <Nullable>enable</Nullable>\n    <GenerateProgramFile>false</GenerateProgramFile>\n";
+                    if (type == GenerateType.Server || type == GenerateType.All || type == GenerateType.SdkCli)
+                    {
+                        projContent += "    <OutputType>Exe</OutputType>\n";
+                        if (type == GenerateType.All)
+                        {
+                            projContent += $"    <StartupObject>Generated.Program</StartupObject>\n";
+                        }
+                    }
+                    projContent += "  </PropertyGroup>\n";
                     projContent += "  <ItemGroup>\n    <None Include=\"..\\..\\README.md\" Pack=\"true\" PackagePath=\"\\\" />\n  </ItemGroup>\n";
 
                     if (type == GenerateType.All || type == GenerateType.Server)
                     {
-                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n  </ItemGroup>\n  <ItemGroup>\n    <FrameworkReference Include=\"Microsoft.AspNetCore.App\" />\n  </ItemGroup>\n";
+                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"9.0.0\" />\n    <PackageReference Include=\"Npgsql.EntityFrameworkCore.PostgreSQL\" Version=\"9.0.0\" />\n    <PackageReference Include=\"Microsoft.EntityFrameworkCore.Sqlite\" Version=\"9.0.0\" />\n    <PackageReference Include=\"Bogus\" Version=\"35.6.1\" />\n  </ItemGroup>\n  <ItemGroup>\n    <FrameworkReference Include=\"Microsoft.AspNetCore.App\" />\n  </ItemGroup>\n";
+                    }
+                    if (config.CreateComposableTestsAndMocks && (type == GenerateType.All || type == GenerateType.Server))
+                    {
+                        projContent += "  <ItemGroup>\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"17.8.0\" />\n    <PackageReference Include=\"xunit\" Version=\"2.6.4\" />\n    <PackageReference Include=\"xunit.runner.visualstudio\" Version=\"2.5.6\" />\n    <PackageReference Include=\"Microsoft.AspNetCore.Mvc.Testing\" Version=\"9.0.0\" />\n  </ItemGroup>\n";
                     }
                     projContent += "</Project>";
                     var projectDir = Path.Combine(outputDir, "src", "GeneratedProject");
                     SafeCreateDirectory(projectDir);
                     File.WriteAllBytes(Path.Combine(projectDir, "GeneratedProject.csproj"), System.Text.Encoding.UTF8.GetBytes(projContent));
 
-                    if (type == GenerateType.Sdk || type == GenerateType.All)
+                    if (true)
                     {
                         var guid1 = Guid.NewGuid().ToString().ToUpper();
                         string slnContent;
@@ -187,6 +210,8 @@ namespace Cdd.OpenApi
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include=""Microsoft.AspNetCore.Mvc.Testing"" Version=""9.0.0"" />
+    <FrameworkReference Include=""Microsoft.AspNetCore.App"" />
   </ItemGroup>
 
   <ItemGroup>

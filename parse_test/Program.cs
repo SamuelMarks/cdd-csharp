@@ -1,11 +1,19 @@
 using System;
-using System.Text.Json;
-using Cdd.OpenApi.Parse;
-
+using System.Collections.Generic;
+using Cdd.OpenApi.Models;
+using Cdd.OpenApi;
 class Program {
     static void Main() {
-        var json = "{\"openapi\": \"3.0.0\", \"paths\": {\"/pet\": {}}}";
-        var doc = JsonSerializer.Deserialize(json, typeof(Cdd.OpenApi.Models.OpenApiDocument), new JsonSerializerOptions { TypeInfoResolver = OpenApiJsonContext.Default }) as Cdd.OpenApi.Models.OpenApiDocument;
-        Console.WriteLine(doc != null && doc.Paths != null ? "PATHS: " + doc.Paths.Count : "PATHS: 0");
+        var schemas = new Dictionary<string, OpenApiSchema> {
+            ["MyModel"] = new OpenApiSchema {
+                Type = "object",
+                Properties = new Dictionary<string, OpenApiSchema> {
+                    ["Name"] = new OpenApiSchema { Type = "string" },
+                    ["Data"] = new OpenApiSchema { Type = "object" }
+                }
+            }
+        };
+        var ns = Cdd.OpenApi.Orm.Emit.ToDbContext("TestProject", schemas);
+        Console.WriteLine(Cdd.OpenApi.WasmSafeFormatter.Format(ns));
     }
 }

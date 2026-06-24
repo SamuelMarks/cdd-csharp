@@ -64,6 +64,94 @@ namespace Cdd.OpenApi
             return node;
         }
 
+        private static Dictionary<string, OpenApiPaths> GroupPathsByTag(OpenApiPaths paths)
+        {
+            var result = new Dictionary<string, OpenApiPaths>();
+            foreach (var pathKvp in paths)
+            {
+                var routePath = pathKvp.Key;
+                var pathItem = pathKvp.Value;
+
+                var operations = new[] { pathItem.Get, pathItem.Put, pathItem.Post, pathItem.Delete, pathItem.Options, pathItem.Head, pathItem.Patch, pathItem.Trace, pathItem.Query };
+                if (pathItem.AdditionalOperations != null)
+                {
+                    var opsList = new List<OpenApiOperation?>(operations);
+                    opsList.AddRange(pathItem.AdditionalOperations.Values);
+                    operations = opsList.ToArray();
+                }
+
+                bool hasOperations = false;
+                foreach (var op in operations)
+                {
+                    if (op == null) continue;
+                    hasOperations = true;
+                    var tag = "Default";
+                    if (op.Tags != null && op.Tags.Count > 0)
+                    {
+                        tag = op.Tags[0];
+                    }
+
+                    if (tag.Length > 0)
+                    {
+                        tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
+                    }
+
+                    if (!result.ContainsKey(tag))
+                    {
+                        result[tag] = new OpenApiPaths();
+                    }
+
+                    if (!result[tag].ContainsKey(routePath))
+                    {
+                        var newPathItem = new OpenApiPathItem
+                        {
+                            Summary = pathItem.Summary,
+                            Description = pathItem.Description,
+                            Parameters = pathItem.Parameters,
+                            Servers = pathItem.Servers,
+                            Ref = pathItem.Ref
+                        };
+                        result[tag][routePath] = newPathItem;
+                    }
+
+                    var currentItem = result[tag][routePath];
+                    if (op == pathItem.Get) currentItem.Get = op;
+                    else if (op == pathItem.Put) currentItem.Put = op;
+                    else if (op == pathItem.Post) currentItem.Post = op;
+                    else if (op == pathItem.Delete) currentItem.Delete = op;
+                    else if (op == pathItem.Options) currentItem.Options = op;
+                    else if (op == pathItem.Head) currentItem.Head = op;
+                    else if (op == pathItem.Patch) currentItem.Patch = op;
+                    else if (op == pathItem.Trace) currentItem.Trace = op;
+                    else if (op == pathItem.Query) currentItem.Query = op;
+                    else if (pathItem.AdditionalOperations != null)
+                    {
+                        foreach (var kvp in pathItem.AdditionalOperations)
+                        {
+                            if (kvp.Value == op)
+                            {
+                                if (currentItem.AdditionalOperations == null)
+                                {
+                                    currentItem.AdditionalOperations = new Dictionary<string, OpenApiOperation>();
+                                }
+                                currentItem.AdditionalOperations[kvp.Key] = op;
+                            }
+                        }
+                    }
+                }
+
+                if (!hasOperations)
+                {
+                    if (!result.ContainsKey("Default"))
+                    {
+                        result["Default"] = new OpenApiPaths();
+                    }
+                    result["Default"][routePath] = pathItem;
+                }
+            }
+            return result;
+        }
+
         /// <summary>Auto-generated documentation for Generate.</summary>
         public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false)
         {
@@ -96,6 +184,38 @@ namespace Cdd.OpenApi
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
                         .AddMembers(dbContextNode);
                     results.Add(new GeneratedCode { FileName = "src/Data/AppDbContext.cs", Code = WasmSafeRoslyn.FormatSafe(dbContextNsNode) });
+
+                    var daoResults = Cdd.OpenApi.Orm.DaoGenerator.GenerateDaos(doc.Components.Schemas, baseNamespace);
+                    results.AddRange(daoResults);
+
+                    if (tests)
+                    {
+                        var daoTestResults = Cdd.OpenApi.Orm.DaoTestsGenerator.GenerateDaoTests(doc.Components.Schemas, baseNamespace);
+                        results.AddRange(daoTestResults);
+                    }
+
+                    var configResults = Cdd.OpenApi.Orm.ConfigGenerator.GenerateConfig(baseNamespace);
+                    results.AddRange(configResults);
+
+                    var seederResults = Cdd.OpenApi.Orm.SeederGenerator.GenerateSeeder(doc.Components.Schemas, baseNamespace, tests);
+                    results.AddRange(seederResults);
+
+                    var routeTags = doc.Paths != null ? GroupPathsByTag(doc.Paths) : new Dictionary<string, OpenApiPaths>();
+
+                    var entrypointResults = Cdd.OpenApi.Orm.ServerEntrypointGenerator.GenerateEntrypoint(baseNamespace, tests, routeTags.Keys);
+                    results.AddRange(entrypointResults);
+
+                    if (doc.Paths != null && doc.Paths.Count > 0)
+                    {
+                        var routeResults = Cdd.OpenApi.Orm.ServerRoutesGenerator.GenerateRoutes(routeTags, baseNamespace, doc.Components.Schemas);
+                        results.AddRange(routeResults);
+                    }
+
+                    if (tests)
+                    {
+                        var configTestResults = Cdd.OpenApi.Orm.ConfigTestsGenerator.GenerateConfigTests(baseNamespace);
+                        results.AddRange(configTestResults);
+                    }
                 }
             }
 
@@ -135,44 +255,61 @@ namespace Cdd.OpenApi
 ";
                 results.Add(new GeneratedCode { FileName = "Attributes.cs", Code = attributesCode });
 
+                var groupedPaths = GroupPathsByTag(doc.Paths);
+
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
-                    var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface("IApi", doc.Paths);
-                    interfaceNode = AddDocTags(interfaceNode, doc);
-                    var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Api"))
-                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")))
-                        .AddMembers(interfaceNode);
-                    results.Add(new GeneratedCode { FileName = "src/Api/IApi.cs", Code = WasmSafeRoslyn.FormatSafe(nsNode) });
+                    foreach (var group in groupedPaths)
+                    {
+                        var tag = group.Key;
+                        var subPaths = group.Value;
+                        var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface($"I{tag}Api", subPaths);
+                        interfaceNode = AddDocTags(interfaceNode, doc);
+                        var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Api"))
+                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")))
+                            .AddMembers(interfaceNode);
+                        results.Add(new GeneratedCode { FileName = $"src/Api/I{tag}Api.cs", Code = WasmSafeRoslyn.FormatSafe(nsNode) });
+                    }
                 }
 
                 if (type == GenerateType.All || type == GenerateType.Sdk)
                 {
-                    var clientNode = Cdd.OpenApi.Clients.Emit.ToClient("ApiClient", doc.Paths);
-                    clientNode = AddDocTags(clientNode, doc);
-                    var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
-                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
-                                   SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
-                        .AddMembers(clientNode);
-                    results.Add(new GeneratedCode { FileName = "src/Client/Client.cs", Code = WasmSafeRoslyn.FormatSafe(clientNsNode) });
-
-                    if (tests)
+                    foreach (var group in groupedPaths)
                     {
-                        var clientTestsNode = Cdd.OpenApi.TestsModule.Emit.ToClientTests("ApiClientTests", doc.Paths, tests);
-                        clientTestsNode = AddDocTags(clientTestsNode, doc);
-                        var clientTestsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
-                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Client")))
-                            .AddMembers(clientTestsNode);
-                        results.Add(new GeneratedCode { FileName = "src/Tests/ApiClientTests.cs", Code = WasmSafeRoslyn.FormatSafe(clientTestsNsNode) });
+                        var tag = group.Key;
+                        var subPaths = group.Value;
+                        var clientNode = Cdd.OpenApi.Clients.Emit.ToClient($"{tag}ApiClient", subPaths);
+                        clientNode = AddDocTags(clientNode, doc);
+                        var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
+                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                                       SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
+                            .AddMembers(clientNode);
+                        results.Add(new GeneratedCode { FileName = $"src/Client/{tag}ApiClient.cs", Code = WasmSafeRoslyn.FormatSafe(clientNsNode) });
+
+                        if (tests)
+                        {
+                            var clientTestsNode = Cdd.OpenApi.TestsModule.Emit.ToClientTests($"{tag}ApiClientTests", subPaths, tests);
+                            clientTestsNode = AddDocTags(clientTestsNode, doc);
+                            var clientTestsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                                .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Client")))
+                                .AddMembers(clientTestsNode);
+                            results.Add(new GeneratedCode { FileName = $"src/Tests/{tag}ApiClientTests.cs", Code = WasmSafeRoslyn.FormatSafe(clientTestsNsNode) });
+                        }
                     }
                 }
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli)
                 {
-                    var cliNode = Cdd.OpenApi.CliModule.Emit.ToCli("ApiClientCli", doc.Paths);
-                    cliNode = AddDocTags(cliNode, doc);
-                    var cliNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
-                        .AddMembers(cliNode);
-                    results.Add(new GeneratedCode { FileName = "src/Cli/ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
+                    foreach (var group in groupedPaths)
+                    {
+                        var tag = group.Key;
+                        var subPaths = group.Value;
+                        var cliNode = Cdd.OpenApi.CliModule.Emit.ToCli($"{tag}ApiClientCli", subPaths);
+                        cliNode = AddDocTags(cliNode, doc);
+                        var cliNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
+                            .AddMembers(cliNode);
+                        results.Add(new GeneratedCode { FileName = $"src/Cli/{tag}ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
+                    }
 
                     var mcpServerNode = Cdd.OpenApi.Mcp.Emit.ToMcpServer("McpServer", doc.Paths);
                     var mcpServerNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
@@ -193,19 +330,24 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All)
                 {
-                    var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock("ApiMock", doc.Paths, tests);
-                    mockNode = AddDocTags(mockNode, doc);
-                    var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
-                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
-                        .AddMembers(mockNode);
-                    results.Add(new GeneratedCode { FileName = "src/Mocks/ApiMock.cs", Code = WasmSafeRoslyn.FormatSafe(mockNsNode) });
+                    foreach (var group in groupedPaths)
+                    {
+                        var tag = group.Key;
+                        var subPaths = group.Value;
+                        var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock($"{tag}ApiMock", subPaths, tests);
+                        mockNode = AddDocTags(mockNode, doc);
+                        var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
+                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
+                            .AddMembers(mockNode);
+                        results.Add(new GeneratedCode { FileName = $"src/Mocks/{tag}ApiMock.cs", Code = WasmSafeRoslyn.FormatSafe(mockNsNode) });
 
-                    var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests("ApiTests", doc.Paths, tests);
-                    testsNode = AddDocTags(testsNode, doc);
-                    var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
-                        .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
-                        .AddMembers(testsNode);
-                    results.Add(new GeneratedCode { FileName = "src/Tests/ApiTests.cs", Code = WasmSafeRoslyn.FormatSafe(testsNsNode) });
+                        var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests($"{tag}ApiTests", subPaths, tests);
+                        testsNode = AddDocTags(testsNode, doc);
+                        var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
+                            .AddMembers(testsNode);
+                        results.Add(new GeneratedCode { FileName = $"src/Tests/{tag}ApiTests.cs", Code = WasmSafeRoslyn.FormatSafe(testsNsNode) });
+                    }
                 }
             }
 

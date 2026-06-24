@@ -45,3 +45,9 @@ repos:
         entry: bash scripts/run_petstore_tests.sh
         language: system
         pass_filenames: false
+
+    -   id: generated-petstore-tests
+        name: Run Generated Petstore Server Tests
+        entry: bash scripts/run_generated_petstore_tests.sh
+        language: system
+        pass_filenames: false

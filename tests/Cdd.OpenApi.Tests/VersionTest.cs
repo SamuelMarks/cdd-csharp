@@ -16,7 +16,7 @@ namespace Cdd.OpenApi.Tests
             {
                 var exitCode = Cdd.OpenApi.Cli.Program.Main(new[] { "--version" });
                 Assert.Equal(0, exitCode);
-                Assert.Equal("0.0.2\n", sw.ToString().Replace("\r", ""));
+                Assert.Equal("0.0.3\n", sw.ToString().Replace("\r", ""));
             }
             finally
             {

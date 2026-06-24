@@ -89,8 +89,19 @@ namespace Cdd.OpenApi.DocsJson
                         var snippetLines = new List<string>();
                         string indent = noWrapping ? "" : "        ";
 
+                        var tag = "Default";
+                        if (operation.Tags != null && operation.Tags.Count > 0)
+                        {
+                            tag = operation.Tags[0];
+                        }
+                        if (tag.Length > 0)
+                        {
+                            tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
+                        }
+                        var clientName = $"{tag}ApiClient";
+
                         snippetLines.Add($"{indent}// Initialize the API client");
-                        snippetLines.Add($"{indent}var client = new ApiClient();");
+                        snippetLines.Add($"{indent}var client = new {clientName}();");
                         snippetLines.Add("");
 
                         // Map parameters
