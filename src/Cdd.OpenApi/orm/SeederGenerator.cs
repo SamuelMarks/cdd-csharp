@@ -14,16 +14,11 @@ namespace Cdd.OpenApi.Orm
         {
             var results = new List<GeneratedCode>();
 
-            var seederCode = new StringBuilder();
-            seederCode.AppendLine($@"namespace {baseNamespace}.Seeder
+            var mainSeederCode = new StringBuilder();
+            mainSeederCode.AppendLine($@"namespace {baseNamespace}.Seeder
 {{
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
-    using Bogus;
-    using {baseNamespace}.Models;
-    using {baseNamespace}.Daos;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -31,7 +26,7 @@ namespace Cdd.OpenApi.Orm
     /// It manages referential integrity by topologically sorting the insertion order and
     /// caching parent IDs in an Entity Pool to satisfy foreign key constraints.
     /// </summary>
-    public class FakeDataSeeder
+    public partial class FakeDataSeeder
     {{
         private readonly IServiceProvider _serviceProvider;
 
@@ -44,11 +39,31 @@ namespace Cdd.OpenApi.Orm
         /// <summary>Seeds the database with fake data.</summary>
         public async Task SeedDatabaseAsync()
         {{
-            using var scope = _serviceProvider.CreateScope();
-            var faker = new Faker();
-");
+            using var scope = _serviceProvider.CreateScope();");
 
-            // Simplified topological sort and entity pool for Phase 4
+            foreach (var schemaKvp in schemas)
+            {
+                var schema = schemaKvp.Value;
+                bool hasId = false;
+                if (schema.Properties != null)
+                {
+                    foreach (var prop in schema.Properties)
+                    {
+                        var propNameLower = prop.Key.ToLowerInvariant();
+                        if (propNameLower == "id") hasId = true;
+                    }
+                }
+                if (hasId)
+                {
+                    mainSeederCode.AppendLine($@"            await Seed{schemaKvp.Key}Async(scope.ServiceProvider);");
+                }
+            }
+
+            mainSeederCode.AppendLine($@"        }}
+    }}
+}}");
+            results.Add(new GeneratedCode { FileName = "src/Seeder/FakeDataSeeder.cs", Code = mainSeederCode.ToString() });
+
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
@@ -66,8 +81,22 @@ namespace Cdd.OpenApi.Orm
 
                 if (!hasId) continue;
 
-                seederCode.AppendLine($@"
-            var {schemaName.ToLowerInvariant()}Dao = scope.ServiceProvider.GetRequiredService<I{schemaName}Dao>();
+                var seederCode = new StringBuilder();
+                seederCode.AppendLine($@"namespace {baseNamespace}.Seeder
+{{
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
+    using Bogus;
+    using {baseNamespace}.Models;
+    using {baseNamespace}.Daos;
+
+    public partial class FakeDataSeeder
+    {{
+        /// <summary>Seeds {schemaName} data.</summary>
+        private async Task Seed{schemaName}Async(IServiceProvider provider)
+        {{
+            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();
             var {schemaName.ToLowerInvariant()}Faker = new Faker<{schemaName}>()
                 .RuleForType(typeof(string), f => f.Lorem.Word())
                 .RuleForType(typeof(int), f => f.Random.Int(1, 100))
@@ -101,11 +130,7 @@ namespace Cdd.OpenApi.Orm
                         }
                         else if (prop.Value.Type == "integer")
                         {
-                            if (propNameLower == "id")
-                            {
-                                // Entity Framework usually handles integer PKs
-                            }
-                            else
+                            if (propNameLower != "id")
                             {
                                 seederCode.AppendLine($"                .RuleFor(x => x.{propName}, f => f.Random.Int(1, 100))");
                             }
@@ -124,38 +149,32 @@ namespace Cdd.OpenApi.Orm
             foreach (var entity in {schemaName.ToLowerInvariant()}List)
             {{
                 await {schemaName.ToLowerInvariant()}Dao.CreateAsync(entity);
-            }}");
-            }
-
-            seederCode.AppendLine($@"
+            }}
         }}
     }}
 }}");
-            results.Add(new GeneratedCode { FileName = "src/Seeder/FakeDataSeeder.cs", Code = seederCode.ToString() });
+                results.Add(new GeneratedCode { FileName = $"src/Seeder/Fake{schemaName}Seeder.cs", Code = seederCode.ToString() });
 
-            if (tests)
-            {
-                // Generate tests
-                var testCode = $@"namespace {baseNamespace}.Tests
-            {{
-            using System;
-            using System.Linq;
-            using System.Threading.Tasks;
-            using Microsoft.Extensions.DependencyInjection;
-            using Xunit;
-            using {baseNamespace}.Seeder;
-            using {baseNamespace}.Daos;
-            using {baseNamespace}.Configuration;
-            using Microsoft.EntityFrameworkCore;
-            using {baseNamespace}.Models;
+                if (tests)
+                {
+                    var testCode = $@"namespace {baseNamespace}.Tests
+{{
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
+    using Xunit;
+    using {baseNamespace}.Seeder;
+    using {baseNamespace}.Daos;
+    using {baseNamespace}.Models;
+    using Microsoft.EntityFrameworkCore;
 
-            /// <summary>Unit tests for FakeDataSeeder.</summary>
-            public class FakeDataSeederTests
-            {{
-            /// <summary>Tests that seed_database populates valid dependency graphs.</summary>
-            [Fact]
-            public async Task SeedDatabaseAsync_PopulatesValidData()
-            {{
+    /// <summary>Unit tests for Fake{schemaName}Seeder.</summary>
+    public class Fake{schemaName}SeederTests
+    {{
+        /// <summary>Tests that seed_database populates {schemaName} data.</summary>
+        [Fact]
+        public async Task Seed{schemaName}Async_PopulatesData()
+        {{
             var services = new ServiceCollection();
             services.AddDaos(true, null);
             services.AddScoped<FakeDataSeeder>();
@@ -170,36 +189,14 @@ namespace Cdd.OpenApi.Orm
             await seeder.SeedDatabaseAsync();
 
             using var scope = provider.CreateScope();
-            ";
-
-                foreach (var schemaKvp in schemas)
-                {
-                    var schemaName = schemaKvp.Key;
-                    var schema = schemaKvp.Value;
-                    bool hasId = false;
-                    if (schema.Properties != null)
-                    {
-                        foreach (var prop in schema.Properties)
-                        {
-                            var propNameLower = prop.Key.ToLowerInvariant();
-                            if (propNameLower == "id") hasId = true;
-                        }
-                    }
-
-                    if (!hasId) continue;
-
-                    testCode += $@"
             var {schemaName.ToLowerInvariant()}Dao = scope.ServiceProvider.GetRequiredService<I{schemaName}Dao>();
             var {schemaName.ToLowerInvariant()}s = await {schemaName.ToLowerInvariant()}Dao.GetAllAsync();
-            Assert.NotEmpty({schemaName.ToLowerInvariant()}s);";
+            Assert.NotEmpty({schemaName.ToLowerInvariant()}s);
+        }}
+    }}
+}}";
+                    results.Add(new GeneratedCode { FileName = $"src/Tests/Fake{schemaName}SeederTests.cs", Code = testCode });
                 }
-
-                testCode += $@"
-            }}
-            }}
-            }}";
-
-                results.Add(new GeneratedCode { FileName = "src/Tests/FakeDataSeederTests.cs", Code = testCode });
             }
 
             return results;

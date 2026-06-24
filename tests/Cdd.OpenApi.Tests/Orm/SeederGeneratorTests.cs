@@ -29,12 +29,12 @@ namespace Cdd.OpenApi.Tests.Orm
 
             var code = SeederGenerator.GenerateSeeder(schemas, "GeneratedProject", true);
 
-            Assert.Contains("f.Internet.Email()", code[0].Code);
-            Assert.Contains("f.Name.FullName()", code[0].Code);
-            Assert.Contains("Guid.NewGuid().ToString()", code[0].Code);
-            Assert.Contains("f.Lorem.Word()", code[0].Code);
-            Assert.Contains("f.Random.Int(1, 100)", code[0].Code);
-            Assert.Contains("f.Random.Bool()", code[0].Code);
+            Assert.Contains("f.Internet.Email()", code[1].Code);
+            Assert.Contains("f.Name.FullName()", code[1].Code);
+            Assert.Contains("Guid.NewGuid().ToString()", code[1].Code);
+            Assert.Contains("f.Lorem.Word()", code[1].Code);
+            Assert.Contains("f.Random.Int(1, 100)", code[1].Code);
+            Assert.Contains("f.Random.Bool()", code[1].Code);
 
             // Reassign IntId to id so it skips
             schemas["TestModel"].Properties.Remove("IntId");

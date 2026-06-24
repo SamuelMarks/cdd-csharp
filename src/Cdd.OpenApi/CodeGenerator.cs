@@ -328,7 +328,7 @@ namespace Cdd.OpenApi
                     results.Add(new GeneratedCode { FileName = "src/Cli/McpModels.cs", Code = WasmSafeRoslyn.FormatSafe(mcpModelsNsNode) });
                 }
 
-                if (type == GenerateType.All)
+                if (type == GenerateType.All || type == GenerateType.Server)
                 {
                     foreach (var group in groupedPaths)
                     {

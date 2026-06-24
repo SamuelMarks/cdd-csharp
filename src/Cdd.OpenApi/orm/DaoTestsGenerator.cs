@@ -12,8 +12,8 @@ namespace Cdd.OpenApi.Orm
         {
             var results = new List<GeneratedCode>();
 
-            var testCode = new StringBuilder();
-            testCode.AppendLine($@"namespace {baseNamespace}.Tests
+            var diTestCode = new StringBuilder();
+            diTestCode.AppendLine($@"namespace {baseNamespace}.Tests
 {{
     using System;
     using System.Linq;
@@ -24,8 +24,8 @@ namespace Cdd.OpenApi.Orm
     using {baseNamespace}.Models;
     using Microsoft.EntityFrameworkCore;
 
-    /// <summary>Unit tests for DAOs.</summary>
-    public class DaoTests
+    /// <summary>Unit tests for DaoServiceCollectionExtensions.</summary>
+    public class DaoServiceCollectionExtensionsTests
     {{
         /// <summary>Verifies DI routes to Stub DAOs by default.</summary>
         [Fact]
@@ -39,11 +39,11 @@ namespace Cdd.OpenApi.Orm
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
-                testCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                testCode.AppendLine($@"            Assert.IsType<Stub{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
+                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
+                diTestCode.AppendLine($@"            Assert.IsType<Stub{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
             }
 
-            testCode.AppendLine($@"        }}
+            diTestCode.AppendLine($@"        }}
 
         /// <summary>Verifies DI routes to Concrete DAOs with Ephemeral DB.</summary>
         [Fact]
@@ -57,11 +57,11 @@ namespace Cdd.OpenApi.Orm
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
-                testCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                testCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
+                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
+                diTestCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
             }
 
-            testCode.AppendLine($@"        }}
+            diTestCode.AppendLine($@"        }}
 
         /// <summary>Verifies DI routes to Concrete DAOs with Postgres.</summary>
         [Fact]
@@ -75,11 +75,14 @@ namespace Cdd.OpenApi.Orm
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
-                testCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                testCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
+                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
+                diTestCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
             }
 
-            testCode.AppendLine($@"        }}");
+            diTestCode.AppendLine($@"        }}
+    }}
+}}");
+            results.Add(new GeneratedCode { FileName = "src/Tests/DaoServiceCollectionExtensionsTests.cs", Code = diTestCode.ToString() });
 
             foreach (var schemaKvp in schemas)
             {
@@ -98,10 +101,24 @@ namespace Cdd.OpenApi.Orm
 
                 if (!hasId) continue;
 
-                testCode.AppendLine($@"
+                var schemaTestCode = new StringBuilder();
+                schemaTestCode.AppendLine($@"namespace {baseNamespace}.Tests
+{{
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
+    using Xunit;
+    using {baseNamespace}.Daos;
+    using {baseNamespace}.Models;
+    using Microsoft.EntityFrameworkCore;
+
+    /// <summary>Unit tests for {schemaName}Dao.</summary>
+    public class {schemaName}DaoTests
+    {{
         /// <summary>Tests basic CRUD operations on Concrete{schemaName}Dao using Sqlite In-Memory.</summary>
         [Fact]
-        public async Task {schemaName}Dao_Crud_Works()
+        public async Task Crud_Works()
         {{
             var services = new ServiceCollection();
             services.AddDaos(true, null);
@@ -135,12 +152,11 @@ namespace Cdd.OpenApi.Orm
 
             // Ensure DB Cleanup
             await dbContext.Database.EnsureDeletedAsync();
-        }}");
-            }
-
-            testCode.AppendLine($@"    }}
+        }}
+    }}
 }}");
-            results.Add(new GeneratedCode { FileName = "src/Tests/DaoTests.cs", Code = testCode.ToString() });
+                results.Add(new GeneratedCode { FileName = $"src/Tests/{schemaName}DaoTests.cs", Code = schemaTestCode.ToString() });
+            }
 
             return results;
         }
