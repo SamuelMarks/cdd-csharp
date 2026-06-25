@@ -136,8 +136,7 @@ namespace Cdd.OpenApi
                     var version = "1.0.0";
                     var authors = "Generated";
                     var description = "Generated OpenApi SDK";
-
-                    if (lastDoc.Info != null)
+                    if (lastDoc!.Info != null)
                     {
                         var info = lastDoc.Info;
                         if (!string.IsNullOrWhiteSpace(info.Title)) title = info.Title;
