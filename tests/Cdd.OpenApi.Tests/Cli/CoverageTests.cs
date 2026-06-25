@@ -93,7 +93,7 @@ namespace Cdd.OpenApi.Tests.Cli
         {
             int port = 51239;
             Environment.SetEnvironmentVariable("CDD_LISTEN", "localhost");
-            Exception serverError = null;
+            Exception? serverError = null;
             var thread = new Thread(() =>
             {
                 try

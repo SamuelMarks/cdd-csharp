@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Xunit;
 
+#pragma warning disable CA1416 // Validate platform compatibility
+
 namespace Cdd.OpenApi.Tests
 {
     public class BrowserInteropTests

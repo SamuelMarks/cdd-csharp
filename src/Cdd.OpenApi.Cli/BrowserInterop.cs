@@ -7,6 +7,7 @@ using Cdd.OpenApi.Parse;
 /// <summary>
 /// Provides interop methods for running within a WebAssembly browser environment.
 /// </summary>
+[System.Runtime.Versioning.SupportedOSPlatform("browser")]
 public partial class BrowserInterop
 {
     [JSExport]

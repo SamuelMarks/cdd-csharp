@@ -217,7 +217,14 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Successfully generated spec", output);
             Assert.True(File.Exists(outPath));
 
-            Directory.Delete(tmpDir, true);
+            var outPathFunction = Path.Combine(tmpDir, "spec_function.json");
+            var (exitCodeFunction, outputFunction) = RunMain(new[] { "sync", "--truth", "function", "-i", tmpDir, "-o", outPathFunction });
+            Assert.Equal(0, exitCodeFunction);
+            Assert.Contains("Synchronizing from truth", outputFunction);
+            Assert.Contains("Successfully generated spec", outputFunction);
+            Assert.True(File.Exists(outPathFunction));
+
+            try { Directory.Delete(tmpDir, true); } catch { }
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Cdd.OpenApi.Tests.Mcp
         [Fact]
         public void ToMcpServer_NullPaths_GeneratesEmptyServer()
         {
-            var classDeclaration = Cdd.OpenApi.Mcp.Emit.ToMcpServer("EmptyServer", null);
+            var classDeclaration = Cdd.OpenApi.Mcp.Emit.ToMcpServer("EmptyServer", null!);
             Assert.NotNull(classDeclaration);
             Assert.Equal("EmptyServer", classDeclaration.Identifier.Text);
 
@@ -154,7 +154,7 @@ namespace Cdd.OpenApi.Tests.Mcp
         public void ToSnakeCase_EmptyString_Coverage()
         {
             var methodInfo = typeof(Cdd.OpenApi.Mcp.Emit).GetMethod("ToSnakeCase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var resultNull = methodInfo.Invoke(null, new object[] { null });
+            var resultNull = methodInfo.Invoke(null, new object?[] { null });
             Assert.Null(resultNull);
 
             var resultEmpty = methodInfo.Invoke(null, new object[] { "" });

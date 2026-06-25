@@ -174,10 +174,10 @@ namespace Cdd.OpenApi.Cli
             config.CreateComposableTestsAndMocks = Environment.GetEnvironmentVariable("CDD_TESTS") == "true" || Environment.GetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS") == "true";
             config.Mcp = Environment.GetEnvironmentVariable("CDD_MCP") == "true" || Environment.GetEnvironmentVariable("MCP") == "true";
 
-            string? inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
+            string inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
             if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
 
-            string? inputDirEnv = Environment.GetEnvironmentVariable("CDD_INPUT_DIR") ?? Environment.GetEnvironmentVariable("INPUT_DIR");
+            string inputDirEnv = Environment.GetEnvironmentVariable("CDD_INPUT_DIR") ?? Environment.GetEnvironmentVariable("INPUT_DIR");
             if (!string.IsNullOrEmpty(inputDirEnv)) config.InputDir = inputDirEnv;
 
             for (int i = startIndex; i < args.Length; i++)
