@@ -132,6 +132,8 @@ namespace Cdd.OpenApi.Tests
 
             Environment.SetEnvironmentVariable("CDD_INPUT_DIR", inDir);
             Environment.SetEnvironmentVariable("CDD_OUTPUT", outDir);
+            Environment.SetEnvironmentVariable("CDD_MCP", "true");
+            Environment.SetEnvironmentVariable("MCP", "true");
 
             try
             {
@@ -143,6 +145,8 @@ namespace Cdd.OpenApi.Tests
             {
                 Environment.SetEnvironmentVariable("CDD_INPUT_DIR", null);
                 Environment.SetEnvironmentVariable("CDD_OUTPUT", null);
+                Environment.SetEnvironmentVariable("CDD_MCP", null);
+                Environment.SetEnvironmentVariable("MCP", null);
                 Directory.Delete(tmpDir, true);
             }
         }
@@ -200,6 +204,16 @@ namespace Cdd.OpenApi.Tests
         }
 
         [Fact]
+        public void SyncCommand_IncompleteArgs_Ignored()
+        {
+            var (exitCode, output) = RunMain(new[] { "sync", "--truth" });
+            Assert.Equal(1, exitCode); // Because truth remains empty as i+1 >= args.Length
+            var (exitCode2, output2) = RunMain(new[] { "sync", "--truth", "class", "-i" });
+            // Runs but fails because there's no input provided
+            var (exitCode3, output3) = RunMain(new[] { "sync", "--truth", "class", "-i", "in", "-o" });
+        }
+
+        [Fact]
         public void SyncCommand_ValidArgs_CallsToOpenApi()
         {
             var tmpDir = Path.Combine(Path.GetTempPath(), "cli_test_sync");
@@ -218,7 +232,7 @@ namespace Cdd.OpenApi.Tests
             Assert.True(File.Exists(outPath));
 
             var outPathFunction = Path.Combine(tmpDir, "spec_function.json");
-            var (exitCodeFunction, outputFunction) = RunMain(new[] { "sync", "--truth", "function", "-i", tmpDir, "-o", outPathFunction });
+            var (exitCodeFunction, outputFunction) = RunMain(new[] { "sync", "--truth", "function", "--input", tmpDir, "--output", outPathFunction });
             Assert.Equal(0, exitCodeFunction);
             Assert.Contains("Synchronizing from truth", outputFunction);
             Assert.Contains("Successfully generated spec", outputFunction);

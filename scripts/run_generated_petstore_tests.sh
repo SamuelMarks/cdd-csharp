@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Download petstore.json and petstore_oas3.json if they don't exist
+if [ ! -f "../petstore.json" ]; then
+    echo "Downloading petstore.json..."
+    curl -sL "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json" -o "../petstore.json"
+fi
+if [ ! -f "../petstore_oas3.json" ]; then
+    echo "Downloading petstore_oas3.json..."
+    curl -sL "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json" -o "../petstore_oas3.json"
+fi
+
 run_tests() {
     local spec_file=$1
     local label=$2

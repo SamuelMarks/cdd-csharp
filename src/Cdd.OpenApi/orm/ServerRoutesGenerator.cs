@@ -70,7 +70,7 @@ namespace Cdd.OpenApi.Orm
                                 {
                                     if (!string.IsNullOrEmpty(respMediaType.Schema.Ref))
                                         modelType = respMediaType.Schema.Ref.Split('/').Last();
-                                    else if (respMediaType.Schema.Type == "array" && respMediaType.Schema.Items?.Ref != null)
+                                    else if (respMediaType.Schema.Type == "array" && respMediaType.Schema.Items != null && respMediaType.Schema.Items.Ref != null)
                                         modelType = respMediaType.Schema.Items.Ref.Split('/').Last();
                                 }
                             }
@@ -103,13 +103,13 @@ namespace Cdd.OpenApi.Orm
                         if (operation.RequestBody != null)
                         {
                             hasBody = true;
-                            if (operation.RequestBody.Content != null && operation.RequestBody.Content.TryGetValue("application/json", out var mediaType))
+                            if (operation.RequestBody.Content.TryGetValue("application/json", out var mediaType))
                             {
                                 if (mediaType.Schema != null)
                                 {
                                     if (!string.IsNullOrEmpty(mediaType.Schema.Ref))
                                         bodyType = mediaType.Schema.Ref.Split('/').Last();
-                                    else if (mediaType.Schema.Type == "array" && mediaType.Schema.Items?.Ref != null)
+                                    else if (mediaType.Schema.Type == "array" && mediaType.Schema.Items != null && mediaType.Schema.Items.Ref != null)
                                         bodyType = $"System.Collections.Generic.List<{mediaType.Schema.Items.Ref.Split('/').Last()}>";
                                 }
                             }

@@ -64,10 +64,201 @@ namespace Cdd.OpenApi.Tests
           }
         }
       },
+      ""put"": {
+        ""operationId"": ""updatePet"",
+        ""responses"": { ""200"": { ""description"": ""OK"" } }
+      },
+      ""delete"": {
+        ""operationId"": ""deletePet"",
+        ""responses"": { ""204"": { ""description"": ""No Content"" } }
+      },
+      ""options"": {
+        ""operationId"": ""optionsPet"",
+        ""responses"": { ""200"": { ""description"": ""OK"" } }
+      },
+      ""head"": {
+        ""operationId"": ""headPet"",
+        ""responses"": { ""200"": { ""description"": ""OK"" } }
+      },
+      ""patch"": {
+        ""operationId"": ""patchPet"",
+        ""responses"": { ""200"": { ""description"": ""OK"" } }
+      },
+      ""trace"": {
+        ""operationId"": ""tracePet"",
+        ""responses"": { ""200"": { ""description"": ""OK"" } }
+      },
       ""x-custom-method"": {
         ""operationId"": ""customMethod"",
         ""responses"": {
           ""200"": { ""description"": ""OK"" }
+        }
+      }
+    },
+    ""/more"": {
+      ""get"": {
+        ""operationId"": ""getMore"",
+        ""parameters"": [
+          { ""name"": ""param1"", ""in"": ""path"" },
+          { ""name"": ""param2"", ""in"": ""query"" }
+        ],
+        ""responses"": {
+          ""200"": { ""description"": ""OK"", ""content"": { ""text/plain"": {} } }
+        }
+      },
+      ""post"": {
+        ""operationId"": ""postMore"",
+        ""requestBody"": {
+          ""content"": { ""text/plain"": {} }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""type"": ""array"", ""items"": { ""type"": ""string"" } }
+              }
+            }
+          }
+        }
+      },
+      ""put"": {
+        ""operationId"": ""putMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""array"", ""items"": { ""type"": ""string"" } }
+            }
+          }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""$ref"": ""#/components/schemas/PetNullProps"" }
+              }
+            }
+          }
+        }
+      },
+      ""patch"": {
+        ""operationId"": ""patchMore"",
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""$ref"": ""#/components/schemas/PetStringId"" }
+              }
+            }
+          }
+        }
+      },
+      ""delete"": {
+        ""operationId"": ""deleteNoResponse""
+      }
+    },
+    ""/even-more"": {
+      ""get"": {
+        ""operationId"": ""getEvenMore"",
+        ""responses"": {
+          ""200"": { ""description"": ""OK, no content"" }
+        }
+      },
+      ""post"": {
+        ""operationId"": ""postEvenMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""array"", ""items"": { ""$ref"": ""#/components/schemas/Pet"" } }
+            }
+          }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""type"": ""array"", ""items"": { ""$ref"": ""#/components/schemas/Pet"" } }
+              }
+            }
+          }
+        }
+      },
+      ""put"": {
+        ""operationId"": ""putEvenMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""array"" }
+            }
+          }
+        },
+        ""responses"": {
+          ""404"": { ""description"": ""Not found"" }
+        }
+      },
+      ""patch"": {
+        ""operationId"": ""patchEvenMore"",
+        ""requestBody"": {},
+        ""responses"": {
+          ""200"": {
+            ""content"": {}
+          }
+        }
+      },
+      ""options"": {
+        ""operationId"": ""optionsEvenMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""array"" }
+            }
+          }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""type"": ""array"" }
+              }
+            }
+          }
+        }
+      },
+      ""head"": {
+        ""operationId"": ""headEvenMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""array"", ""items"": {} }
+            }
+          }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""type"": ""array"", ""items"": {} }
+              }
+            }
+          }
+        }
+      },
+      ""trace"": {
+        ""operationId"": ""traceEvenMore"",
+        ""requestBody"": {
+          ""content"": {
+            ""application/json"": {
+              ""schema"": { ""type"": ""string"" }
+            }
+          }
+        },
+        ""responses"": {
+          ""200"": {
+            ""content"": {
+              ""application/json"": {
+                ""schema"": { ""type"": ""string"" }
+              }
+            }
+          }
         }
       }
     }
@@ -79,6 +270,33 @@ namespace Cdd.OpenApi.Tests
         ""properties"": {
           ""id"": { ""type"": ""integer"" }
         }
+      },
+      ""PetStringId"": {
+        ""type"": ""object"",
+        ""properties"": {
+          ""id"": { ""type"": ""string"" }
+        }
+      },
+      ""PetUpperId"": {
+        ""type"": ""object"",
+        ""properties"": {
+          ""Id"": { ""type"": ""integer"" }
+        }
+      },
+      ""PetUpperStringId"": {
+        ""type"": ""object"",
+        ""properties"": {
+          ""Id"": { ""type"": ""string"" }
+        }
+      },
+      ""PetNoId"": {
+        ""type"": ""object"",
+        ""properties"": {
+          ""name"": { ""type"": ""string"" }
+        }
+      },
+      ""PetNullProps"": {
+        ""type"": ""object""
       }
     }
   }
@@ -189,6 +407,24 @@ namespace Cdd.OpenApi.Tests
         public void Generate_CodeGenerator_Branches()
         {
             CodeGenerator.Generate(new Cdd.OpenApi.Models.OpenApiDocument());
+            var docWithNullPaths = new Cdd.OpenApi.Models.OpenApiDocument
+            {
+                Paths = null,
+                Components = new Cdd.OpenApi.Models.OpenApiComponents
+                {
+                    Schemas = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema>()
+                }
+            };
+            CodeGenerator.Generate(docWithNullPaths, "Generated", GenerateType.Server, false);
+            var docWithEmptyPaths = new Cdd.OpenApi.Models.OpenApiDocument
+            {
+                Paths = new Cdd.OpenApi.Models.OpenApiPaths(),
+                Components = new Cdd.OpenApi.Models.OpenApiComponents
+                {
+                    Schemas = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema>()
+                }
+            };
+            CodeGenerator.Generate(docWithEmptyPaths, "Generated", GenerateType.Server, false);
         }
 
 
