@@ -85,8 +85,8 @@ def run_tests(spec_file, base_path, label):
         if use_docker:
             subprocess.run(["docker", "rm", "-f", "petstore_server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 def main():
-    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json", "../petstore.json")
-    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json", "../petstore_oas3.json")
+    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/3.1.0/examples/v2.0/json/petstore.json", "../petstore.json")
+    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/3.1.0/examples/v3.0/petstore.json", "../petstore_oas3.json")
 
     run_tests("../petstore.json", "/v2", "Swagger 2.0")
     run_tests("../petstore_oas3.json", "/api/v3", "OpenAPI 3.2.0")

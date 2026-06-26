@@ -46,6 +46,13 @@ namespace Cdd.OpenApi.Orm
             {
                 var schemaName = schemaKvp.Key;
                 var schema = schemaKvp.Value;
+
+                // Only create tables for object schemas
+                if (schema.Type != "object" && schema.Properties == null)
+                {
+                    continue;
+                }
+
                 bool hasId = false;
 
                 if (schema.Properties != null)
@@ -83,6 +90,14 @@ namespace Cdd.OpenApi.Orm
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
+                var schema = schemaKvp.Value;
+
+                // Only create tables for object schemas
+                if (schema.Type != "object" && schema.Properties == null)
+                {
+                    continue;
+                }
+
                 var propNode = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName($"DbSet<{schemaName}>"), schemaName + "s")
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                     .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Set<{schemaName}>"))))

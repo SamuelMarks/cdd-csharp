@@ -179,25 +179,29 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
-                    var dbContextNode = Cdd.OpenApi.Orm.Emit.ToDbContext("AppDbContext", doc.Components.Schemas);
+                    var ormSchemas = doc.Components.Schemas
+                        .Where(kvp => kvp.Value.Type == "object" || kvp.Value.Properties != null)
+                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                    var dbContextNode = Cdd.OpenApi.Orm.Emit.ToDbContext("AppDbContext", ormSchemas);
                     var dbContextNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
                         .AddMembers(dbContextNode);
                     results.Add(new GeneratedCode { FileName = "src/Data/AppDbContext.cs", Code = WasmSafeRoslyn.FormatSafe(dbContextNsNode) });
 
-                    var daoResults = Cdd.OpenApi.Orm.DaoGenerator.GenerateDaos(doc.Components.Schemas, baseNamespace);
+                    var daoResults = Cdd.OpenApi.Orm.DaoGenerator.GenerateDaos(ormSchemas, baseNamespace);
                     results.AddRange(daoResults);
 
                     if (tests)
                     {
-                        var daoTestResults = Cdd.OpenApi.Orm.DaoTestsGenerator.GenerateDaoTests(doc.Components.Schemas, baseNamespace);
+                        var daoTestResults = Cdd.OpenApi.Orm.DaoTestsGenerator.GenerateDaoTests(ormSchemas, baseNamespace);
                         results.AddRange(daoTestResults);
                     }
 
                     var configResults = Cdd.OpenApi.Orm.ConfigGenerator.GenerateConfig(baseNamespace);
                     results.AddRange(configResults);
 
-                    var seederResults = Cdd.OpenApi.Orm.SeederGenerator.GenerateSeeder(doc.Components.Schemas, baseNamespace, tests);
+                    var seederResults = Cdd.OpenApi.Orm.SeederGenerator.GenerateSeeder(ormSchemas, baseNamespace, tests);
                     results.AddRange(seederResults);
 
                     var routeTags = doc.Paths != null ? GroupPathsByTag(doc.Paths) : new Dictionary<string, OpenApiPaths>();

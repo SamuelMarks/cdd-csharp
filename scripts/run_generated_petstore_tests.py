@@ -88,8 +88,8 @@ def run_tests(spec_file, label, port):
             pass
 
 def main():
-    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json", "../petstore.json")
-    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json", "../petstore_oas3.json")
+    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/3.1.0/examples/v2.0/json/petstore.json", "../petstore.json")
+    download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/3.1.0/examples/v3.0/petstore.json", "../petstore_oas3.json")
 
     run_tests("../petstore.json", "Swagger 2.0 (Generated)", "8081")
     run_tests("../petstore_oas3.json", "OpenAPI 3.2.0 (Generated)", "8082")
