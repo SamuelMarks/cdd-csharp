@@ -35,12 +35,12 @@ def run_tests(spec_file, base_path, label):
     if shutil.which("npm"):
         print("Using npx @stoplight/prism-cli to mock the petstore natively...")
         with open("prism.log", "w") as out:
-            server_process = subprocess.Popen(["npx", "-y", "@stoplight/prism-cli", "mock", "-p", "8085", spec_file], stdout=out, stderr=subprocess.STDOUT)
+            server_process = subprocess.Popen(["npx", "-y", "@stoplight/prism-cli", "mock", "-p", "8085", spec_file], stdout=out, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
         time.sleep(5)
     elif shutil.which("python3"):
         print("Using python3 to mock the petstore natively (empty 200/404 responses are sufficient for these tests)...")
         with open("python_mock.log", "w") as out:
-            server_process = subprocess.Popen(["python3", "-m", "http.server", "8085"], stdout=out, stderr=subprocess.STDOUT)
+            server_process = subprocess.Popen(["python3", "-m", "http.server", "8085"], stdout=out, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
         time.sleep(2)
     elif shutil.which("docker") and subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
         print("Falling back to docker for petstore server...")
@@ -73,14 +73,17 @@ def run_tests(spec_file, base_path, label):
         f.write(content)
 
     print(f"Running integration tests for {label}...")
-    subprocess.run(["dotnet", "test", "GeneratedProject.sln"], cwd=client_dir, check=True)
-
-    print("Cleaning up petstore server...")
-    if server_process:
-        server_process.kill()
-    if use_docker:
-        subprocess.run(["docker", "rm", "-f", "petstore_server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+    try:
+        subprocess.run(["dotnet", "test", "GeneratedProject.sln"], cwd=client_dir, check=True)
+    finally:
+        print("Cleaning up petstore server...")
+        if server_process:
+            try:
+                os.killpg(os.getpgid(server_process.pid), 9)
+            except Exception:
+                pass
+        if use_docker:
+            subprocess.run(["docker", "rm", "-f", "petstore_server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 def main():
     download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json", "../petstore.json")
     download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json", "../petstore_oas3.json")

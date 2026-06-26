@@ -1,3 +1,5 @@
+[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
+
 namespace Cdd.OpenApi.Tests
 {
     public static class TestConfig

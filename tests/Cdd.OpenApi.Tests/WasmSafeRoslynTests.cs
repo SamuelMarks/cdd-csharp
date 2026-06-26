@@ -15,6 +15,16 @@ namespace Cdd.OpenApi.Tests
         }
 
         [Fact]
+        public void GetDescendantNodesSafe_ReturnsExpectedNodes()
+        {
+            var tree = CSharpSyntaxTree.ParseText("class C { public void M() { } }");
+            var root = tree.GetRoot();
+            var nodes = root.GetDescendantNodesSafe().ToList();
+            Assert.Contains(nodes, n => n is ClassDeclarationSyntax);
+            Assert.Contains(nodes, n => n is MethodDeclarationSyntax);
+        }
+
+        [Fact]
         public void FormatConstructorSafe_ExpressionBody_FormatsCorrectly()
         {
             var ctor = ParseMember<ConstructorDeclarationSyntax>("class C { public C() => System.Console.WriteLine(1); }");

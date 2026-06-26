@@ -41,7 +41,13 @@ def run_tests(spec_file, label, port):
     print(f"Starting generated petstore server on port {port}...")
     log_file = os.path.join(server_dir, "src", "GeneratedProject", f"server_{port}.log")
     with open(log_file, "w") as out:
-        server_process = subprocess.Popen(["dotnet", "run", "-f", "net10.0", "--urls", f"http://127.0.0.1:{port}", "--ephemeral"], cwd=os.path.join(server_dir, "src", "GeneratedProject"), stdout=out, stderr=subprocess.STDOUT)
+        server_process = subprocess.Popen(
+            ["dotnet", "run", "-f", "net10.0", "--urls", f"http://127.0.0.1:{port}", "--ephemeral"],
+            cwd=os.path.join(server_dir, "src", "GeneratedProject"),
+            stdout=out,
+            stderr=subprocess.STDOUT,
+            preexec_fn=os.setsid
+        )
 
     print("Waiting for generated server to be ready...")
     if wait_for_server(f"http://127.0.0.1:{port}/", timeout=30):
@@ -50,7 +56,7 @@ def run_tests(spec_file, label, port):
         print("Server failed to start. Logs:")
         with open(log_file, "r") as f:
             print(f.read())
-        server_process.kill()
+        os.killpg(os.getpgid(server_process.pid), 9)
         raise Exception("Server failed to start")
 
     print(f"Generating client for {label}...")
@@ -73,7 +79,7 @@ def run_tests(spec_file, label, port):
         subprocess.run(["dotnet", "test", "GeneratedProject.sln"], cwd=client_dir, check=True)
     finally:
         print("Cleaning up generated server...")
-        server_process.kill()
+        os.killpg(os.getpgid(server_process.pid), 9)
 
 def main():
     download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json", "../petstore.json")
