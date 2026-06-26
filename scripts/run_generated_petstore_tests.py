@@ -56,7 +56,10 @@ def run_tests(spec_file, label, port):
         print("Server failed to start. Logs:")
         with open(log_file, "r") as f:
             print(f.read())
-        os.killpg(os.getpgid(server_process.pid), 9)
+        try:
+            os.killpg(os.getpgid(server_process.pid), 9)
+        except ProcessLookupError:
+            pass
         raise Exception("Server failed to start")
 
     print(f"Generating client for {label}...")
@@ -79,7 +82,10 @@ def run_tests(spec_file, label, port):
         subprocess.run(["dotnet", "test", "GeneratedProject.sln"], cwd=client_dir, check=True)
     finally:
         print("Cleaning up generated server...")
-        os.killpg(os.getpgid(server_process.pid), 9)
+        try:
+            os.killpg(os.getpgid(server_process.pid), 9)
+        except ProcessLookupError:
+            pass
 
 def main():
     download("https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v2.0/json/petstore.json", "../petstore.json")
