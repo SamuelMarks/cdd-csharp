@@ -11,6 +11,13 @@ def main():
     cmd = sys.argv[1]
     args = sys.argv[2:]
 
+    # Inject --include for dotnet format if file arguments are passed
+    if cmd == "dotnet" and len(args) >= 2 and args[0] == "format":
+        # check if there are files at the end (anything ending with .cs usually)
+        files_idx = next((i for i, arg in enumerate(args) if arg.endswith('.cs') and not arg.startswith('-')), -1)
+        if files_idx != -1:
+            args.insert(files_idx, "--include")
+
     if shutil.which(cmd):
         try:
             sys.exit(subprocess.run([cmd] + args).returncode)
