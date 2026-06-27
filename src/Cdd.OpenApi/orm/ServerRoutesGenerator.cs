@@ -132,11 +132,19 @@ namespace Cdd.OpenApi.Orm
 
                         string handlerBody = "return Results.StatusCode(501);";
 
-                        if (schemas.ContainsKey(targetSchemaName))
+                        if (schemas.TryGetValue(targetSchemaName, out var initialSchema))
+                        {
+                            if (initialSchema.Type == "array" && initialSchema.Items?.Ref != null)
+                            {
+                                targetSchemaName = initialSchema.Items.Ref.Split('/').Last();
+                                daoType = $"I{targetSchemaName}Dao";
+                            }
+                        }
+
+                        if (schemas.TryGetValue(targetSchemaName, out var schema) && (schema.Type == "object" || schema.Properties != null))
                         {
                             delegateParams.Insert(0, $"[FromServices] {daoType} dao");
 
-                            var schema = schemas[targetSchemaName];
                             string expectedIdType = "string";
                             if (schema.Properties != null && schema.Properties.TryGetValue("id", out var idProp))
                             {
