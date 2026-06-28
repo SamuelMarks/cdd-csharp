@@ -55,21 +55,44 @@ namespace Cdd.OpenApi.Cli
                     return 0;
                 }
 
+                if (args.Any(a => a == "--help" || a == "-h"))
+                {
+                    if (command == "from_openapi")
+                        Console.WriteLine(CddCli.FromOpenApiHelp);
+                    else if (command == "to_openapi")
+                        Console.WriteLine(CddCli.ToOpenApiHelp);
+                    else if (command == "to_docs_json")
+                        Console.WriteLine(CddCli.ToDocsJsonHelp);
+                    else if (command == "sync")
+                        Console.WriteLine(CddCli.SyncHelp);
+                    else if (command == "serve_json_rpc")
+                        Console.WriteLine(CddCli.ServeJsonRpcHelp);
+                    else if (command == "mcp")
+                        Console.WriteLine(CddCli.McpHelp);
+                    else
+                        PrintUsage();
+                    return 0;
+                }
+
                 if (command == "from_openapi")
                 {
-                    return CddCli.GenerateFromOpenApi(args);
+                    var parsed = CddCli.ParseFromOpenApiArgs(args);
+                    return CddCli.FromOpenApi(parsed.type, parsed.config);
                 }
                 else if (command == "to_openapi")
                 {
-                    return CddCli.GenerateToOpenApi(args);
+                    var parsed = CddCli.ParseToOpenApiArgs(args);
+                    return CddCli.ToOpenApi(parsed.inputPath, parsed.outputPath);
                 }
                 else if (command == "to_docs_json")
                 {
-                    return CddCli.GenerateDocsJson(args);
+                    var parsed = CddCli.ParseDocsJsonArgs(args);
+                    return CddCli.ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping);
                 }
                 else if (command == "sync")
                 {
-                    return SyncCommand.Run(args);
+                    var parsedSync = CddCli.ParseSyncArgs(args);
+                    return CddCli.Sync(parsedSync.truth, parsedSync.inputPath, parsedSync.outputPath);
                 }
                 else if (command == "serve_json_rpc")
                 {
@@ -118,16 +141,17 @@ namespace Cdd.OpenApi.Cli
             Console.WriteLine("  from_openapi    Generate code from an OpenAPI specification.");
             Console.WriteLine("  to_openapi      Generate an OpenAPI specification from source code.");
             Console.WriteLine("  to_docs_json    Generate JSON documentation with code snippets for an OpenAPI specification.");
+            Console.WriteLine("  sync            Synchronize an OpenAPI specification with source code.");
             Console.WriteLine("  serve_json_rpc  Expose CLI interface as a JSON-RPC server.");
-            Console.WriteLine("  mcp             Run Meta-MCP server over stdio.");
+            Console.WriteLine("  mcp             Run the generator as an MCP server over stdio.");
             Console.WriteLine("\nOptions:");
             Console.WriteLine("  --help, -h      Show this message");
             Console.WriteLine("  --version, -v   Show version information");
             Console.WriteLine("\nExamples:");
-            Console.WriteLine("  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | --input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests]");
+            Console.WriteLine("  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | -d|--input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests] [-m|--mcp]");
             Console.WriteLine("  cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]");
             Console.WriteLine("  cdd-csharp to_docs_json --no-imports --no-wrapping -i|--input <spec.json> [-o|--output docs.json]");
-            Console.WriteLine("  cdd-csharp serve_json_rpc [-p|--port <port>] [-l|--listen <ip>]");
+            Console.WriteLine("  cdd-csharp serve_json_rpc [-p|--port <port>] [-l|--listen <address>]");
         }
 
         private static int Error(string message)

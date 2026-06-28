@@ -116,59 +116,72 @@ A true ecosystem requires standardized tooling. Once a developer learns the CDD 
 - `--input, -i` (or `-f`): Target file, directory, or OpenAPI spec.
 - `--output, -o`: Destination path for generation or sync.
 
-### Core Subcommands
+### `from_openapi`
+```text
+Usage:
+  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | --input-dir <dir> [-o <output>]
 
-#### `from_openapi to_sdk_cli`
-Generate a client SDK and a corresponding command-line interface (CLI) from an OpenAPI specification.
-- `--input, -i <spec>`: Path to the OpenAPI specification file.
+Options:
+  -i, --input                 Path or URL to the OpenAPI specification.
+  --input-dir                 Directory containing OpenAPI specifications.
+  -o, --output                Output file or directory path.
+  --tests                     Generate integration tests and mocks.
+  --no-github-actions         Do not generate GitHub Actions scaffolding.
+  --no-installable-package    Do not generate installable package scaffolding.
+  --mcp                       Generate Model Context Protocol (MCP) server and adapter.
+```
 
-#### `from_openapi to_sdk`
-Generate a client SDK from an OpenAPI specification.
-- `--input, -i <spec>`: Path to the OpenAPI specification file.
+### `to_openapi`
+```text
+Usage:
+  cdd-csharp to_openapi -i <input> [-o <output>]
 
-#### `from_openapi to_server`
-Generate server boilerplate, models, and routing logic from an OpenAPI specification.
-- `--input, -i <spec>`: Path to the OpenAPI specification file.
+Options:
+  -i, --input    Path to source code directory or file.
+  -o, --output   Output file or directory path.
+```
 
-#### `to_openapi`
-Parse the existing codebase and extract an authoritative OpenAPI specification.
-- `--input, -i <path>` (or `-f <path>`): Path to the source code directory or file to parse.
+### `to_docs_json`
+```text
+Usage:
+  cdd-csharp to_docs_json -i <input> [-o <output>]
 
-#### `to_docs_json`
-Convert an OpenAPI specification into a localized, documentation-optimized JSON format.
-- `--input, -i <spec>`: Path to the OpenAPI specification file.
-- `--no-imports`: Disable import statements in the generated documentation.
-- `--no-wrapping`: Disable line wrapping in the generated documentation.
+Options:
+  -i, --input    Path or URL to the OpenAPI specification.
+  -o, --output   Output file or directory path.
+  --no-imports   Omit the imports field.
+  --no-wrapping  Omit the wrapper fields.
+```
 
-#### `serve_json_rpc`
-Launch a JSON-RPC server for editor and tool integrations.
-- `--port <port>` (or `-p`): Port to listen on (e.g., `8080`).
-- `--listen <address>` (or `-l`): Address to bind to (e.g., `0.0.0.0`).
+### `sync`
+```text
+Usage:
+  cdd-csharp sync -t <truth> -i <input> [-o <output>]
 
-#### `mcp`
-Run the Model Context Protocol server via stdio.
+Options:
+  -t, --truth    Designate a single source of truth for synchronization.
+  -i, --input    Path to the source files.
+  -o, --output   Output file or directory path.
+```
 
-#### `sync`
-Synchronize models, routes, or configurations using a specific source of truth.
-- `--truth`: The source of truth (e.g., class, sqlalchemy, function).
-- `--input, -i <path>`: Path to the source files.
-- `--output, -o <path>`: Output file or directory path.
+### `serve_json_rpc`
+```text
+Usage:
+  cdd-csharp serve_json_rpc [-p <port>] [-l <listen>]
 
-#### `parse`
-Parse a given JSON OpenAPI specification and output a summary (title, version, and paths count).
-- `<input>`: Path to the OpenAPI specification file (positional argument).
+Options:
+  -p, --port     Port to listen on (default: 8080).
+  -l, --listen   Address to listen on (default: 127.0.0.1).
+```
 
-#### `emit`
-Parse an OpenAPI specification and emit it back to JSON in the standard format.
-- `<input>`: Path to the OpenAPI specification file (positional argument).
-- `<output>`: Path to write the emitted OpenAPI specification file (positional argument).
+### `mcp`
+```text
+Usage:
+  cdd-csharp mcp
 
-### Detail Features Beyond Common Subset
-
-- **Integration Tests and Mocks Generation**: Utilizing `--tests` with `from_openapi` automatically generates integration tests and mocks.
-- **GitHub Actions Scaffolding Suppression**: Utilizing `--no-github-actions` with `from_openapi` prevents the generation of GitHub Actions scaffolding.
-- **Installable Package Scaffolding Suppression**: Utilizing `--no-installable-package` with `from_openapi` prevents the generation of package scaffolding.
-- **Model Context Protocol (MCP)**: Utilizing `--mcp` with `from_openapi` generates a Model Context Protocol server and adapter.
+Options:
+  Run the generator as an MCP server over stdio.
+```
 
 ---
 

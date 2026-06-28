@@ -23,7 +23,8 @@ namespace Cdd.OpenApi.Tests.Orm
                         ["List"] = new OpenApiSchema { Type = "array" },
                         ["Untyped"] = new OpenApiSchema()
                     }
-                }
+                },
+                ["NonObject"] = new OpenApiSchema { Type = "string" }
             };
 
             var ns = global::Cdd.OpenApi.Orm.Emit.ToDbContext("GeneratedProject", schemas);

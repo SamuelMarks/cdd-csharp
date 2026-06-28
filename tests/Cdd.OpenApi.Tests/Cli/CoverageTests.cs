@@ -15,7 +15,9 @@ namespace Cdd.OpenApi.Tests.Cli
         [Fact]
         public void FetchHttpContent_Works()
         {
-            var result = CddCli.GenerateDocsJson(new[] { "to_docs_json", "-i", "http://localhost:1/invalid" });
+            var args = new[] { "to_docs_json", "-i", "http://localhost:1/invalid" };
+            var parsed = CddCli.ParseDocsJsonArgs(args);
+            var result = CddCli.ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping);
             Assert.Equal(0, result);
         }
 

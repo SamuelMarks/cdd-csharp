@@ -58,7 +58,7 @@ The `to_docs_json` command MUST output a JSON array of objects to `stdout` match
                 },
                 "wrapper_start": {
                   "type": "string",
-                  "description": "The opening boilerplate code, such as a class definition, 'public static void main(String[] args) {', or an async function declaration. Can be toggled on/off."
+                  "description": "The opening boilerplate code, such as a class definition, 'public static void main(String... args) {', or an async function declaration. Can be toggled on/off."
                 },
                 "snippet": {
                   "type": "string",

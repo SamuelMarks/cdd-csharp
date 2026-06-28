@@ -16,12 +16,22 @@ namespace Cdd.OpenApi.Cli
     /// </summary>
     public static class CddCli
     {
+
+        public const string FromOpenApiHelp = "Generate code from an OpenAPI specification.\n\nUsage:\n  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  -d, --input-dir             Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  -m, --mcp                   Generate Model Context Protocol (MCP) server and adapter.";
+        public const string ToOpenApiHelp = "Usage:\n  cdd-csharp to_openapi -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to source code directory or file.\n  -o, --output   Output file or directory path.";
+        public const string ToDocsJsonHelp = "Usage:\n  cdd-csharp to_docs_json -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path or URL to the OpenAPI specification.\n  -o, --output   Output file or directory path.\n  --no-imports   Omit the imports field.\n  --no-wrapping  Omit the wrapper fields.";
+        public const string SyncHelp = "Usage:\n  cdd-csharp sync -t <truth> -i <input> [-o <output>]\n\nOptions:\n  -t, --truth    Designate a single source of truth for synchronization.\n  -i, --input    Path to the source files.\n  -o, --output   Output file or directory path.";
+        public const string ServeJsonRpcHelp = "Usage:\n  cdd-csharp serve_json_rpc [-p <port>] [-l <listen>]\n\nOptions:\n  -p, --port     Port to listen on (default: 8080).\n  -l, --listen   Address to listen on (default: 127.0.0.1).";
+        public const string McpHelp = "Usage:\n  cdd-csharp mcp\n\nOptions:\n  Run the generator as an MCP server over stdio.";
+
+
+
         /// <summary>
-        /// Generate an OpenAPI specification from source code.
+        /// Parse arguments for generating an OpenAPI specification from source code.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
         /// <returns>Exit code (0 for success).</returns>
-        public static int GenerateToOpenApi(string[] args)
+        public static (string inputPath, string outputPath) ParseToOpenApiArgs(string[] args)
         {
             string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
             if (inputPath.StartsWith("/")) inputPath = inputPath.Substring(1);
@@ -42,10 +52,21 @@ namespace Cdd.OpenApi.Cli
                     }
                 }
             }
+            return (inputPath, outputPath);
+        }
+
+        /// <summary>
+        /// Generate an OpenAPI specification from source code.
+        /// </summary>
+        /// <param name="inputPath">Path to source code directory or file.</param>
+        /// <param name="outputPath">Output file or directory path.</param>
+        /// <returns>Exit code (0 for success).</returns>
+        public static int ToOpenApi(string inputPath, string outputPath)
+        {
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                Console.Error.WriteLine("Usage: cdd-csharp to_openapi -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to source code directory or file.\n  -o, --output   Output file or directory path.");
+                Console.Error.WriteLine(ToOpenApiHelp);
                 return 1;
             }
 
@@ -68,11 +89,11 @@ namespace Cdd.OpenApi.Cli
         }
 
         /// <summary>
-        /// Generate JSON documentation with code snippets for an OpenAPI specification.
+        /// Parse arguments for generating JSON documentation with code snippets for an OpenAPI specification.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
         /// <returns>Exit code (0 for success).</returns>
-        public static int GenerateDocsJson(string[] args)
+        public static (string inputPath, string outputPath, bool noImports, bool noWrapping) ParseDocsJsonArgs(string[] args)
         {
             string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
             if (inputPath.StartsWith("/")) inputPath = inputPath.Substring(1);
@@ -103,10 +124,23 @@ namespace Cdd.OpenApi.Cli
                     noWrapping = true;
                 }
             }
+            return (inputPath, outputPath, noImports, noWrapping);
+        }
+
+        /// <summary>
+        /// Generate JSON documentation with code snippets for an OpenAPI specification.
+        /// </summary>
+        /// <param name="inputPath">Path or URL to the OpenAPI specification.</param>
+        /// <param name="outputPath">Output file or directory path.</param>
+        /// <param name="noImports">Omit the imports field.</param>
+        /// <param name="noWrapping">Omit the wrapper fields.</param>
+        /// <returns>Exit code (0 for success).</returns>
+        public static int ToDocsJson(string inputPath, string outputPath, bool noImports, bool noWrapping)
+        {
 
             if (string.IsNullOrEmpty(inputPath))
             {
-                Console.Error.WriteLine("Usage: cdd-csharp to_docs_json -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path or URL to the OpenAPI specification.\n  -o, --output   Output file or directory path.\n  --no-imports   Omit the imports field.\n  --no-wrapping  Omit the wrapper fields.");
+                Console.Error.WriteLine(ToDocsJsonHelp);
                 return 1;
             }
 
@@ -153,11 +187,11 @@ namespace Cdd.OpenApi.Cli
         }
 
         /// <summary>
-        /// Generate code from an OpenAPI specification.
+        /// Parse arguments for generating code from an OpenAPI specification.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
         /// <returns>Exit code (0 for success).</returns>
-        public static int GenerateFromOpenApi(string[] args)
+        public static (GenerateType type, CddConfig config) ParseFromOpenApiArgs(string[] args)
         {
             var subCommand = args.Length > 1 ? args[1].ToLowerInvariant() : "";
             GenerateType type = GenerateType.All;
@@ -186,7 +220,7 @@ namespace Cdd.OpenApi.Cli
                 {
                     config.InputPaths.Add(args[++i]);
                 }
-                else if (args[i] == "--input-dir" && i + 1 < args.Length)
+                else if ((args[i] == "-d" || args[i] == "--input-dir") && i + 1 < args.Length)
                 {
                     config.InputDir = args[++i];
                 }
@@ -206,15 +240,26 @@ namespace Cdd.OpenApi.Cli
                 {
                     config.CreateComposableTestsAndMocks = true;
                 }
-                else if (args[i] == "--mcp")
+                else if (args[i] == "-m" || args[i] == "--mcp")
                 {
                     config.Mcp = true;
                 }
             }
+            return (type, config);
+        }
+
+        /// <summary>
+        /// Generate code from an OpenAPI specification.
+        /// </summary>
+        /// <param name="type">The type of code to generate.</param>
+        /// <param name="config">The configuration.</param>
+        /// <returns>Exit code (0 for success).</returns>
+        public static int FromOpenApi(GenerateType type, CddConfig config)
+        {
 
             if (string.IsNullOrEmpty(config.InputPath) && string.IsNullOrEmpty(config.InputDir) && !config.InputPaths.Any())
             {
-                Console.Error.WriteLine("Usage: cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | --input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  --input-dir                 Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  --mcp                       Generate Model Context Protocol (MCP) server and adapter.");
+                Console.Error.WriteLine(FromOpenApiHelp);
                 return 1;
             }
 
@@ -241,6 +286,63 @@ namespace Cdd.OpenApi.Cli
         /// </summary>
         /// <param name="args">The command line arguments.</param>
         /// <returns>Exit code (0 for success).</returns>
+
+        /// <summary>
+        /// Parse arguments for the sync command.
+        /// </summary>
+        /// <param name="args">The command line arguments.</param>
+        /// <returns>A tuple containing the truth source, input path, and output path.</returns>
+        public static (string truth, string inputPath, string outputPath) ParseSyncArgs(string[] args)
+        {
+            string truth = string.Empty;
+            string inputPath = string.Empty;
+            string outputPath = string.Empty;
+
+            for (int i = 1; i < args.Length; i++)
+            {
+                if ((args[i] == "-t" || args[i] == "--truth") && i + 1 < args.Length)
+                {
+                    truth = args[++i];
+                }
+                else if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
+                {
+                    inputPath = args[++i];
+                }
+                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
+                {
+                    outputPath = args[++i];
+                }
+            }
+            return (truth, inputPath, outputPath);
+        }
+
+        /// <summary>
+        /// Parse arguments for synchronizing an OpenAPI specification with source code.
+        /// </summary>
+        /// <param name="truth">Designate a single source of truth for synchronization.</param>
+        /// <param name="inputPath">Path to the source files.</param>
+        /// <param name="outputPath">Output file or directory path.</param>
+        /// <returns>Exit code (0 for success).</returns>
+        public static int Sync(string truth, string inputPath, string outputPath)
+        {
+            if (string.IsNullOrEmpty(truth))
+            {
+                Console.Error.WriteLine(SyncHelp);
+                return 1;
+            }
+
+            if (truth == "class" || truth == "function")
+            {
+                Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                return ToOpenApi(inputPath, outputPath);
+            }
+            else
+            {
+                Console.Error.WriteLine($"Error: Truth source '{truth}' is not supported yet.");
+                return 1;
+            }
+        }
+
         public static int ServeMcp(string[] args)
         {
             var writer = Console.Out;
@@ -461,9 +563,9 @@ namespace Cdd.OpenApi.Cli
                         }
 
                         int retCode = 1;
-                        if (method == "from_openapi") retCode = GenerateFromOpenApi(invokeArgs.ToArray());
-                        else if (method == "to_openapi") retCode = GenerateToOpenApi(invokeArgs.ToArray());
-                        else if (method == "to_docs_json") retCode = GenerateDocsJson(invokeArgs.ToArray());
+                        if (method == "from_openapi") { var parsed = ParseFromOpenApiArgs(invokeArgs.ToArray()); retCode = FromOpenApi(parsed.type, parsed.config); }
+                        else if (method == "to_openapi") { var parsed = ParseToOpenApiArgs(invokeArgs.ToArray()); retCode = ToOpenApi(parsed.inputPath, parsed.outputPath); }
+                        else if (method == "to_docs_json") { var parsed = ParseDocsJsonArgs(invokeArgs.ToArray()); retCode = ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping); }
 
                         var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = retCode };
                         byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());

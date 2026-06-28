@@ -10,6 +10,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      petstore:
+        image: swaggerapi/petstore
+        ports:
+          - 8085:8080
+        env:
+          SWAGGER_HOST: http://localhost:8085
+          SWAGGER_BASE_PATH: /v2
     steps:
     - uses: actions/checkout@v7
 

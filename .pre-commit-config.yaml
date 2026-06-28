@@ -22,7 +22,7 @@ repos:
 
     -   id: web-ui-tests
         name: Run Web UI C# Tests
-        entry: python3 scripts/fallback_runner.py python3 run_web_ui_test.py
+        entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py python3 run_web_ui_test.py
         language: system
         files: \.(py|cs)$
         pass_filenames: false
@@ -32,4 +32,28 @@ repos:
         entry: python3 scripts/fallback_runner.py python3 scripts/lint_wasm.py
         language: system
         files: \.(py|cs)$
+        pass_filenames: false
+
+    -   id: build
+        name: Build
+        entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py dotnet build CddOpenApi.slnx
+        language: system
+        pass_filenames: false
+
+    -   id: tests
+        name: Run tests
+        entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py dotnet test CddOpenApi.slnx
+        language: system
+        pass_filenames: false
+
+    -   id: petstore-tests
+        name: Run Petstore Integration Tests
+        entry: python3 scripts/run_slow.py python3 scripts/run_petstore_tests.py
+        language: system
+        pass_filenames: false
+
+    -   id: generated-petstore-tests
+        name: Run Generated Petstore Server Tests
+        entry: python3 scripts/run_slow.py python3 scripts/run_generated_petstore_tests.py
+        language: system
         pass_filenames: false

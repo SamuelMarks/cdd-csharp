@@ -32,7 +32,23 @@ def run_tests(spec_file, base_path, label):
     use_docker = False
     server_process = None
 
-    if shutil.which("npm"):
+    if wait_for_server("http://localhost:8085/api/v3", timeout=2):
+        print("Reusing active mock server instance on port 8085...")
+    elif wait_for_server("http://localhost:8085/v2", timeout=2):
+        print("Reusing active mock server instance on port 8085...")
+    elif wait_for_server("http://localhost:8085/", timeout=2):
+        print("Reusing active mock server instance on port 8085...")
+    elif shutil.which("docker") and subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+        print("Using docker for petstore server...")
+        use_docker = True
+        subprocess.run(["docker", "rm", "-f", "petstore_server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if subprocess.run(["docker", "run", "-d", "-p", "8085:8080", "-e", "SWAGGER_HOST=http://localhost:8085", "-e", f"SWAGGER_BASE_PATH={base_path}", "--name", "petstore_server", "swaggerapi/petstore"], stdout=subprocess.DEVNULL).returncode != 0:
+            print("Docker run failed, tests may fail")
+        print("Waiting for petstore server to be ready...")
+        if wait_for_server("http://localhost:8085/", timeout=60):
+            print("Petstore server is ready! Waiting a few more seconds for endpoints to map...")
+            time.sleep(3)
+    elif shutil.which("npm"):
         print("Using npx @stoplight/prism-cli to mock the petstore natively...")
         with open("prism.log", "w") as out:
             server_process = subprocess.Popen(["npx", "-y", "@stoplight/prism-cli", "mock", "-p", "8085", spec_file], stdout=out, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
@@ -42,16 +58,6 @@ def run_tests(spec_file, base_path, label):
         with open("python_mock.log", "w") as out:
             server_process = subprocess.Popen(["python3", "-m", "http.server", "8085"], stdout=out, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
         time.sleep(2)
-    elif shutil.which("docker") and subprocess.run(["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-        print("Falling back to docker for petstore server...")
-        use_docker = True
-        subprocess.run(["docker", "rm", "-f", "petstore_server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if subprocess.run(["docker", "run", "-d", "-p", "8085:8085", "-e", "SWAGGER_HOST=http://localhost:8085", "-e", f"SWAGGER_BASE_PATH={base_path}", "--name", "petstore_server", "swaggerapi/petstore"], stdout=subprocess.DEVNULL).returncode != 0:
-            print("Docker run failed, tests may fail")
-        print("Waiting for petstore server to be ready...")
-        if wait_for_server("http://localhost:8085/", timeout=60):
-            print("Petstore server is ready! Waiting a few more seconds for endpoints to map...")
-            time.sleep(3)
     else:
         print("Warning: no suitable runtime (npm, python3, docker) is available. Tests relying on localhost:8085 will likely fail.")
 

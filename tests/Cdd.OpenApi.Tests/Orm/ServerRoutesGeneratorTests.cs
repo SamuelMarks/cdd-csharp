@@ -20,6 +20,11 @@ namespace Cdd.OpenApi.Tests.Orm
                     {
                         ["id"] = new OpenApiSchema { Type = "integer" }
                     }
+                },
+                ["MyModelArray"] = new OpenApiSchema
+                {
+                    Type = "array",
+                    Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" }
                 }
             };
 
@@ -52,6 +57,25 @@ namespace Cdd.OpenApi.Tests.Orm
                                 ["application/json"] = new OpenApiMediaType
                                 {
                                     Schema = new OpenApiSchema { Type = "array", Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" } }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/api/mymodelarray"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/MyModelArray" }
+                                    }
                                 }
                             }
                         }

@@ -75,13 +75,13 @@ The `{REPO_NAME}` compiler leverages a unified architecture to support various f
 
 | Concept | Parse (From) | Emit (To) |
 |---------|--------------|-----------|
-| OpenAPI (JSON/YAML) | [ ] | [ ] |
-| `{LANGUAGE}` Models / Structs / Types | [ ] | [ ] |
-| `{LANGUAGE}` Server Routes / Endpoints | [ ] | [ ] |
-| `{LANGUAGE}` API Clients / SDKs | [ ] | [ ] |
-| `{LANGUAGE}` ORM / DB Schemas | [ ] | [ ] |
-| `{LANGUAGE}` CLI Argument Parsers | [ ] | [ ] |
-| `{LANGUAGE}` Docstrings / Comments | [ ] | [ ] |
+| OpenAPI (JSON/YAML) | [x] | [x] |
+| `{LANGUAGE}` Models / Structs / Types | [x] | [x] |
+| `{LANGUAGE}` Server Routes / Endpoints | [x] | [x] |
+| `{LANGUAGE}` API Clients / SDKs | [x] | [x] |
+| `{LANGUAGE}` ORM / DB Schemas | [x] | [x] |
+| `{LANGUAGE}` CLI Argument Parsers | [x] | [x] |
+| `{LANGUAGE}` Docstrings / Comments | [x] | [x] |
 
 <!-- INSTRUCTION TO LLM: Check the boxes above (`✅`) based on the `{SUPPORTED_CONVERSIONS}` context provided. -->
 

@@ -11,7 +11,7 @@ using Cdd.OpenApi.Parse;
 public partial class BrowserInterop
 {
     [JSExport]
-    internal static string GenerateFromOpenApi(string specContent, string command, string target, bool generateTests = false)
+    internal static string FromOpenApi(string specContent, string command, string target, bool generateTests = false)
     {
         try
         {

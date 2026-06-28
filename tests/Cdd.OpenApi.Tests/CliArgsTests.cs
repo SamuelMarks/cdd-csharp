@@ -232,13 +232,25 @@ namespace Cdd.OpenApi.Tests
             Assert.True(File.Exists(outPath));
 
             var outPathFunction = Path.Combine(tmpDir, "spec_function.json");
-            var (exitCodeFunction, outputFunction) = RunMain(new[] { "sync", "--truth", "function", "--input", tmpDir, "--output", outPathFunction });
+            var (exitCodeFunction, outputFunction) = RunMain(new[] { "sync", "-t", "function", "--input", tmpDir, "--output", outPathFunction });
             Assert.Equal(0, exitCodeFunction);
             Assert.Contains("Synchronizing from truth", outputFunction);
             Assert.Contains("Successfully generated spec", outputFunction);
             Assert.True(File.Exists(outPathFunction));
 
             try { Directory.Delete(tmpDir, true); } catch { }
+        }
+
+        [Fact]
+        public void HelpFlag_OnSpecificCommand_PrintsSpecificHelp()
+        {
+            var (exitCode, output) = RunMain(new[] { "to_openapi", "--help" });
+            Assert.Equal(0, exitCode);
+            Assert.Contains("Usage:\n  cdd-csharp to_openapi", output);
+
+            var (exitCode2, output2) = RunMain(new[] { "sync", "-h" });
+            Assert.Equal(0, exitCode2);
+            Assert.Contains("Usage:\n  cdd-csharp sync", output2);
         }
     }
 }
