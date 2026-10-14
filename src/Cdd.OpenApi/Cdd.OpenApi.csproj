@@ -4,9 +4,8 @@
     <Version>0.0.3</Version>
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable Condition="'$(UseWasiSdk)' != 'true'">enable</Nullable>
-    <Nullable Condition="'$(UseWasiSdk)' == 'true'">disable</Nullable>
-    <NoWarn Condition="'$(UseWasiSdk)' == 'true'">$(NoWarn);CS8632</NoWarn>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);NU1904</NoWarn>
     <PublishTrimmed>false</PublishTrimmed>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

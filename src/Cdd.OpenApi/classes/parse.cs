@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,10 +9,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
-    /// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Parses C# model class syntax declarations into <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Parse
     {
-        /// <summary>Auto-generated documentation for ToSchema.</summary>
+        /// <summary>
+        /// Extracts an <see cref="OpenApiSchema"/> from a Roslyn <see cref="ClassDeclarationSyntax"/>.
+        /// </summary>
+        /// <param name="classNode">The C# class syntax node to analyze.</param>
+        /// <returns>The parsed <see cref="OpenApiSchema"/>.</returns>
         public static OpenApiSchema ToSchema(ClassDeclarationSyntax classNode)
         {
             var example = Docstrings.Parse.GetTag(classNode, "example");
@@ -148,16 +156,14 @@ namespace Cdd.OpenApi.Classes
             return schema;
         }
 
-        private static string MapType(string csharpType)
+        /// <summary>
+        /// Maps a C# type name to its corresponding OpenAPI type string.
+        /// </summary>
+        /// <param name="csharpType">The C# type string.</param>
+        /// <returns>The mapped OpenAPI type name.</returns>
+        private static string MapType(string? csharpType)
         {
-            return csharpType switch
-            {
-                "int" or "long" or "short" => "integer",
-                "float" or "double" or "decimal" => "number",
-                "bool" => "boolean",
-                "string" => "string",
-                _ => "object"
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapCSharpToOpenApi(csharpType, "object");
         }
     }
 }

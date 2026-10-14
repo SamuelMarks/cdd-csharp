@@ -1,62 +1,66 @@
+// <copyright file="OpenApiComponents.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiComponents.</summary>
+    /// <summary>Holds a set of reusable objects for different aspects of the OpenAPI specification.</summary>
     public class OpenApiComponents
     {
-        /// <summary>Auto-generated documentation for Schemas.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiSchema"/> objects.</summary>
         [JsonPropertyName("schemas")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiSchema>? Schemas { get; set; }
 
-        /// <summary>Auto-generated documentation for Responses.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiResponse"/> objects.</summary>
         [JsonPropertyName("responses")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiResponse>? Responses { get; set; }
 
-        /// <summary>Auto-generated documentation for Parameters.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiParameter"/> objects.</summary>
         [JsonPropertyName("parameters")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiParameter>? Parameters { get; set; }
 
-        /// <summary>Auto-generated documentation for Examples.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiExample"/> objects.</summary>
         [JsonPropertyName("examples")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiExample>? Examples { get; set; }
 
-        /// <summary>Auto-generated documentation for RequestBodies.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiRequestBody"/> objects.</summary>
         [JsonPropertyName("requestBodies")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiRequestBody>? RequestBodies { get; set; }
 
-        /// <summary>Auto-generated documentation for Headers.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiHeader"/> objects.</summary>
         [JsonPropertyName("headers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiHeader>? Headers { get; set; }
 
-        /// <summary>Auto-generated documentation for SecuritySchemes.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiSecurityScheme"/> objects.</summary>
         [JsonPropertyName("securitySchemes")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiSecurityScheme>? SecuritySchemes { get; set; }
 
-        /// <summary>Auto-generated documentation for Links.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiLink"/> objects.</summary>
         [JsonPropertyName("links")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiLink>? Links { get; set; }
 
-        /// <summary>Auto-generated documentation for Callbacks.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiCallback"/> objects.</summary>
         [JsonPropertyName("callbacks")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiCallback>? Callbacks { get; set; }
 
-        /// <summary>Auto-generated documentation for PathItems.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiPathItem"/> objects.</summary>
         [JsonPropertyName("pathItems")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiPathItem>? PathItems { get; set; }
 
-        /// <summary>Auto-generated documentation for MediaTypes.</summary>
+        /// <summary>Gets or sets the reusable <see cref="OpenApiMediaType"/> objects.</summary>
         [JsonPropertyName("mediaTypes")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiMediaType>? MediaTypes { get; set; }

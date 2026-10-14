@@ -1,3 +1,7 @@
+// <copyright file="CodeGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -6,31 +10,38 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
-    /// <summary>Auto-generated documentation for GenerateType.</summary>
+    /// <summary>Specifies the target C# artifacts to generate from an OpenAPI document.</summary>
     public enum GenerateType
     {
-        /// <summary>Auto-generated documentation for Sdk.</summary>
+        /// <summary>Generates client SDK models and HTTP client classes.</summary>
         Sdk,
-        /// <summary>Auto-generated documentation for SdkCli.</summary>
+        /// <summary>Generates client SDK models, HTTP client classes, and a CLI wrapper.</summary>
         SdkCli,
-        /// <summary>Auto-generated documentation for Server.</summary>
+        /// <summary>Generates ASP.NET Core server interfaces, routes, DAOs, EF Core DbContext, and seeders.</summary>
         Server,
-        /// <summary>Auto-generated documentation for All.</summary>
+        /// <summary>Generates all SDK, CLI, Server, ORM, and optional MCP artifacts.</summary>
         All
     }
 
-    /// <summary>Auto-generated documentation for GeneratedCode.</summary>
+    /// <summary>Represents a single generated C# source file and its relative file path.</summary>
     public class GeneratedCode
     {
-        /// <summary>Auto-generated documentation for FileName.</summary>
+        /// <summary>Gets or sets the relative file path of the generated C# file.</summary>
         public string FileName { get; set; } = string.Empty;
-        /// <summary>Auto-generated documentation for Code.</summary>
+        /// <summary>Gets or sets the formatted C# source code content.</summary>
         public string Code { get; set; } = string.Empty;
     }
 
-    /// <summary>Auto-generated documentation for CodeGenerator.</summary>
+    /// <summary>Generates in-memory C# source files from an <see cref="OpenApiDocument"/>.</summary>
     public static class CodeGenerator
     {
+        /// <summary>
+        /// Attaches top-level OpenAPI document metadata as XML documentation tags onto a syntax node.
+        /// </summary>
+        /// <typeparam name="TNode">The syntax node type.</typeparam>
+        /// <param name="node">The syntax node to annotate.</param>
+        /// <param name="doc">The source OpenAPI document.</param>
+        /// <returns>The annotated syntax node.</returns>
         private static TNode AddDocTags<TNode>(TNode node, OpenApiDocument doc) where TNode : SyntaxNode
         {
 
@@ -64,6 +75,11 @@ namespace Cdd.OpenApi
             return node;
         }
 
+        /// <summary>
+        /// Groups the operations in an <see cref="OpenApiPaths"/> object by their primary operation tag.
+        /// </summary>
+        /// <param name="paths">The OpenAPI paths to group.</param>
+        /// <returns>A dictionary mapping normalized tag names to their corresponding <see cref="OpenApiPaths"/>.</returns>
         private static Dictionary<string, OpenApiPaths> GroupPathsByTag(OpenApiPaths paths)
         {
             var result = new Dictionary<string, OpenApiPaths>();
@@ -152,17 +168,22 @@ namespace Cdd.OpenApi
             return result;
         }
 
-        /// <summary>Auto-generated documentation for Generate.</summary>
-        public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false)
+        /// <summary>
+        /// Generates C# source files from an <see cref="OpenApiDocument"/>.
+        /// </summary>
+        /// <param name="doc">The OpenAPI document to generate code from.</param>
+        /// <param name="baseNamespace">The root C# namespace for generated files.</param>
+        /// <param name="type">The target generation mode (All, Sdk, SdkCli, Server).</param>
+        /// <param name="tests">Whether to generate composable unit/integration test suites and mocks.</param>
+        /// <param name="mcp">Whether to explicitly generate MCP server and model files regardless of target type.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false, bool mcp = false)
         {
             var results = new List<GeneratedCode>();
             if (doc == null) return results;
 
             if (doc.Components?.Schemas != null)
             {
-                var modelsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
-                    .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")));
-
                 foreach (var schemaKvp in doc.Components.Schemas)
                 {
                     var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
@@ -225,39 +246,46 @@ namespace Cdd.OpenApi
 
             if (doc.Paths != null && doc.Paths.Count > 0)
             {
-                var attributesCode = @"namespace " + baseNamespace + @"
-{
-    using System;
-    /// <summary>Auto-generated documentation for ExplodeAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class ExplodeAttribute : Attribute {}
-    /// <summary>Auto-generated documentation for AllowEmptyValueAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class AllowEmptyValueAttribute : Attribute {}
-    /// <summary>Auto-generated documentation for AllowReservedAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class AllowReservedAttribute : Attribute {}
-    /// <summary>Auto-generated documentation for StyleAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class StyleAttribute : Attribute {
-        /// <summary>Auto-generated documentation for StyleAttribute.</summary>
-        public StyleAttribute(string style) {}
-    }
-    /// <summary>Auto-generated documentation for ContentAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class ContentAttribute : Attribute {
-        /// <summary>Auto-generated documentation for ContentAttribute.</summary>
-        public ContentAttribute(string mediaType, string schemaType) {}
-    }
-    /// <summary>Auto-generated documentation for ExamplesAttribute.</summary>
-    [AttributeUsage(AttributeTargets.All)]
-    public class ExamplesAttribute : Attribute {
-        /// <summary>Auto-generated documentation for ExamplesAttribute.</summary>
-        public ExamplesAttribute(params string[] args) {}
-    }
-}
-";
-                results.Add(new GeneratedCode { FileName = "Attributes.cs", Code = attributesCode });
+                var attrUsage = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("AttributeUsage"))
+                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.AttributeArgument(SyntaxFactory.ParseExpression("AttributeTargets.All")))))));
+                var attrBase = SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
+                    SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("Attribute"))));
+
+                ClassDeclarationSyntax MakeAttr(string name, params ParameterSyntax[] ctorParams)
+                {
+                    var cls = SyntaxFactory.ClassDeclaration(name)
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddAttributeLists(attrUsage)
+                        .WithBaseList(attrBase);
+                    if (ctorParams.Length > 0)
+                    {
+                        cls = cls.AddMembers(
+                            SyntaxFactory.ConstructorDeclaration(name)
+                                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                                .AddParameterListParameters(ctorParams)
+                                .WithBody(SyntaxFactory.Block()));
+                    }
+                    return cls;
+                }
+
+                var attrNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(baseNamespace))
+                    .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))
+                    .AddMembers(
+                        MakeAttr("ExplodeAttribute"),
+                        MakeAttr("AllowEmptyValueAttribute"),
+                        MakeAttr("AllowReservedAttribute"),
+                        MakeAttr("StyleAttribute", SyntaxFactory.Parameter(SyntaxFactory.Identifier("style")).WithType(SyntaxFactory.ParseTypeName("string"))),
+                        MakeAttr("ContentAttribute",
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("mediaType")).WithType(SyntaxFactory.ParseTypeName("string")),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("schemaType")).WithType(SyntaxFactory.ParseTypeName("string"))),
+                        MakeAttr("ExamplesAttribute",
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("args"))
+                                .AddModifiers(SyntaxFactory.Token(SyntaxKind.ParamsKeyword))
+                                .WithType(SyntaxFactory.ParseTypeName("string[]")))
+                    );
+                results.Add(new GeneratedCode { FileName = "Attributes.cs", Code = WasmSafeRoslyn.FormatSafe(attrNs) });
 
                 var groupedPaths = GroupPathsByTag(doc.Paths);
 
@@ -314,7 +342,10 @@ namespace Cdd.OpenApi
                             .AddMembers(cliNode);
                         results.Add(new GeneratedCode { FileName = $"src/Cli/{tag}ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
                     }
+                }
 
+                if (type == GenerateType.All || type == GenerateType.SdkCli || mcp)
+                {
                     var mcpServerNode = Cdd.OpenApi.Mcp.Emit.ToMcpServer("McpServer", doc.Paths);
                     var mcpServerNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))

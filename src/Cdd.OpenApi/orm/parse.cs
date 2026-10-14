@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,10 +11,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
 {
-    /// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Parses Entity Framework Core <c>DbContext</c> class declarations into <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Parse
     {
-        /// <summary>Auto-generated documentation for ToSchemas.</summary>
+        /// <summary>
+        /// Extracts a dictionary of <see cref="OpenApiSchema"/> definitions from <c>DbSet&lt;T&gt;</c> properties on a <c>DbContext</c> class.
+        /// </summary>
+        /// <param name="classNode">The C# DbContext class syntax node to analyze.</param>
+        /// <returns>A dictionary mapping entity names to their <see cref="OpenApiSchema"/> definitions.</returns>
         public static IDictionary<string, OpenApiSchema> ToSchemas(ClassDeclarationSyntax classNode)
         {
             var schemas = new Dictionary<string, OpenApiSchema>();

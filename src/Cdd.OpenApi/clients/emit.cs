@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,10 +11,15 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Clients
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits strongly-typed C# HTTP client classes from <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToClient.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an asynchronous HTTP API client.
+        /// </summary>
+        /// <param name="className">The name of the generated client class.</param>
+        /// <param name="paths">The OpenAPI paths to generate client methods for.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToClient(string className, OpenApiPaths paths)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)
@@ -51,28 +60,7 @@ namespace Cdd.OpenApi.Clients
                 var routePath = pathKvp.Key;
                 var pathItem = pathKvp.Value;
 
-                var operations = new Dictionary<string, OpenApiOperation?>
-                {
-                    { "Get", pathItem.Get },
-                    { "Put", pathItem.Put },
-                    { "Post", pathItem.Post },
-                    { "Delete", pathItem.Delete },
-                    { "Options", pathItem.Options },
-                    { "Head", pathItem.Head },
-                    { "Patch", pathItem.Patch },
-                    { "Trace", pathItem.Trace },
-                    { "Query", pathItem.Query }
-                };
-
-                if (pathItem.AdditionalOperations != null)
-                    if (pathItem.AdditionalOperations.Any())
-                    {
-                        foreach (var addOp in pathItem.AdditionalOperations)
-                        {
-                            var normVerb = addOp.Key.Substring(0, 1).ToUpperInvariant() + addOp.Key.Substring(1).ToLowerInvariant();
-                            operations[normVerb] = addOp.Value;
-                        }
-                    }
+                var operations = Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem);
 
                 foreach (var opKvp in operations)
                 {
@@ -580,16 +568,14 @@ namespace Cdd.OpenApi.Clients
             return classNode.AddMembers(members.ToArray());
         }
 
+        /// <summary>
+        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
+        /// </summary>
+        /// <param name="openApiType">The OpenAPI type string.</param>
+        /// <returns>The mapped C# type name.</returns>
         private static string MapTypeToCSharp(string? openApiType)
         {
-            return openApiType switch
-            {
-                "integer" => "int",
-                "number" => "double",
-                "boolean" => "bool",
-                "string" => "string",
-                _ => "string"
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "string");
         }
     }
 }

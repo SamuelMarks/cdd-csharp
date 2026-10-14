@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,15 +9,21 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.TestsModule
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits xUnit API and client test classes from <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToTests.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> containing server API test methods for the specified paths.
+        /// </summary>
+        /// <param name="name">The name of the generated test class.</param>
+        /// <param name="paths">The OpenAPI paths to generate test methods for.</param>
+        /// <param name="tests">Whether to emit composable xUnit <c>[Fact]</c> test harnesses.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToTests(string name, OpenApiPaths paths, bool tests = false)
         {
             var classDecl = SyntaxFactory.ClassDeclaration(name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            classDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(classDecl, $"Auto-generated documentation for {name}.");
+            classDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(classDecl, $"Unit tests for {name}.");
 
             var members = new List<MemberDeclarationSyntax>();
             if (tests)
@@ -34,7 +44,7 @@ namespace Cdd.OpenApi.TestsModule
                             SyntaxFactory.IdentifierName("api")
                         ))
                     ));
-                ctor = Cdd.OpenApi.Docstrings.Emit.WithSummary(ctor, $"Auto-generated documentation for {name}.");
+                ctor = Cdd.OpenApi.Docstrings.Emit.WithSummary(ctor, $"Initializes a new instance of the {name} class.");
 
                 members.Add(field);
                 members.Add(ctor);
@@ -53,12 +63,18 @@ namespace Cdd.OpenApi.TestsModule
             return classDecl.AddMembers(members.ToArray());
         }
 
-        /// <summary>Auto-generated documentation for ToClientTests.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> containing HTTP client test methods for the specified paths.
+        /// </summary>
+        /// <param name="name">The name of the generated client test class.</param>
+        /// <param name="paths">The OpenAPI paths to generate client test methods for.</param>
+        /// <param name="tests">Whether to emit composable xUnit <c>[Fact]</c> test harnesses.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToClientTests(string name, OpenApiPaths paths, bool tests = false)
         {
             var classDecl = SyntaxFactory.ClassDeclaration(name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            classDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(classDecl, $"Auto-generated documentation for {name}.");
+            classDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(classDecl, $"Client unit tests for {name}.");
 
             var members = new List<MemberDeclarationSyntax>();
             if (tests)
@@ -79,7 +95,7 @@ namespace Cdd.OpenApi.TestsModule
                             SyntaxFactory.IdentifierName("client")
                         ))
                     ));
-                ctor = Cdd.OpenApi.Docstrings.Emit.WithSummary(ctor, $"Auto-generated documentation for {name}.");
+                ctor = Cdd.OpenApi.Docstrings.Emit.WithSummary(ctor, $"Initializes a new instance of the {name} class.");
 
                 members.Add(field);
                 members.Add(ctor);
@@ -98,13 +114,27 @@ namespace Cdd.OpenApi.TestsModule
             return classDecl.AddMembers(members.ToArray());
         }
 
+        /// <summary>
+        /// Creates a server API test method declaration for a single OpenAPI operation.
+        /// </summary>
+        /// <param name="method">The PascalCase HTTP verb.</param>
+        /// <param name="route">The route path template.</param>
+        /// <param name="op">The OpenAPI operation metadata.</param>
+        /// <param name="tests">Whether to attach <c>[Xunit.Fact]</c> and async task body.</param>
+        /// <returns>The generated <see cref="MethodDeclarationSyntax"/>.</returns>
         private static MethodDeclarationSyntax CreateTestMethod(string method, string route, OpenApiOperation op, bool tests)
         {
             var methodName = op.OperationId ?? $"{method}{route.Replace("/", "").Replace("{", "").Replace("}", "")}";
             var returnType = SyntaxFactory.ParseTypeName(tests ? "System.Threading.Tasks.Task" : "void");
             var methodDecl = SyntaxFactory.MethodDeclaration(returnType, methodName + "Test")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            methodDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(methodDecl, $"Auto-generated documentation for {methodName}Test.");
+            if (tests)
+            {
+                methodDecl = methodDecl.AddAttributeLists(
+                    SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Xunit.Fact"))))
+                );
+            }
+            methodDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(methodDecl, $"Tests the {methodName} operation.");
 
             var body = SyntaxFactory.Block();
 
@@ -122,6 +152,14 @@ namespace Cdd.OpenApi.TestsModule
             return methodDecl.WithBody(body);
         }
 
+        /// <summary>
+        /// Creates a client test method declaration for a single OpenAPI operation.
+        /// </summary>
+        /// <param name="method">The PascalCase HTTP verb.</param>
+        /// <param name="route">The route path template.</param>
+        /// <param name="op">The OpenAPI operation metadata.</param>
+        /// <param name="tests">Whether to attach <c>[Xunit.Fact]</c> and async task body.</param>
+        /// <returns>The generated <see cref="MethodDeclarationSyntax"/>.</returns>
         private static MethodDeclarationSyntax CreateClientTestMethod(string method, string route, OpenApiOperation op, bool tests)
         {
             var methodName = op.OperationId ?? $"{method}{route.Replace("/", "").Replace("{", "").Replace("}", "")}";
@@ -129,7 +167,13 @@ namespace Cdd.OpenApi.TestsModule
             var returnType = SyntaxFactory.ParseTypeName(tests ? "System.Threading.Tasks.Task" : "void");
             var methodDecl = SyntaxFactory.MethodDeclaration(returnType, methodName + "Test")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
-            methodDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(methodDecl, $"Auto-generated documentation for {methodName}Test.");
+            if (tests)
+            {
+                methodDecl = methodDecl.AddAttributeLists(
+                    SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Xunit.Fact"))))
+                );
+            }
+            methodDecl = Cdd.OpenApi.Docstrings.Emit.WithSummary(methodDecl, $"Tests the {methodName} client operation.");
 
             var body = SyntaxFactory.Block();
 

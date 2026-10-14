@@ -222,7 +222,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             };
             var jsonStr = DocsJsonGenerator.Generate(doc, false, false);
             var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
-            var snippet = parsed[0].Operations[0].Code.Snippet;
+            var snippet = parsed![0].Operations[0].Code.Snippet;
             Assert.Contains("string validParam = \"example\";", snippet);
             Assert.DoesNotContain("null validParam", snippet);
         }

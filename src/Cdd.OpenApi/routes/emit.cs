@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,11 +11,17 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits ASP.NET Core route controller interfaces from <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToInterface.</summary>
-        public static InterfaceDeclarationSyntax ToInterface(string interfaceName, OpenApiPaths paths)
+        /// <summary>
+        /// Generates an ASP.NET Core controller route interface from an <see cref="OpenApiPaths"/> collection.
+        /// </summary>
+        /// <param name="interfaceName">The name of the generated interface.</param>
+        /// <param name="paths">The OpenAPI paths to convert into route methods.</param>
+        /// <param name="includeMcp">Whether to include MCP SSE and JSON-RPC message endpoints.</param>
+        /// <returns>The generated <see cref="InterfaceDeclarationSyntax"/>.</returns>
+        public static InterfaceDeclarationSyntax ToInterface(string interfaceName, OpenApiPaths paths, bool includeMcp = true)
         {
             var interfaceNode = SyntaxFactory.InterfaceDeclaration(interfaceName)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
@@ -22,27 +32,7 @@ namespace Cdd.OpenApi.Routes
                 var routePath = pathKvp.Key;
                 var pathItem = pathKvp.Value;
 
-                var operations = new Dictionary<string, OpenApiOperation?>
-                {
-                    { "Get", pathItem.Get },
-                    { "Put", pathItem.Put },
-                    { "Post", pathItem.Post },
-                    { "Delete", pathItem.Delete },
-                    { "Options", pathItem.Options },
-                    { "Head", pathItem.Head },
-                    { "Patch", pathItem.Patch },
-                    { "Trace", pathItem.Trace },
-                    { "Query", pathItem.Query }
-                };
-
-                if (pathItem.AdditionalOperations != null)
-                {
-                    foreach (var addOp in pathItem.AdditionalOperations)
-                    {
-                        var normVerb = addOp.Key.Substring(0, 1).ToUpperInvariant() + addOp.Key.Substring(1).ToLowerInvariant();
-                        operations[normVerb] = addOp.Value;
-                    }
-                }
+                var operations = Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem);
 
                 foreach (var opKvp in operations)
                 {
@@ -333,42 +323,43 @@ namespace Cdd.OpenApi.Routes
 
 
             // Dynamic SSE endpoint definitions for Server Integration
-            var sseMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpSseEndpoint")
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpGet"))
-                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/sse")))
-                        )))
-                )));
-            sseMethod = Docstrings.Emit.WithSummary(sseMethod, "Establishes a Model Context Protocol SSE stream.");
-            members.Add(sseMethod);
+            if (includeMcp)
+            {
+                var sseMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpSseEndpoint")
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                    .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpGet"))
+                            .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/sse")))
+                            )))
+                    )));
+                sseMethod = Docstrings.Emit.WithSummary(sseMethod, "Establishes a Model Context Protocol SSE stream.");
+                members.Add(sseMethod);
 
-            var msgMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpMessageEndpoint")
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
-                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/messages")))
-                        )))
-                )))
-                .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body")).WithType(SyntaxFactory.ParseTypeName("object")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromBody"))))))
-                .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("sessionId")).WithType(SyntaxFactory.ParseTypeName("string")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromQuery"))))));
-            msgMethod = Docstrings.Emit.WithSummary(msgMethod, "Receives JSON-RPC messages for an active MCP session.");
-            members.Add(msgMethod);
+                var msgMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult>"), "McpMessageEndpoint")
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                    .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("HttpPost"))
+                            .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("/mcp/messages")))
+                            )))
+                    )))
+                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body")).WithType(SyntaxFactory.ParseTypeName("object")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromBody"))))))
+                    .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("sessionId")).WithType(SyntaxFactory.ParseTypeName("string")).AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("FromQuery"))))));
+                msgMethod = Docstrings.Emit.WithSummary(msgMethod, "Receives JSON-RPC messages for an active MCP session.");
+                members.Add(msgMethod);
+            }
             return interfaceNode.AddMembers(members.ToArray());
         }
 
+        /// <summary>
+        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
+        /// </summary>
+        /// <param name="openApiType">The OpenAPI type string.</param>
+        /// <returns>The mapped C# type name.</returns>
         private static string MapTypeToCSharp(string? openApiType)
         {
-            return openApiType switch
-            {
-                "integer" => "int",
-                "number" => "double",
-                "boolean" => "bool",
-                "string" => "string",
-                _ => "string"
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "string");
         }
     }
 }

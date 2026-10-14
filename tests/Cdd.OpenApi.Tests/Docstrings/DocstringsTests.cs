@@ -126,7 +126,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Equal("s2", servers.ElementAt(1).Url);
             Assert.Equal("desc2", servers.ElementAt(1).Description);
             Assert.Equal("s3", servers.ElementAt(2).Url);
-            Assert.Single(servers.ElementAt(2).Variables);
+            Assert.Single(servers.ElementAt(2).Variables!);
         }
 
         [Fact]
@@ -199,10 +199,10 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Equal("Default server", servers[0].Description);
 
             Assert.Equal("", servers[1].Url);
-            var v1 = servers[1].Variables["var"];
+            var v1 = servers[1].Variables!["var"];
             Assert.Equal("def", v1.Default);
 
-            var v2 = servers[2].Variables["v"];
+            var v2 = servers[2].Variables!["v"];
             Assert.Equal("Desc", v2.Description);
         }
     }

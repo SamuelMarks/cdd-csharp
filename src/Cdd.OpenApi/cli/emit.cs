@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,15 +11,25 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.CliModule
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits C# command-line interface (CLI) wrapper classes from <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Converts a PascalCase or camelCase identifier to snake_case.
+        /// </summary>
+        /// <param name="text">The input identifier string.</param>
+        /// <returns>The snake_case formatted string.</returns>
         private static string ToSnakeCase(string text)
         {
             return string.Concat(text.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
         }
 
-        /// <summary>Auto-generated documentation for ToCli.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a CLI wrapper around an OpenAPI specification.
+        /// </summary>
+        /// <param name="className">The name of the generated CLI class.</param>
+        /// <param name="paths">The OpenAPI paths to expose as CLI subcommands.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToCli(string className, OpenApiPaths paths)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)

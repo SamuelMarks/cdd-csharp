@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,10 +9,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Routes
 {
-    /// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Parses ASP.NET Core route attributes and controller methods into <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Parse
     {
-        /// <summary>Auto-generated documentation for ToPaths.</summary>
+        /// <summary>
+        /// Extracts an <see cref="OpenApiPaths"/> object from a C# controller class declaration.
+        /// </summary>
+        /// <param name="classNode">The C# controller class syntax node to analyze.</param>
+        /// <returns>The extracted <see cref="OpenApiPaths"/>.</returns>
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();
@@ -162,11 +170,11 @@ namespace Cdd.OpenApi.Routes
                         var paramStr = tag.Attributes.TryGetValue("link-parameters", out var pStr) ? pStr : null;
                         if (!string.IsNullOrEmpty(paramStr))
                         {
-                            linkObj.Parameters = new Dictionary<string, object>();
+                            linkObj.Parameters = new Dictionary<string, OpenApiAny>();
                             foreach (var p in paramStr.Split(','))
                             {
                                 var parts = p.Split(':');
-                                if (parts.Length == 2) linkObj.Parameters[parts[0].Trim()] = parts[1].Trim();
+                                if (parts.Length == 2) linkObj.Parameters[parts[0].Trim()] = parts[1].Trim()!;
                             }
                         }
 
@@ -527,6 +535,12 @@ namespace Cdd.OpenApi.Routes
             return paths;
         }
 
+        /// <summary>
+        /// Assigns an <see cref="OpenApiOperation"/> to the appropriate HTTP verb property on an <see cref="OpenApiPathItem"/>.
+        /// </summary>
+        /// <param name="pathItem">The target path item.</param>
+        /// <param name="method">The lowercase HTTP method name.</param>
+        /// <param name="op">The operation to assign.</param>
         private static void SetOperation(OpenApiPathItem pathItem, string method, OpenApiOperation op)
         {
             switch (method)
@@ -547,16 +561,14 @@ namespace Cdd.OpenApi.Routes
             }
         }
 
+        /// <summary>
+        /// Maps a C# type name to its corresponding OpenAPI type string.
+        /// </summary>
+        /// <param name="csharpType">The C# type string.</param>
+        /// <returns>The mapped OpenAPI type name.</returns>
         private static string MapType(string? csharpType)
         {
-            return csharpType switch
-            {
-                "int" or "long" or "short" => "integer",
-                "float" or "double" or "decimal" => "number",
-                "bool" => "boolean",
-                "string" => "string",
-                _ => "string" // Fallback for path/query parameters
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapCSharpToOpenApi(csharpType, "string");
         }
     }
 }

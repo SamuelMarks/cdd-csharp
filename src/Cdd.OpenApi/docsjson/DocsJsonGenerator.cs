@@ -1,3 +1,7 @@
+// <copyright file="DocsJsonGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +14,13 @@ namespace Cdd.OpenApi.DocsJson
     /// <summary>Generates JSON documentation.</summary>
     public static class DocsJsonGenerator
     {
-        /// <summary>Generates the documentation JSON string.</summary>
+        /// <summary>
+        /// Generates the documentation JSON string containing C# code snippets for all operations in the OpenAPI document.
+        /// </summary>
+        /// <param name="doc">The OpenAPI document to generate documentation snippets for.</param>
+        /// <param name="noImports">Whether to omit the <c>imports</c> field from generated code objects.</param>
+        /// <param name="noWrapping">Whether to omit the <c>wrapper_start</c> and <c>wrapper_end</c> fields from generated code objects.</param>
+        /// <returns>The serialized documentation JSON string.</returns>
         public static string Generate(OpenApiDocument doc, bool noImports, bool noWrapping)
         {
             var output = new DocsJsonOutput
@@ -140,19 +150,21 @@ namespace Cdd.OpenApi.DocsJson
             return JsonSerializer.Serialize(resultList, DocsJsonContext.Default.ListDocsJsonOutput);
         }
 
+        /// <summary>
+        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
+        /// </summary>
+        /// <param name="openApiType">The OpenAPI type string.</param>
+        /// <returns>The mapped C# type name.</returns>
         private static string MapTypeToCSharp(string? openApiType)
         {
-            return openApiType switch
-            {
-                "integer" => "int",
-                "number" => "double",
-                "boolean" => "bool",
-                "string" => "string",
-                "object" => "object",
-                _ => "object"
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "object");
         }
 
+        /// <summary>
+        /// Returns a sample C# literal expression string for a given C# type name.
+        /// </summary>
+        /// <param name="csharpType">The C# type name.</param>
+        /// <returns>A C# literal expression string representing a default sample value.</returns>
         private static string GetDefaultValueForType(string csharpType)
         {
             return csharpType switch

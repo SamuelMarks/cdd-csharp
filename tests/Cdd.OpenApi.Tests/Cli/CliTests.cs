@@ -419,8 +419,8 @@ namespace Cdd.OpenApi.Cli.Tests
         [Fact]
         public void ToDocsJson_HttpThrows()
         {
-            // Http request to a non-existent port should return {} and succeed.
-            Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", "http://localhost:12345/doesnotexist.json" }));
+            // Http request to a non-existent port should surface CddException and return exit code 1.
+            Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-i", "http://localhost:12345/doesnotexist.json" }));
         }
         [Fact]
         public void ToCli_FullParamTypes_Coverage()

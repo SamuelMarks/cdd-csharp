@@ -1,3 +1,7 @@
+// <copyright file="DocsJsonContext.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
 

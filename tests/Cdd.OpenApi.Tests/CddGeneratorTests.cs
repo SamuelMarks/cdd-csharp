@@ -380,25 +380,26 @@ namespace Cdd.OpenApi.Tests
         public void Test_CddGenerator_CatchBlocks()
         {
             var tempFile = Path.GetTempFileName();
+            var inputPath = Path.GetTempFileName();
             try
             {
-                var inputPath = Path.GetTempFileName();
                 File.WriteAllText(inputPath, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
 
                 var config = new CddConfig
                 {
                     InputPath = inputPath,
-                    OutputDir = tempFile, // It's a file, so creating subdirs will throw and be caught
+                    OutputDir = tempFile,
                     NoGithubActions = false,
                     CreateComposableTestsAndMocks = true
                 };
 
-                CddGenerator.GenerateAll(config);
-                // Should not throw, catch blocks should be hit
+                var ex = Assert.Throws<Cdd.OpenApi.Errors.CddException>(() => CddGenerator.GenerateAll(config));
+                Assert.Equal(Cdd.OpenApi.Errors.CddErrorCode.IoError, ex.ErrorCode);
             }
             finally
             {
-                File.Delete(tempFile);
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+                if (File.Exists(inputPath)) File.Delete(inputPath);
             }
         }
 
@@ -406,7 +407,9 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void Generate_CodeGenerator_Branches()
         {
-            CodeGenerator.Generate(new Cdd.OpenApi.Models.OpenApiDocument());
+            var resEmpty = CodeGenerator.Generate(new Cdd.OpenApi.Models.OpenApiDocument());
+            Assert.Empty(resEmpty);
+
             var docWithNullPaths = new Cdd.OpenApi.Models.OpenApiDocument
             {
                 Paths = null,
@@ -415,7 +418,10 @@ namespace Cdd.OpenApi.Tests
                     Schemas = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema>()
                 }
             };
-            CodeGenerator.Generate(docWithNullPaths, "Generated", GenerateType.Server, false);
+            var resNullPaths = CodeGenerator.Generate(docWithNullPaths, "Generated", GenerateType.Server, false);
+            Assert.NotEmpty(resNullPaths);
+            Assert.Contains(resNullPaths, r => r.FileName == "src/Data/AppDbContext.cs");
+
             var docWithEmptyPaths = new Cdd.OpenApi.Models.OpenApiDocument
             {
                 Paths = new Cdd.OpenApi.Models.OpenApiPaths(),
@@ -424,7 +430,9 @@ namespace Cdd.OpenApi.Tests
                     Schemas = new System.Collections.Generic.Dictionary<string, Cdd.OpenApi.Models.OpenApiSchema>()
                 }
             };
-            CodeGenerator.Generate(docWithEmptyPaths, "Generated", GenerateType.Server, false);
+            var resEmptyPaths = CodeGenerator.Generate(docWithEmptyPaths, "Generated", GenerateType.Server, false);
+            Assert.NotEmpty(resEmptyPaths);
+            Assert.Contains(resEmptyPaths, r => r.FileName == "src/Data/AppDbContext.cs");
         }
 
 
@@ -440,6 +448,9 @@ namespace Cdd.OpenApi.Tests
 
                 var config = new CddConfig { InputPath = inputPath, OutputDir = tempDir, CreateComposableTestsAndMocks = true };
                 CddGenerator.GenerateAll(config);
+                Assert.True(System.IO.File.Exists(System.IO.Path.Combine(tempDir, "GeneratedProject.sln")));
+                var csproj = System.IO.File.ReadAllText(System.IO.Path.Combine(tempDir, "src", "GeneratedProject", "GeneratedProject.csproj"));
+                Assert.Contains("<PackageId>GeneratedProject</PackageId>", csproj);
             }
             finally
             {
@@ -511,10 +522,28 @@ namespace Cdd.OpenApi.Tests
 
                 System.IO.File.WriteAllText(inputPath, @"{ ""openapi"": ""3.0.0"", ""info"": { ""title"": ""<script>"", ""description"": ""<script>"", ""version"": ""<script>"", ""contact"": { ""name"": ""Name <script>"" } }, ""paths"": {} }");
                 CddGenerator.GenerateAll(config);
-
+                var escapedCsproj = System.IO.File.ReadAllText(System.IO.Path.Combine(tempDir, "src", "GeneratedProject", "GeneratedProject.csproj"));
+                Assert.Contains("&lt;script&gt;", escapedCsproj);
 
                 var config2 = new CddConfig { InputPaths = new System.Collections.Generic.List<string>() };
-                try { CddGenerator.GenerateAll(config2); } catch { }
+                Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config2));
+
+                var specA = System.IO.Path.Combine(tempDir, "specA.json");
+                var specB = System.IO.Path.Combine(tempDir, "specB.json");
+                System.IO.File.WriteAllText(specA, @"{ ""openapi"": ""3.2.0"", ""self"": ""self-uri"", ""jsonSchemaDialect"": ""dialect-uri"", ""basePath"": ""/v1"", ""servers"": [{ ""url"": ""http://localhost"" }], ""components"": { ""securitySchemes"": { ""SecA"": { ""type"": ""apiKey"" } } }, ""paths"": { ""/a"": { ""get"": { ""operationId"": ""GetA"" } } } }");
+                System.IO.File.WriteAllText(specB, @"{ ""openapi"": ""3.2.0"", ""components"": { ""schemas"": { ""ModelB"": { ""type"": ""object"", ""properties"": { ""id"": { ""type"": ""string"" } } } }, ""securitySchemes"": { ""SecB"": { ""type"": ""apiKey"" } } }, ""paths"": { ""/b"": { ""get"": { ""operationId"": ""GetB"" } } } }");
+                var specC = System.IO.Path.Combine(tempDir, "specC.json");
+                System.IO.File.WriteAllText(specC, @"{ ""openapi"": ""3.2.0"", ""components"": { ""schemas"": { ""ModelA"": { ""type"": ""object"", ""properties"": { ""id"": { ""type"": ""string"" } } } } } }");
+                var mergedConfig = new CddConfig
+                {
+                    InputPaths = new System.Collections.Generic.List<string> { specA, specB, specC },
+                    OutputDir = tempDir,
+                    NoInstallablePackage = true,
+                    NoGithubActions = true
+                };
+                CddGenerator.GenerateAll(mergedConfig);
+                Assert.True(System.IO.File.Exists(System.IO.Path.Combine(tempDir, "src", "Models", "ModelA.cs")));
+                Assert.True(System.IO.File.Exists(System.IO.Path.Combine(tempDir, "src", "Models", "ModelB.cs")));
             }
             finally
             {

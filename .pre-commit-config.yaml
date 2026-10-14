@@ -34,6 +34,12 @@ repos:
         files: \.(py|cs)$
         pass_filenames: false
 
+    -   id: doc-coverage
+        name: Check 100% Documentation Coverage
+        entry: bash -c "test \"$(dotnet run --project scripts/DocCoverage.csproj -- src | tail -n 1)\" = \"100\""
+        language: system
+        pass_filenames: false
+
     -   id: build
         name: Build
         entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py dotnet build CddOpenApi.slnx
@@ -42,7 +48,7 @@ repos:
 
     -   id: tests
         name: Run tests
-        entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py dotnet test CddOpenApi.slnx
+        entry: python3 scripts/run_slow.py python3 scripts/fallback_runner.py dotnet test tests/Cdd.OpenApi.Tests/Cdd.OpenApi.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=100
         language: system
         pass_filenames: false
 

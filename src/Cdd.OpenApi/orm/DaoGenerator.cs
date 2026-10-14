@@ -1,5 +1,10 @@
+// <copyright file="DaoGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
@@ -8,67 +13,78 @@ namespace Cdd.OpenApi.Orm
     public static class DaoGenerator
     {
         /// <summary>Generates DAOs and their dependency injection extensions.</summary>
+        /// <param name="schemas">The OpenAPI schemas to generate DAOs for.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> GenerateDaos(IDictionary<string, OpenApiSchema> schemas, string baseNamespace)
         {
             var results = new List<GeneratedCode>();
 
-            var diCode = new StringBuilder();
-            diCode.AppendLine($@"namespace {baseNamespace}.Daos
-{{
-    using System;
-    using Microsoft.Extensions.DependencyInjection;
-    using {baseNamespace}.Models;
-    using Microsoft.EntityFrameworkCore;
-
-    /// <summary>Dependency injection extensions for DAOs.</summary>
-    public static class DaoServiceCollectionExtensions
-    {{
-        /// <summary>Registers DAOs based on the environment configuration.</summary>
-        public static IServiceCollection AddDaos(this IServiceCollection services, bool useEphemeral, string? databaseUrl)
-        {{
-            if (useEphemeral)
-            {{
-                var dbName = Guid.NewGuid().ToString();
-                services.AddDbContext<AppDbContext>(options => options.UseSqlite($""DataSource={{dbName}};Mode=Memory;Cache=Shared""));
-                // Register Concrete DAOs
-");
+            var ephemeralStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement(@"var dbName = Guid.NewGuid().ToString();"),
+                SyntaxFactory.ParseStatement(@"services.AddDbContext<AppDbContext>(options => options.UseSqlite($""DataSource={dbName};Mode=Memory;Cache=Shared""));")
+            };
+            var postgresStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement(@"services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseUrl));")
+            };
+            var stubStmts = new List<StatementSyntax>();
 
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
-                diCode.AppendLine($"                services.AddScoped<I{schemaName}Dao, Concrete{schemaName}Dao>();");
+                ephemeralStmts.Add(SyntaxFactory.ParseStatement($"services.AddScoped<I{schemaName}Dao, Concrete{schemaName}Dao>();"));
+                postgresStmts.Add(SyntaxFactory.ParseStatement($"services.AddScoped<I{schemaName}Dao, Concrete{schemaName}Dao>();"));
+                stubStmts.Add(SyntaxFactory.ParseStatement($"services.AddScoped<I{schemaName}Dao, Stub{schemaName}Dao>();"));
             }
 
-            diCode.AppendLine($@"            }}
-            else if (!string.IsNullOrEmpty(databaseUrl))
-            {{
-                services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseUrl));
-                // Register Concrete DAOs
-");
-            foreach (var schemaKvp in schemas)
+            var ifElseStmt = SyntaxFactory.IfStatement(
+                SyntaxFactory.IdentifierName("useEphemeral"),
+                SyntaxFactory.Block(ephemeralStmts),
+                SyntaxFactory.ElseClause(
+                    SyntaxFactory.IfStatement(
+                        SyntaxFactory.ParseExpression("!string.IsNullOrEmpty(databaseUrl)"),
+                        SyntaxFactory.Block(postgresStmts),
+                        SyntaxFactory.ElseClause(SyntaxFactory.Block(stubStmts))
+                    )
+                )
+            );
+
+            var addDaosMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("IServiceCollection"), "AddDaos")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                .AddParameterListParameters(
+                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("services"))
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.ThisKeyword))
+                        .WithType(SyntaxFactory.ParseTypeName("IServiceCollection")),
+                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("useEphemeral"))
+                        .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.BoolKeyword))),
+                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("databaseUrl"))
+                        .WithType(SyntaxFactory.ParseTypeName("string?"))
+                )
+                .WithBody(SyntaxFactory.Block(
+                    ifElseStmt,
+                    SyntaxFactory.ParseStatement("return services;")
+                ));
+
+            var diClass = SyntaxFactory.ClassDeclaration("DaoServiceCollectionExtensions")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                .AddMembers(addDaosMethod);
+
+            var diNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Daos"))
+                .AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore"))
+                )
+                .AddMembers(diClass);
+
+            results.Add(new GeneratedCode
             {
-                var schemaName = schemaKvp.Key;
-                diCode.AppendLine($"                services.AddScoped<I{schemaName}Dao, Concrete{schemaName}Dao>();");
-            }
-
-            diCode.AppendLine($@"            }}
-            else
-            {{
-                // Register Stub DAOs
-");
-            foreach (var schemaKvp in schemas)
-            {
-                var schemaName = schemaKvp.Key;
-                diCode.AppendLine($"                services.AddScoped<I{schemaName}Dao, Stub{schemaName}Dao>();");
-            }
-
-            diCode.AppendLine($@"            }}
-            return services;
-        }}
-    }}
-}}");
-
-            results.Add(new GeneratedCode { FileName = "src/Daos/DaoServiceCollectionExtensions.cs", Code = diCode.ToString() });
+                FileName = "src/Daos/DaoServiceCollectionExtensions.cs",
+                Code = WasmSafeRoslyn.FormatSafe(diNs)
+            });
 
             foreach (var schemaKvp in schemas)
             {
@@ -85,96 +101,97 @@ namespace Cdd.OpenApi.Orm
                     if (upperIdProp.Type == "integer") idType = "int";
                 }
 
-                var daoCode = $@"namespace {baseNamespace}.Daos
-{{
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Microsoft.EntityFrameworkCore;
-    using {baseNamespace}.Models;
+                var daoInterface = SyntaxFactory.InterfaceDeclaration($"I{schemaName}Dao")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .AddMembers(
+                        SyntaxFactory.ParseMemberDeclaration($"Task<IEnumerable<{schemaName}>> GetAllAsync();")!,
+                        SyntaxFactory.ParseMemberDeclaration($"Task<{schemaName}?> GetByIdAsync({idType} id);")!,
+                        SyntaxFactory.ParseMemberDeclaration($"Task<{schemaName}> CreateAsync({schemaName} entity);")!,
+                        SyntaxFactory.ParseMemberDeclaration($"Task<{schemaName}> UpdateAsync({schemaName} entity);")!,
+                        SyntaxFactory.ParseMemberDeclaration($"Task DeleteAsync({idType} id);")!
+                    );
 
-    /// <summary>Abstract DAO interface for {schemaName}.</summary>
-    public interface I{schemaName}Dao
-    {{
-        /// <summary>Gets all {schemaName} entities.</summary>
-        Task<IEnumerable<{schemaName}>> GetAllAsync();
-        /// <summary>Gets a single {schemaName} by ID.</summary>
-        Task<{schemaName}?> GetByIdAsync({idType} id);
-        /// <summary>Creates a new {schemaName}.</summary>
-        Task<{schemaName}> CreateAsync({schemaName} entity);
-        /// <summary>Updates an existing {schemaName}.</summary>
-        Task<{schemaName}> UpdateAsync({schemaName} entity);
-        /// <summary>Deletes a {schemaName} by ID.</summary>
-        Task DeleteAsync({idType} id);
-    }}
+                var stubClass = SyntaxFactory.ClassDeclaration($"Stub{schemaName}Dao")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .WithBaseList(SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
+                        SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName($"I{schemaName}Dao")))))
+                    .AddMembers(
+                        SyntaxFactory.ParseMemberDeclaration($"public Task<IEnumerable<{schemaName}>> GetAllAsync() => throw new NotImplementedException();")!,
+                        SyntaxFactory.ParseMemberDeclaration($"public Task<{schemaName}?> GetByIdAsync({idType} id) => throw new NotImplementedException();")!,
+                        SyntaxFactory.ParseMemberDeclaration($"public Task<{schemaName}> CreateAsync({schemaName} entity) => throw new NotImplementedException();")!,
+                        SyntaxFactory.ParseMemberDeclaration($"public Task<{schemaName}> UpdateAsync({schemaName} entity) => throw new NotImplementedException();")!,
+                        SyntaxFactory.ParseMemberDeclaration($"public Task DeleteAsync({idType} id) => throw new NotImplementedException();")!
+                    );
 
-    /// <summary>Stub DAO implementation for {schemaName}.</summary>
-    public class Stub{schemaName}Dao : I{schemaName}Dao
-    {{
-        /// <summary>Gets all {schemaName} entities.</summary>
-        public Task<IEnumerable<{schemaName}>> GetAllAsync() => throw new NotImplementedException();
-        /// <summary>Gets a single {schemaName} by ID.</summary>
-        public Task<{schemaName}?> GetByIdAsync({idType} id) => throw new NotImplementedException();
-        /// <summary>Creates a new {schemaName}.</summary>
-        public Task<{schemaName}> CreateAsync({schemaName} entity) => throw new NotImplementedException();
-        /// <summary>Updates an existing {schemaName}.</summary>
-        public Task<{schemaName}> UpdateAsync({schemaName} entity) => throw new NotImplementedException();
-        /// <summary>Deletes a {schemaName} by ID.</summary>
-        public Task DeleteAsync({idType} id) => throw new NotImplementedException();
-    }}
+                var concreteClass = SyntaxFactory.ClassDeclaration($"Concrete{schemaName}Dao")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .WithBaseList(SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
+                        SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName($"I{schemaName}Dao")))))
+                    .AddMembers(
+                        SyntaxFactory.ParseMemberDeclaration("private readonly AppDbContext _context;")!,
+                        SyntaxFactory.ConstructorDeclaration($"Concrete{schemaName}Dao")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("context"))
+                                    .WithType(SyntaxFactory.ParseTypeName("AppDbContext")))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement("_context = context;")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<IEnumerable<{schemaName}>>"), "GetAllAsync")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement($"return await _context.{schemaName}s.ToListAsync();")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<{schemaName}?>"), "GetByIdAsync")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("id")).WithType(SyntaxFactory.ParseTypeName(idType)))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement($"return await _context.{schemaName}s.FindAsync(id);")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<{schemaName}>"), "CreateAsync")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("entity")).WithType(SyntaxFactory.ParseTypeName(schemaName)))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement($"_context.{schemaName}s.Add(entity);"),
+                                SyntaxFactory.ParseStatement("await _context.SaveChangesAsync();"),
+                                SyntaxFactory.ParseStatement("return entity;")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"Task<{schemaName}>"), "UpdateAsync")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("entity")).WithType(SyntaxFactory.ParseTypeName(schemaName)))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement($"_context.{schemaName}s.Update(entity);"),
+                                SyntaxFactory.ParseStatement("await _context.SaveChangesAsync();"),
+                                SyntaxFactory.ParseStatement("return entity;")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "DeleteAsync")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("id")).WithType(SyntaxFactory.ParseTypeName(idType)))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement($"var entity = await _context.{schemaName}s.FindAsync(id);"),
+                                SyntaxFactory.ParseStatement($"if (entity != null) {{ _context.{schemaName}s.Remove(entity); await _context.SaveChangesAsync(); }}")
+                            ))
+                    );
 
-    /// <summary>Concrete DAO implementation for {schemaName} using Entity Framework Core.</summary>
-    public class Concrete{schemaName}Dao : I{schemaName}Dao
-    {{
-        private readonly AppDbContext _context;
+                var daoNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Daos"))
+                    .AddUsings(
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Collections.Generic")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
+                    )
+                    .AddMembers(daoInterface, stubClass, concreteClass);
 
-        /// <summary>Initializes a new instance of Concrete{schemaName}Dao.</summary>
-        public Concrete{schemaName}Dao(AppDbContext context)
-        {{
-            _context = context;
-        }}
-
-        /// <summary>Gets all {schemaName} entities.</summary>
-        public async Task<IEnumerable<{schemaName}>> GetAllAsync()
-        {{
-            return await _context.{schemaName}s.ToListAsync();
-        }}
-
-        /// <summary>Gets a single {schemaName} by ID.</summary>
-        public async Task<{schemaName}?> GetByIdAsync({idType} id)
-        {{
-            return await _context.{schemaName}s.FindAsync(id);
-        }}
-
-        /// <summary>Creates a new {schemaName}.</summary>
-        public async Task<{schemaName}> CreateAsync({schemaName} entity)
-        {{
-            _context.{schemaName}s.Add(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }}
-
-        /// <summary>Updates an existing {schemaName}.</summary>
-        public async Task<{schemaName}> UpdateAsync({schemaName} entity)
-        {{
-            _context.{schemaName}s.Update(entity);
-            await _context.SaveChangesAsync();
-            return entity;
-        }}
-
-        /// <summary>Deletes a {schemaName} by ID.</summary>
-        public async Task DeleteAsync({idType} id)
-        {{
-            var entity = await _context.{schemaName}s.FindAsync(id);
-            if (entity != null)
-            {{
-                _context.{schemaName}s.Remove(entity);
-                await _context.SaveChangesAsync();
-            }}
-        }}
-    }}
-}}";
-                results.Add(new GeneratedCode { FileName = $"src/Daos/{schemaName}Dao.cs", Code = daoCode });
+                results.Add(new GeneratedCode
+                {
+                    FileName = $"src/Daos/{schemaName}Dao.cs",
+                    Code = WasmSafeRoslyn.FormatSafe(daoNs)
+                });
             }
 
             return results;

@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,10 +11,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.CliModule
 {
-    /// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Parses C# command-line interface (CLI) classes into <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Parse
     {
-        /// <summary>Auto-generated documentation for ToPaths.</summary>
+        /// <summary>
+        /// Extracts an <see cref="OpenApiPaths"/> object by analyzing command switch statements in a C# CLI class.
+        /// </summary>
+        /// <param name="classNode">The C# CLI class syntax node to analyze.</param>
+        /// <returns>The extracted <see cref="OpenApiPaths"/>.</returns>
         public static OpenApiPaths ToPaths(ClassDeclarationSyntax classNode)
         {
             var paths = new OpenApiPaths();
@@ -41,11 +49,11 @@ namespace Cdd.OpenApi.CliModule
                                     var name = variable.Identifier.Text;
                                     var paramName = name.Replace("_", "-");
                                     var initializer = variable.Initializer?.Value;
-                                    object? example = null;
+                                    OpenApiAny? example = null;
                                     if (initializer is LiteralExpressionSyntax lit)
                                     {
                                         if (lit.Token.IsKind(SyntaxKind.NumericLiteralToken))
-                                            example = lit.Token.Value;
+                                            example = new OpenApiAny(lit.Token.Text, System.Text.Json.JsonValueKind.Number);
                                         else if (lit.Token.IsKind(SyntaxKind.StringLiteralToken))
                                             example = lit.Token.ValueText;
                                     }

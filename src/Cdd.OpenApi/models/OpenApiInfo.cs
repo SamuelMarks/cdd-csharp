@@ -1,40 +1,44 @@
+// <copyright file="OpenApiInfo.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiInfo.</summary>
+    /// <summary>Provides metadata about the API.</summary>
     public class OpenApiInfo
     {
-        /// <summary>Auto-generated documentation for Title.</summary>
+        /// <summary>Gets or sets the title of the API.</summary>
         [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
 
-        /// <summary>Auto-generated documentation for Summary.</summary>
+        /// <summary>Gets or sets a short summary of the API.</summary>
         [JsonPropertyName("summary")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Summary { get; set; }
 
-        /// <summary>Auto-generated documentation for Description.</summary>
+        /// <summary>Gets or sets a description of the API.</summary>
         [JsonPropertyName("description")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Description { get; set; }
 
-        /// <summary>Auto-generated documentation for TermsOfService.</summary>
+        /// <summary>Gets or sets a URL to the Terms of Service for the API.</summary>
         [JsonPropertyName("termsOfService")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? TermsOfService { get; set; }
 
-        /// <summary>Auto-generated documentation for Contact.</summary>
+        /// <summary>Gets or sets the contact information for the exposed API.</summary>
         [JsonPropertyName("contact")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiContact? Contact { get; set; }
 
-        /// <summary>Auto-generated documentation for License.</summary>
+        /// <summary>Gets or sets the license information for the exposed API.</summary>
         [JsonPropertyName("license")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiLicense? License { get; set; }
 
-        /// <summary>Auto-generated documentation for Version.</summary>
+        /// <summary>Gets or sets the version of the OpenAPI document.</summary>
         [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
     }

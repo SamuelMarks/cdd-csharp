@@ -98,7 +98,33 @@ namespace N {
             Assert.Contains("[Serializable]", result);
             Assert.Contains("[Obsolete]", result);
             Assert.Contains("=> 1;", result);
-            Assert.Contains(":IBase", result);
+            Assert.Contains(": IBase", result);
+
+            string fileScopedCode = @"
+namespace N.FileScoped;
+using System;
+/// <summary>Record doc</summary>
+[Serializable]
+public record R : IBase { public int X { get; set; } }
+[Serializable]
+public record RNoBase { }
+/// <summary>Struct doc</summary>
+[Serializable]
+public struct S : IBase { public int Y; }
+[Serializable]
+public struct SNoBase { }
+/// <summary>Enum doc</summary>
+[Flags]
+public enum E { A, B }
+";
+            var fsNs = ParseMember<Microsoft.CodeAnalysis.CSharp.Syntax.FileScopedNamespaceDeclarationSyntax>(fileScopedCode);
+            var fsResult = WasmSafeRoslyn.FormatSafe(fsNs);
+            Assert.Contains("namespace N.FileScoped;", fsResult);
+            Assert.Contains("public record R", fsResult);
+            Assert.Contains("public record RNoBase", fsResult);
+            Assert.Contains("public struct S", fsResult);
+            Assert.Contains("public struct SNoBase", fsResult);
+            Assert.Contains("public enum E", fsResult);
         }
     }
 }

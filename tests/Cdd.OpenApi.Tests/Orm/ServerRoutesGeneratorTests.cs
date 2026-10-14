@@ -25,11 +25,83 @@ namespace Cdd.OpenApi.Tests.Orm
                 {
                     Type = "array",
                     Items = new OpenApiSchema { Ref = "#/components/schemas/MyModel" }
+                },
+                ["ArrayWithoutItems"] = new OpenApiSchema
+                {
+                    Type = "array",
+                    Items = null
+                },
+                ["ArrayWithoutRef"] = new OpenApiSchema
+                {
+                    Type = "array",
+                    Items = new OpenApiSchema { Type = "string", Ref = null }
+                },
+                ["PrimitiveSchema"] = new OpenApiSchema
+                {
+                    Type = "string",
+                    Properties = null
                 }
             };
 
             var paths = new OpenApiPaths
             {
+                ["/api/array-no-items"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/ArrayWithoutItems" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/api/array-no-ref"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/ArrayWithoutRef" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["/api/primitive"] = new OpenApiPathItem
+                {
+                    Get = new OpenApiOperation
+                    {
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/PrimitiveSchema" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 ["/api/mymodel"] = new OpenApiPathItem
                 {
                     Get = new OpenApiOperation

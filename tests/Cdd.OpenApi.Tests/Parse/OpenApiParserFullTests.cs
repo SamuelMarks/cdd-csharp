@@ -62,18 +62,18 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.NotNull(doc);
             Assert.Equal("3.2.0", doc.OpenApi);
             Assert.Equal("Test API", doc.Info.Title);
-            Assert.Equal("API Support", doc.Info.Contact.Name);
+            Assert.Equal("API Support", doc.Info.Contact!.Name);
 
-            Assert.Single(doc.Servers);
-            Assert.Equal("https://api.example.com/v1", doc.Servers.First().Url);
+            Assert.Single(doc.Servers!);
+            Assert.Equal("https://api.example.com/v1", doc.Servers!.First().Url);
 
             Assert.NotNull(doc.Paths);
             Assert.True(doc.Paths.ContainsKey("/pets"));
             var getOp = doc.Paths["/pets"].Get;
             Assert.NotNull(getOp);
             Assert.Equal("listPets", getOp.OperationId);
-            Assert.Single(getOp.Tags);
-            Assert.Equal("pets", getOp.Tags[0]);
+            Assert.Single(getOp.Tags!);
+            Assert.Equal("pets", getOp.Tags![0]);
 
             Assert.NotNull(doc.Components);
             Assert.NotNull(doc.Components.Schemas);

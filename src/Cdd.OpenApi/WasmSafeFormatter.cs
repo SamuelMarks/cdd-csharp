@@ -1,3 +1,7 @@
+// <copyright file="WasmSafeFormatter.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.Linq;
 using System.Text;
@@ -11,6 +15,11 @@ namespace Cdd.OpenApi
     /// </summary>
     public static class WasmSafeFormatter
     {
+        /// <summary>
+        /// Iteratively enumerates all syntax tokens under the specified root node without recursion.
+        /// </summary>
+        /// <param name="root">The root syntax node to extract tokens from.</param>
+        /// <returns>An enumerable sequence of syntax tokens in document order.</returns>
         private static System.Collections.Generic.IEnumerable<SyntaxToken> GetTokens(SyntaxNode root)
         {
             var stack = new System.Collections.Generic.Stack<SyntaxNodeOrToken>();
@@ -34,7 +43,11 @@ namespace Cdd.OpenApi
             }
         }
 
-        /// <summary>Format</summary>
+        /// <summary>
+        /// Formats a Roslyn <see cref="SyntaxNode"/> into a readable C# string without using recursive <c>NormalizeWhitespace</c>.
+        /// </summary>
+        /// <param name="node">The syntax node to format.</param>
+        /// <returns>The formatted C# code string.</returns>
         public static string Format(SyntaxNode node)
         {
             var sb = new StringBuilder();
@@ -101,14 +114,32 @@ namespace Cdd.OpenApi
                 }
                 else if (text == "[")
                 {
-                    sb.AppendLine();
-                    sb.Append(new string(' ', indent * 4));
-                    sb.Append("[");
+                    if (token.Parent is Microsoft.CodeAnalysis.CSharp.Syntax.AttributeListSyntax)
+                    {
+                        sb.AppendLine();
+                        sb.Append(new string(' ', indent * 4));
+                        sb.Append("[");
+                    }
+                    else
+                    {
+                        sb.Append("[");
+                    }
                 }
                 else if (text == "]")
                 {
-                    sb.AppendLine("]");
-                    sb.Append(new string(' ', indent * 4));
+                    if (token.Parent is Microsoft.CodeAnalysis.CSharp.Syntax.AttributeListSyntax)
+                    {
+                        sb.AppendLine("]");
+                        sb.Append(new string(' ', indent * 4));
+                    }
+                    else
+                    {
+                        sb.Append("]");
+                    }
+                }
+                else if (text == ",")
+                {
+                    sb.Append(", ");
                 }
                 else if (text == "get" || text == "set")
                 {

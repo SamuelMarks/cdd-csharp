@@ -1,3 +1,7 @@
+// <copyright file="OpenApiJsonContext.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 using Cdd.OpenApi.Models;
 
@@ -26,9 +30,11 @@ namespace Cdd.OpenApi.Parse
     [JsonSerializable(typeof(OpenApiExternalDocs))]
     [JsonSerializable(typeof(OpenApiDiscriminator))]
     [JsonSerializable(typeof(OpenApiXml))]
+    [JsonSerializable(typeof(OpenApiAny))]
     [JsonSerializable(typeof(string[]))]
     [JsonSerializable(typeof(System.Collections.Generic.Dictionary<string, string>))]
     [JsonSerializable(typeof(System.Collections.Generic.Dictionary<string, OpenApiSchema>))]
+    [JsonSerializable(typeof(System.Text.Json.Nodes.JsonObject))]
     public partial class OpenApiJsonContext : JsonSerializerContext
     {
     }

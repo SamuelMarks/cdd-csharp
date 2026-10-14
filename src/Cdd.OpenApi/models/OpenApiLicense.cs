@@ -1,20 +1,24 @@
+// <copyright file="OpenApiLicense.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiLicense.</summary>
+    /// <summary>License information for the exposed API.</summary>
     public class OpenApiLicense
     {
-        /// <summary>Auto-generated documentation for Name.</summary>
+        /// <summary>Gets or sets the license name used for the API.</summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>Auto-generated documentation for Identifier.</summary>
+        /// <summary>Gets or sets an SPDX license expression for the API.</summary>
         [JsonPropertyName("identifier")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Identifier { get; set; }
 
-        /// <summary>Auto-generated documentation for Url.</summary>
+        /// <summary>Gets or sets a URL to the license used for the API.</summary>
         [JsonPropertyName("url")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Url { get; set; }

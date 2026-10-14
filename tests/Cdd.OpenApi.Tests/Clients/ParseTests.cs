@@ -164,7 +164,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("No Content", op.Responses["204"].Description);
             Assert.True(op.Responses["204"].Headers?.ContainsKey("X-Limit"));
             Assert.True(op.Responses["204"].Links?.ContainsKey("OtherOp"));
-            Assert.Equal("application/json", op.Responses["204"].Headers["X-Limit"].Content.First().Key);
+            Assert.Equal("application/json", op.Responses["204"].Headers!["X-Limit"].Content!.First().Key);
 
             Assert.NotNull(op.Servers);
             Assert.Single(op.Servers);
@@ -374,11 +374,11 @@ namespace Cdd.OpenApi.Tests.Clients
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
             Assert.NotNull(paths["/query"].Query);
-            Assert.Equal("QueryMethod", paths["/query"].Query.OperationId);
+            Assert.Equal("QueryMethod", paths!["/query"].Query!.OperationId);
 
             Assert.NotNull(paths["/purge"].AdditionalOperations);
-            Assert.True(paths["/purge"].AdditionalOperations.ContainsKey("PURGE"));
-            Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations["PURGE"].OperationId);
+            Assert.True(paths["/purge"].AdditionalOperations!.ContainsKey("PURGE"));
+            Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations!["PURGE"].OperationId);
         }
         [Fact]
         public void Parse_ToPaths_ExtractsComplexHeaders_Coverage()
@@ -401,13 +401,13 @@ namespace Cdd.OpenApi.Tests.Clients
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
             var op = paths["/user"].Get;
-            var h = op.Responses["200"].Headers["X-Limit"];
+            var h = op!.Responses!["200"].Headers!["X-Limit"];
             Assert.True(h.Required);
             Assert.True(h.Deprecated);
             Assert.True(h.Explode);
             Assert.Equal("ex", h.Example);
             Assert.Equal("simple", h.Style);
-            Assert.Equal("integer", h.Schema.Type);
+            Assert.Equal("integer", h.Schema!.Type);
         }
         [Fact]
         public void Parse_ToPaths_MapType_Coverage()
@@ -428,22 +428,22 @@ namespace Cdd.OpenApi.Tests.Clients
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
-            Assert.Equal("integer", paths["/1"].Get.Parameters[0].Schema.Type);
+            Assert.Equal("integer", paths["/1"].Get!.Parameters![0].Schema!.Type);
             // System.Console.WriteLine("TYPE: " + paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
             // System.Console.WriteLine("RETURN TYPE IS: " + classNode.Members.OfType<MethodDeclarationSyntax>().First().ReturnType.ToString());
-            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("integer", paths["/1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
 
-            Assert.Equal("number", paths["/2"].Get.Parameters[0].Schema.Type);
-            Assert.Equal("number", paths["/2"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("number", paths["/2"].Get!.Parameters![0].Schema!.Type);
+            Assert.Equal("number", paths["/2"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
 
-            Assert.Equal("boolean", paths["/3"].Get.Parameters[0].Schema.Type);
-            Assert.Equal("boolean", paths["/3"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("boolean", paths["/3"].Get!.Parameters![0].Schema!.Type);
+            Assert.Equal("boolean", paths["/3"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
 
-            Assert.Equal("string", paths["/4"].Get.Parameters[0].Schema.Type);
+            Assert.Equal("string", paths["/4"].Get!.Parameters![0].Schema!.Type);
             // Assert.Equal("string", paths["/4"].Get.Responses["200"].Content["application/json"].Schema.Type);
 
-            Assert.Equal("string", paths["/5"].Get.Parameters[0].Schema.Type); // fallback
-            Assert.Equal("string", paths["/5"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("string", paths["/5"].Get!.Parameters![0].Schema!.Type); // fallback
+            Assert.Equal("string", paths["/5"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
         [Fact]
         public void Parse_ToPaths_ExtractsComplexHeaders_TaskCoverage()
@@ -467,7 +467,7 @@ namespace Cdd.OpenApi.Tests.Clients
 
             var op = paths["/user2"].Get;
             Assert.NotNull(op);
-            Assert.Null(op.Responses["200"].Content); // string does not create content by default in this implementation
+            Assert.Null(op.Responses!["200"].Content); // string does not create content by default in this implementation
         }
         [Fact]
         public void Parse_ToPaths_MapType_TaskSystemCoverage()
@@ -484,7 +484,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
-            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("integer", paths["/1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
         [Fact]
         public void Parse_ToPaths_MapType_TaskSystemCoverage2()
@@ -501,7 +501,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
 
-            Assert.Equal("integer", paths["/1"].Get.Responses["200"].Content["application/json"].Schema.Type);
+            Assert.Equal("integer", paths["/1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
 
         [Fact]
@@ -545,29 +545,29 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(op);
 
             // test responses
-            Assert.True(op.Responses.ContainsKey("default"));
+            Assert.True(op.Responses!.ContainsKey("default"));
             Assert.Equal("Default description", op.Responses["default"].Description);
             Assert.True(op.Responses.ContainsKey("500"));
             Assert.Equal("Response", op.Responses["500"].Description);
 
             // test param tags
-            var lParam = op.Parameters.First(p => p.Name == "l");
+            var lParam = op.Parameters!.First(p => p.Name == "l");
             Assert.Null(lParam.Style);
             Assert.Null(lParam.Description);
-            Assert.Empty(lParam.Examples);
+            Assert.Empty(lParam.Examples!);
 
             // test map type branches
-            var dParam = op.Parameters.First(p => p.Name == "d");
-            Assert.Equal("number", dParam.Schema.Type);
-            var fParam = op.Parameters.First(p => p.Name == "f");
-            Assert.Equal("number", fParam.Schema.Type);
+            var dParam = op.Parameters!.First(p => p.Name == "d");
+            Assert.Equal("number", dParam.Schema!.Type);
+            var fParam = op.Parameters!.First(p => p.Name == "f");
+            Assert.Equal("number", fParam.Schema!.Type);
 
             // test callback without name and expression
-            Assert.True(op.Callbacks.ContainsKey("myCallback"));
+            Assert.True(op.Callbacks!.ContainsKey("myCallback"));
             Assert.True(op.Callbacks["myCallback"].ContainsKey("{$request.body#/callbackUrl}"));
 
             // test security without name and scopes
-            Assert.True(op.Security[0].ContainsKey("default"));
+            Assert.True(op.Security![0].ContainsKey("default"));
             Assert.Empty(op.Security[0]["default"]);
         }
 

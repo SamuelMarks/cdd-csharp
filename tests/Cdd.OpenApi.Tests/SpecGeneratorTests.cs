@@ -136,9 +136,9 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            var scheme = doc.Components.SecuritySchemes["Bearer"];
-            Assert.NotNull(scheme.Flows.Password);
-            Assert.Equal("pets", scheme.Flows.Password.Scopes["read"]);
+            var scheme = doc.Components!.SecuritySchemes!["Bearer"];
+            Assert.NotNull(scheme.Flows!.Password);
+            Assert.Equal("pets", scheme.Flows.Password.Scopes!["read"]);
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            Assert.NotNull(doc.Components.SecuritySchemes["Bearer"].Flows.Implicit);
+            Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.Implicit);
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            Assert.NotNull(doc.Components.SecuritySchemes["Bearer"].Flows.AuthorizationCode);
+            Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.AuthorizationCode);
         }
 
         [Fact]
@@ -189,7 +189,7 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            Assert.NotNull(doc.Components.SecuritySchemes["Bearer"].Flows.DeviceAuthorization);
+            Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.DeviceAuthorization);
         }
 
         [Fact]
@@ -280,6 +280,10 @@ namespace Cdd.OpenApi.Tests
             ";
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.NotNull(doc.Paths);
+            Assert.True(doc.Paths.ContainsKey("/test"));
+            Assert.NotNull(doc.Paths["/test"].Get);
+            Assert.Equal("DoSomething", doc.Paths["/test"].Get!.OperationId);
         }
 
 
@@ -299,6 +303,9 @@ namespace Cdd.OpenApi.Tests
             ";
             var doc = SpecGenerator.Generate(new[] { code });
             Assert.NotNull(doc);
+            Assert.Null(doc.Paths);
+            Assert.NotNull(doc.Components?.Schemas);
+            Assert.True(doc.Components!.Schemas!.ContainsKey("MyClient"));
         }
 
 
@@ -319,8 +326,8 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            var scheme = doc.Components.SecuritySchemes["OAuth2"];
-            Assert.Equal("Read pets", scheme.Flows.ClientCredentials.Scopes["read:pets"]);
+            var scheme = doc.Components!.SecuritySchemes!["OAuth2"];
+            Assert.Equal("Read pets", scheme.Flows!.ClientCredentials!.Scopes!["read:pets"]);
         }
 
 
@@ -357,8 +364,8 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            var scheme = doc.Components.SecuritySchemes["OAuth2"];
-            Assert.Equal("admin", scheme.Flows.ClientCredentials.Scopes["admin"]);
+            var scheme = doc.Components!.SecuritySchemes!["OAuth2"];
+            Assert.Equal("admin", scheme.Flows!.ClientCredentials!.Scopes!["admin"]);
         }
 
 
@@ -404,8 +411,8 @@ namespace Cdd.OpenApi.Tests
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
-            var scheme = doc.Components.SecuritySchemes["OAuth2"];
-            Assert.Equal("Access to admin", scheme.Flows.ClientCredentials.Scopes["admin"]);
+            var scheme = doc.Components!.SecuritySchemes!["OAuth2"];
+            Assert.Equal("Access to admin", scheme.Flows!.ClientCredentials!.Scopes!["admin"]);
         }
     }
 }

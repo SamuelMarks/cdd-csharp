@@ -8,10 +8,12 @@ namespace Cdd.OpenApi.Tests
         [Fact]
         public void TestFormatter()
         {
-            var code = "class A { int B { get; set; } }";
+            var code = "[System.Serializable] class A { int[] B { get; set; } }";
             var tree = CSharpSyntaxTree.ParseText(code);
             var result = WasmSafeFormatter.Format(tree.GetRoot());
             Assert.Contains("class", result);
+            Assert.Contains("int[]", result);
+            Assert.Contains("[System.Serializable]", result);
         }
     }
 }

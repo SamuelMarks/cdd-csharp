@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Parse;
+using Cdd.OpenApi.Emit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
     public class CoverageTests
     {
         [Fact]
-        public void OpenApiParameter_Properties()
+        public void OpenApiParameter_PropertiesAndRoundTrip()
         {
             var p = new OpenApiParameter
             {
@@ -20,64 +22,78 @@ namespace Cdd.OpenApi.Tests.Models
                 Style = "form",
                 Explode = true,
                 AllowReserved = true,
-                Schema = new OpenApiSchema(),
+                Schema = new OpenApiSchema { Type = "string" },
                 Example = "example",
-                Examples = new Dictionary<string, OpenApiExample>(),
-                Content = new Dictionary<string, OpenApiMediaType>()
+                Examples = new Dictionary<string, OpenApiExample> { ["ex1"] = new OpenApiExample { Value = "val" } },
+                Content = new Dictionary<string, OpenApiMediaType> { ["text/plain"] = new OpenApiMediaType() },
+                Type = "string",
+                Format = "uuid",
+                Items = new OpenApiSchema { Type = "string" },
+                CollectionFormat = "csv",
+                Default = "def",
+                Maximum = 10,
+                ExclusiveMaximum = true,
+                Minimum = 1,
+                ExclusiveMinimum = true,
+                MaxLength = 10,
+                MinLength = 1,
+                Pattern = ".*",
+                MaxItems = 10,
+                MinItems = 1,
+                UniqueItems = true,
+                Enum = new List<OpenApiAny> { "a", "b" },
+                MultipleOf = 2
             };
-            Assert.Equal("name", p.Name);
-            Assert.Equal("query", p.In);
-            Assert.Equal("desc", p.Description);
-            Assert.True(p.Required);
-            Assert.True(p.Deprecated);
-            Assert.True(p.AllowEmptyValue);
-            Assert.Equal("form", p.Style);
-            Assert.True(p.Explode);
-            Assert.True(p.AllowReserved);
-            Assert.NotNull(p.Schema);
-            Assert.Equal("example", p.Example);
-            Assert.NotNull(p.Examples);
-            Assert.NotNull(p.Content);
 
-            p.Type = "string";
-            p.Format = "uuid";
-            p.Items = new OpenApiSchema();
-            p.CollectionFormat = "csv";
-            p.Default = "def";
-            p.Maximum = 10;
-            p.ExclusiveMaximum = true;
-            p.Minimum = 1;
-            p.ExclusiveMinimum = true;
-            p.MaxLength = 10;
-            p.MinLength = 1;
-            p.Pattern = ".*";
-            p.MaxItems = 10;
-            p.MinItems = 1;
-            p.UniqueItems = true;
-            p.Enum = new List<object> { "a", "b" };
-            p.MultipleOf = 2;
+            var doc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/items"] = new OpenApiPathItem
+                    {
+                        Get = new OpenApiOperation { Parameters = new List<OpenApiParameter> { p } }
+                    }
+                }
+            };
 
-            Assert.Equal("string", p.Type);
-            Assert.Equal("uuid", p.Format);
-            Assert.NotNull(p.Items);
-            Assert.Equal("csv", p.CollectionFormat);
-            Assert.Equal("def", p.Default);
-            Assert.Equal(10, p.Maximum);
-            Assert.True(p.ExclusiveMaximum);
-            Assert.Equal(1, p.Minimum);
-            Assert.True(p.ExclusiveMinimum);
-            Assert.Equal(10, p.MaxLength);
-            Assert.Equal(1, p.MinLength);
-            Assert.Equal(".*", p.Pattern);
-            Assert.Equal(10, p.MaxItems);
-            Assert.Equal(1, p.MinItems);
-            Assert.True(p.UniqueItems);
-            Assert.NotNull(p.Enum);
-            Assert.Equal(2, p.MultipleOf);
+            var json = new OpenApiEmitter().EmitJson(doc);
+            var parsedDoc = new OpenApiParser().ParseJson(json);
+            var parsedParam = parsedDoc.Paths!["/items"].Get!.Parameters![0];
+
+            Assert.Equal("name", parsedParam.Name);
+            Assert.Equal("query", parsedParam.In);
+            Assert.Equal("desc", parsedParam.Description);
+            Assert.True(parsedParam.Required);
+            Assert.True(parsedParam.Deprecated);
+            Assert.True(parsedParam.AllowEmptyValue);
+            Assert.Equal("form", parsedParam.Style);
+            Assert.True(parsedParam.Explode);
+            Assert.True(parsedParam.AllowReserved);
+            Assert.NotNull(parsedParam.Schema);
+            Assert.NotNull(parsedParam.Example);
+            Assert.NotNull(parsedParam.Examples);
+            Assert.NotNull(parsedParam.Content);
+            Assert.Equal("string", parsedParam.Type);
+            Assert.Equal("uuid", parsedParam.Format);
+            Assert.NotNull(parsedParam.Items);
+            Assert.Equal("csv", parsedParam.CollectionFormat);
+            Assert.NotNull(parsedParam.Default);
+            Assert.Equal(10, parsedParam.Maximum);
+            Assert.True(parsedParam.ExclusiveMaximum);
+            Assert.Equal(1, parsedParam.Minimum);
+            Assert.True(parsedParam.ExclusiveMinimum);
+            Assert.Equal(10, parsedParam.MaxLength);
+            Assert.Equal(1, parsedParam.MinLength);
+            Assert.Equal(".*", parsedParam.Pattern);
+            Assert.Equal(10, parsedParam.MaxItems);
+            Assert.Equal(1, parsedParam.MinItems);
+            Assert.True(parsedParam.UniqueItems);
+            Assert.NotNull(parsedParam.Enum);
+            Assert.Equal(2, parsedParam.MultipleOf);
         }
 
         [Fact]
-        public void OpenApiSecurityScheme_Properties()
+        public void OpenApiSecurityScheme_PropertiesAndRoundTrip()
         {
             var s = new OpenApiSecurityScheme
             {
@@ -96,20 +112,33 @@ namespace Cdd.OpenApi.Tests.Models
                 TokenUrl = "token_url",
                 Scopes = new Dictionary<string, string> { { "read", "read access" } }
             };
-            Assert.Equal("oauth2", s.Type);
-            Assert.Equal("desc", s.Description);
-            Assert.Equal("name", s.Name);
-            Assert.Equal("header", s.In);
-            Assert.Equal("bearer", s.Scheme);
-            Assert.Equal("JWT", s.BearerFormat);
-            Assert.NotNull(s.Flows);
-            Assert.Equal("url", s.OpenIdConnectUrl);
-            Assert.Equal("oauth_url", s.Oauth2MetadataUrl);
-            Assert.True(s.Deprecated);
-            Assert.Equal("implicit", s.Flow);
-            Assert.Equal("auth_url", s.AuthorizationUrl);
-            Assert.Equal("token_url", s.TokenUrl);
-            Assert.NotNull(s.Scopes);
+
+            var doc = new OpenApiDocument
+            {
+                Components = new OpenApiComponents
+                {
+                    SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme> { ["OAuth"] = s }
+                }
+            };
+
+            var json = new OpenApiEmitter().EmitJson(doc);
+            var parsedDoc = new OpenApiParser().ParseJson(json);
+            var parsedScheme = parsedDoc.Components!.SecuritySchemes!["OAuth"];
+
+            Assert.Equal("oauth2", parsedScheme.Type);
+            Assert.Equal("desc", parsedScheme.Description);
+            Assert.Equal("name", parsedScheme.Name);
+            Assert.Equal("header", parsedScheme.In);
+            Assert.Equal("bearer", parsedScheme.Scheme);
+            Assert.Equal("JWT", parsedScheme.BearerFormat);
+            Assert.NotNull(parsedScheme.Flows);
+            Assert.Equal("url", parsedScheme.OpenIdConnectUrl);
+            Assert.Equal("oauth_url", parsedScheme.Oauth2MetadataUrl);
+            Assert.True(parsedScheme.Deprecated);
+            Assert.Equal("implicit", parsedScheme.Flow);
+            Assert.Equal("auth_url", parsedScheme.AuthorizationUrl);
+            Assert.Equal("token_url", parsedScheme.TokenUrl);
+            Assert.NotNull(parsedScheme.Scopes);
         }
     }
 }

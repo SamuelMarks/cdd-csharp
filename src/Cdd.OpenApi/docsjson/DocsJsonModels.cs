@@ -1,3 +1,7 @@
+// <copyright file="DocsJsonModels.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 

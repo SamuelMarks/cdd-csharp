@@ -62,13 +62,13 @@ public class MyCli
 
             var countParam = postPath.Parameters[0];
             Assert.Equal("count", countParam.Name);
-            Assert.Equal("integer", countParam.Schema.Type);
+            Assert.Equal("integer", countParam.Schema!.Type);
             Assert.Equal(5, countParam.Example);
             Assert.Equal("The count parameter", countParam.Description);
 
             var nameParam = postPath.Parameters[1];
             Assert.Equal("name", nameParam.Name);
-            Assert.Equal("string", nameParam.Schema.Type);
+            Assert.Equal("string", nameParam.Schema!.Type);
             Assert.Equal("test", nameParam.Example);
             Assert.Null(nameParam.Description);
         }
@@ -103,7 +103,7 @@ public class MyCli
             Assert.NotNull(paths);
             Assert.True(paths.ContainsKey("/post"));
             var postPath = paths["/post"];
-            var param = postPath.Parameters[0];
+            var param = postPath.Parameters![0];
             Assert.Equal("no-init", param.Name);
             Assert.Null(param.Example);
         }

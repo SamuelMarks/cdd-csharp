@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -6,10 +10,15 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits Entity Framework Core <c>DbContext</c> classes from <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToDbContext.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an Entity Framework Core <c>DbContext</c>.
+        /// </summary>
+        /// <param name="className">The name of the generated DbContext class.</param>
+        /// <param name="schemas">The OpenAPI schemas to expose as <c>DbSet&lt;T&gt;</c> properties.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToDbContext(string className, IDictionary<string, OpenApiSchema> schemas)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)

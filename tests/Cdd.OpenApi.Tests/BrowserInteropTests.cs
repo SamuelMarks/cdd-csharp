@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Xunit;
+using Cdd.OpenApi.Cli;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
@@ -67,7 +68,7 @@ namespace Cdd.OpenApi.Tests
         public void FromOpenApi_NullCommand_NoTests()
         {
             string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
-            var result = BrowserInterop.FromOpenApi(spec, null, "to_sdk");
+            var result = BrowserInterop.FromOpenApi(spec, null!, "to_sdk");
             Assert.Contains("Client.cs", result);
         }
 

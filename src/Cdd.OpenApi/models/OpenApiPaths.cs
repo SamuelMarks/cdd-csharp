@@ -1,10 +1,13 @@
+// <copyright file="OpenApiPaths.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    // A dictionary wrapper to handle paths correctly during parsing and serialization
-    /// <summary>Auto-generated documentation for OpenApiPaths.</summary>
+    /// <summary>Holds the relative paths to the individual endpoints and their operations.</summary>
     public class OpenApiPaths : Dictionary<string, OpenApiPathItem>
     {
     }

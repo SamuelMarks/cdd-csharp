@@ -1,7 +1,12 @@
+// <copyright file="IntegrationTestGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
-using System.Text;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
@@ -14,25 +19,10 @@ namespace Cdd.OpenApi
         /// <summary>
         /// Generates test code from an OpenAPI document.
         /// </summary>
+        /// <param name="doc">The OpenAPI document to generate integration tests from.</param>
+        /// <returns>The formatted C# integration test source code.</returns>
         public static string Generate(OpenApiDocument doc)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("using System;");
-            sb.AppendLine("using System.Threading.Tasks;");
-            sb.AppendLine("using Xunit;");
-            sb.AppendLine("using Generated.Client;");
-            sb.AppendLine("using Generated.Models;");
-            sb.AppendLine("using System.Net.Http;");
-            sb.AppendLine("using System.Collections.Generic;");
-            sb.AppendLine();
-            sb.AppendLine("namespace GeneratedProject.Tests");
-            sb.AppendLine("{");
-            sb.AppendLine("    public class IntegrationTests");
-            sb.AppendLine("    {");
-            sb.AppendLine("        private readonly HttpClient _httpClient;");
-            sb.AppendLine();
-            sb.AppendLine("        public IntegrationTests()");
-            sb.AppendLine("        {");
             string basePath = "/v2/";
             if (doc?.Servers != null && doc.Servers.Count > 0 && !string.IsNullOrEmpty(doc.Servers[0].Url))
             {
@@ -56,10 +46,20 @@ namespace Cdd.OpenApi
 
             var fullUrl = "http://localhost:8080" + basePath;
 
-            sb.AppendLine($"            _httpClient = new HttpClient {{ BaseAddress = new Uri(\"{fullUrl}\") }};");
-            sb.AppendLine("            _httpClient.DefaultRequestHeaders.Add(\"api_key\", \"special-key\");");
-            sb.AppendLine("            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(\"Bearer\", \"special-key\");");
-            sb.AppendLine("        }");
+            var members = new List<MemberDeclarationSyntax>
+            {
+                SyntaxFactory.ParseMemberDeclaration("private readonly HttpClient _httpClient;")!,
+                SyntaxFactory.ConstructorDeclaration("IntegrationTests")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .WithBody(SyntaxFactory.Block(
+                        SyntaxFactory.ParseStatement($@"_httpClient = new HttpClient {{ BaseAddress = new Uri(""{fullUrl}"") }};"),
+                        SyntaxFactory.ParseStatement(@"_httpClient.DefaultRequestHeaders.Add(""api_key"", ""special-key"");"),
+                        SyntaxFactory.ParseStatement(@"_httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(""Bearer"", ""special-key"");")
+                    ))
+            };
+
+            var factAttr = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Fact"))));
 
             if (doc?.Paths != null)
             {
@@ -68,27 +68,7 @@ namespace Cdd.OpenApi
                     var route = pathKvp.Key;
                     var pathItem = pathKvp.Value;
 
-                    var operations = new Dictionary<string, OpenApiOperation?>
-                    {
-                        { "Get", pathItem.Get },
-                        { "Put", pathItem.Put },
-                        { "Post", pathItem.Post },
-                        { "Delete", pathItem.Delete },
-                        { "Options", pathItem.Options },
-                        { "Head", pathItem.Head },
-                        { "Patch", pathItem.Patch },
-                        { "Trace", pathItem.Trace },
-                        { "Query", pathItem.Query }
-                    };
-
-                    if (pathItem.AdditionalOperations != null)
-                    {
-                        foreach (var addOp in pathItem.AdditionalOperations)
-                        {
-                            var normVerb = addOp.Key.Substring(0, 1).ToUpperInvariant() + addOp.Key.Substring(1).ToLowerInvariant();
-                            operations[normVerb] = addOp.Value;
-                        }
-                    }
+                    var operations = Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem);
 
                     foreach (var opKvp in operations)
                     {
@@ -112,17 +92,12 @@ namespace Cdd.OpenApi
                         }
                         var clientName = $"{tag}ApiClient";
 
-                        sb.AppendLine();
-                        sb.AppendLine("        [Fact]");
-                        sb.AppendLine($"        public async Task {testMethodName}()");
-                        sb.AppendLine("        {");
-
                         var args = new List<string>();
                         if (operation.Parameters != null)
                         {
                             foreach (var p in operation.Parameters)
                             {
-                                string dummyValue = "\"string\"";
+                                string dummyValue = @"""string""";
                                 if (p.Schema?.Type == "integer") dummyValue = "1";
                                 else if (p.Schema?.Type == "number") dummyValue = "123.45";
                                 else if (p.Schema?.Type == "boolean") dummyValue = "true";
@@ -147,7 +122,7 @@ namespace Cdd.OpenApi
                                     var refName = p.Schema.Ref.Split('/').Last();
                                     dummyValue = $"new {refName}()";
                                 }
-                                if (p.Name == "api_key") dummyValue = "\"special-key\"";
+                                if (p.Name == "api_key") dummyValue = @"""special-key""";
                                 args.Add(dummyValue);
                             }
                         }
@@ -155,7 +130,7 @@ namespace Cdd.OpenApi
                         if (operation.RequestBody?.Content != null && operation.RequestBody.Content.ContainsKey("application/json"))
                         {
                             var schema = operation.RequestBody.Content["application/json"].Schema;
-                            string dummyValue = "\"string\"";
+                            string dummyValue = @"""string""";
                             if (schema != null)
                             {
                                 if (!string.IsNullOrEmpty(schema.Ref))
@@ -188,33 +163,36 @@ namespace Cdd.OpenApi
 
                         var argsString = string.Join(", ", args);
 
-                        sb.AppendLine("            try");
-                        sb.AppendLine("            {");
-                        sb.AppendLine($"                var client = new {clientName}(_httpClient);");
-                        sb.AppendLine($"                var response = await client.{methodName}({argsString});");
-                        sb.AppendLine("            }");
-                        sb.AppendLine("            catch (HttpRequestException ex)");
-                        sb.AppendLine("            {");
-                        sb.AppendLine("                if (ex.StatusCode == System.Net.HttpStatusCode.InternalServerError)");
-                        sb.AppendLine("                {");
-                        sb.AppendLine("                    throw;");
-                        sb.AppendLine("                }");
-                        sb.AppendLine("            }");
+                        var tryStmt = SyntaxFactory.ParseStatement(
+                            $"try {{ var client = new {clientName}(_httpClient); var response = await client.{methodName}({argsString}); Assert.NotNull(response); }} catch (HttpRequestException ex) {{ if (ex.StatusCode == System.Net.HttpStatusCode.InternalServerError) {{ throw; }} Assert.NotEqual(System.Net.HttpStatusCode.InternalServerError, ex.StatusCode); }}");
 
-                        // We shouldn't assert NotNull.
-                        // Actually, the client method will EnsureSuccessStatusCode().
-                        // The chaos test asserts that if server returns 500 or invalid schema, the test FAILS.
-                        // Since EnsureSuccessStatusCode() and JsonSerializer throw exceptions, the test will naturally fail on bad responses.
-                        // Therefore, we catch HttpRequestException and only fail on 500.
+                        var testMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), testMethodName)
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(tryStmt));
 
-                        sb.AppendLine("        }");
+                        members.Add(testMethod);
                     }
                 }
             }
 
-            sb.AppendLine("    }");
-            sb.AppendLine("}");
-            return sb.ToString();
+            var testClass = SyntaxFactory.ClassDeclaration("IntegrationTests")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddMembers(members.ToArray());
+
+            var ns = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName("GeneratedProject.Tests"))
+                .AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Xunit")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Generated.Client")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Generated.Models")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Collections.Generic"))
+                )
+                .AddMembers(testClass);
+
+            return WasmSafeRoslyn.FormatSafe(ns);
         }
     }
 }

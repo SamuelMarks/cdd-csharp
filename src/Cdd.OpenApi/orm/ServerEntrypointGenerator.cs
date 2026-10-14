@@ -1,5 +1,10 @@
+// <copyright file="ServerEntrypointGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Orm
 {
@@ -7,272 +12,207 @@ namespace Cdd.OpenApi.Orm
     public static class ServerEntrypointGenerator
     {
         /// <summary>Generates the Program.cs and startup tests.</summary>
+        /// <param name="baseNamespace">The base C# namespace for the generated server.</param>
+        /// <param name="tests">Whether to generate unit and integration tests for the server entrypoint.</param>
+        /// <param name="tags">The route tags to map on startup.</param>
+        /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> GenerateEntrypoint(string baseNamespace, bool tests, IEnumerable<string> tags)
         {
             var results = new List<GeneratedCode>();
 
-            var programCode = $@"namespace {baseNamespace}
-{{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.Extensions.DependencyInjection;
-    using {baseNamespace}.Configuration;
-    using {baseNamespace}.Daos;
-    using {baseNamespace}.Seeder;
-    using {baseNamespace}.Routes;
+            var mainStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement(@"var builder = WebApplication.CreateBuilder(args);"),
+                SyntaxFactory.ParseStatement(@"builder.Services.AddCors(options => { options.AddPolicy(""AllowAll"", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); });"),
+                SyntaxFactory.ParseStatement(@"var config = ServerConfiguration.FromEnvironment();"),
+                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
+                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                SyntaxFactory.ParseStatement(@"bool strictValidation = args.Contains(""--strict-validation"") || Environment.GetEnvironmentVariable(""TEST_STRICT_VALIDATION"") == ""true"";"),
+                SyntaxFactory.ParseStatement(@"bool enforceAuth = args.Contains(""--enforce-auth"") || Environment.GetEnvironmentVariable(""TEST_ENFORCE_AUTH"") == ""true"";"),
+                SyntaxFactory.ParseStatement(@"bool startAuthServer = args.Contains(""--start-auth-server"") || Environment.GetEnvironmentVariable(""TEST_START_AUTH_SERVER"") == ""true"";"),
+                SyntaxFactory.ParseStatement(@"builder.Services.AddDaos(config.UseEphemeral, config.DatabaseUrl);"),
+                SyntaxFactory.ParseStatement(@"if (config.Seed) { builder.Services.AddScoped<FakeDataSeeder>(); }"),
+                SyntaxFactory.ParseStatement(@"var app = builder.Build();"),
+                SyntaxFactory.ParseStatement(@"app.UseCors(""AllowAll"");"),
+                SyntaxFactory.ParseStatement(@"if (strictValidation) { app.Use(async (context, next) => { if (context.Request.Headers.ContainsKey(""X-Trigger-Validation-Error"")) { context.Response.StatusCode = 400; await context.Response.WriteAsync(@""{ """"error"""": """"Field 'email' must match format 'email'"""" }""); return; } await next(); }); }"),
+                SyntaxFactory.ParseStatement(@"if (enforceAuth || config.UseEphemeral) { app.Use(async (context, next) => { if (!context.Request.Path.StartsWithSegments(""/auth"") && !context.Request.Headers.Authorization.ToString().Contains(""mock-token-123"")) { context.Response.StatusCode = 401; await context.Response.WriteAsync(@""{ """"error"""": """"Unauthorized"""" }""); return; } await next(); }); }"),
+                SyntaxFactory.ParseStatement(@"if (config.UseEphemeral || !string.IsNullOrEmpty(config.DatabaseUrl)) { await AppInitializer.InitializeAsync(app.Services); if (config.Seed) { using var scope = app.Services.CreateScope(); var seeder = scope.ServiceProvider.GetRequiredService<FakeDataSeeder>(); await seeder.SeedDatabaseAsync(); } }"),
+                SyntaxFactory.ParseStatement(@"app.MapGet(""/"", () => ""CDD Server is running"");"),
+                SyntaxFactory.ParseStatement(@"if (startAuthServer) { app.MapPost(""/auth/login"", () => Results.Ok(new { Token = ""Bearer mock-token-123"" })); app.MapPost(""/auth/register"", () => Results.Ok(new { Message = ""User registered"" })); }"),
+                SyntaxFactory.ParseStatement(@"app.MapPost(""/_mock/trigger-webhook/{webhook_name}"", (string webhook_name) => Results.Ok(new { Message = $""Webhook {webhook_name} triggered"" }));")
+            };
 
-    /// <summary>The main entrypoint for the application.</summary>
-    public partial class Program
-    {{
-        /// <summary>Main method.</summary>
-        public static async Task Main(string[] args)
-        {{
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Phase 10: CORS
-            builder.Services.AddCors(options =>
-            {{
-                options.AddPolicy(""AllowAll"", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-            }});
-
-            // Parse CLI options
-            var config = ServerConfiguration.FromEnvironment();
-            if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;
-            if (args.Contains(""--seed"")) config.Seed = true;
-            bool strictValidation = args.Contains(""--strict-validation"") || Environment.GetEnvironmentVariable(""TEST_STRICT_VALIDATION"") == ""true"";
-            bool enforceAuth = args.Contains(""--enforce-auth"") || Environment.GetEnvironmentVariable(""TEST_ENFORCE_AUTH"") == ""true"";
-            bool startAuthServer = args.Contains(""--start-auth-server"") || Environment.GetEnvironmentVariable(""TEST_START_AUTH_SERVER"") == ""true"";
-
-            // 1. Resolve DAOs
-            builder.Services.AddDaos(config.UseEphemeral, config.DatabaseUrl);
-
-            if (config.Seed)
-            {{
-                builder.Services.AddScoped<FakeDataSeeder>();
-            }}
-
-            var app = builder.Build();
-
-            // Apply CORS
-            app.UseCors(""AllowAll"");
-
-            // Phase 10: Strict Validation Middleware
-            if (strictValidation)
-            {{
-                app.Use(async (context, next) =>
-                {{
-                    // Simplified strict validation mock
-                    if (context.Request.Headers.ContainsKey(""X-Trigger-Validation-Error""))
-                    {{
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsync(""{{ \""error\"": \""Field 'email' must match format 'email'\"" }}"");
-                        return;
-                    }}
-                    await next();
-                }});
-            }}
-
-            // Phase 10: Auth Middleware
-            if (enforceAuth || config.UseEphemeral)
-            {{
-                app.Use(async (context, next) =>
-                {{
-                    if (!context.Request.Path.StartsWithSegments(""/auth"") && !context.Request.Headers.Authorization.ToString().Contains(""mock-token-123""))
-                    {{
-                        context.Response.StatusCode = 401;
-                        await context.Response.WriteAsync(""{{ \""error\"": \""Unauthorized\"" }}"");
-                        return;
-                    }}
-                    await next();
-                }});
-            }}
-
-            // 2 & 3. Database Initialization and Data Seeding
-            if (config.UseEphemeral || !string.IsNullOrEmpty(config.DatabaseUrl))
-            {{
-                await AppInitializer.InitializeAsync(app.Services);
-
-                if (config.Seed)
-                {{
-                    using var scope = app.Services.CreateScope();
-                    var seeder = scope.ServiceProvider.GetRequiredService<FakeDataSeeder>();
-                    await seeder.SeedDatabaseAsync();
-                }}
-            }}
-
-            // 4. Start Listeners
-            app.MapGet(""/"", () => ""CDD Server is running"");
-
-            // Phase 10: IdP endpoints
-            if (startAuthServer)
-            {{
-                app.MapPost(""/auth/login"", () => Results.Ok(new {{ Token = ""Bearer mock-token-123"" }}));
-                app.MapPost(""/auth/register"", () => Results.Ok(new {{ Message = ""User registered"" }}));
-            }}
-
-            // Phase 10: Webhook Trigger
-            app.MapPost(""/_mock/trigger-webhook/{{webhook_name}}"", (string webhook_name) => Results.Ok(new {{ Message = $""Webhook {{webhook_name}} triggered"" }}));
-";
             foreach (var tag in tags)
             {
-                programCode += $"            app.Map{tag}Routes();\n";
+                mainStmts.Add(SyntaxFactory.ParseStatement($"app.Map{tag}Routes();"));
             }
 
-            programCode += @"
-            await app.RunAsync();
-        }
-    }
-}";
-            results.Add(new GeneratedCode { FileName = "src/Program.cs", Code = programCode });
+            mainStmts.Add(SyntaxFactory.ParseStatement("await app.RunAsync();"));
+
+            var mainMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Main")
+                .AddModifiers(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                .AddParameterListParameters(
+                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("args"))
+                        .WithType(SyntaxFactory.ParseTypeName("string[]")))
+                .WithBody(SyntaxFactory.Block(mainStmts));
+
+            var programClass = SyntaxFactory.ClassDeclaration("Program")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword))
+                .AddMembers(mainMethod);
+
+            var programNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(baseNamespace))
+                .AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Linq")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Builder")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Http")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Configuration")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Daos")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Seeder")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Routes"))
+                )
+                .AddMembers(programClass);
+
+            results.Add(new GeneratedCode
+            {
+                FileName = "src/Program.cs",
+                Code = WasmSafeRoslyn.FormatSafe(programNs)
+            });
 
             if (tests)
             {
-                var testsCode = $@"namespace {baseNamespace}.Tests
-{{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.Extensions.DependencyInjection;
-    using Xunit;
-    using {baseNamespace};
-    using {baseNamespace}.Configuration;
+                var factAttr = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Fact"))));
 
-    /// <summary>Tests for the server CLI entrypoint.</summary>
-    public class EntrypointTests
-    {{
-        /// <summary>Tests that --ephemeral flag sets the configuration correctly.</summary>
-        [Fact]
-        public void ParseArgs_Ephemeral_SetsUseEphemeral()
-        {{
-            var args = new[] {{ ""--ephemeral"" }};
-            var config = new ServerConfiguration(); // For test isolation
-            if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;
-            if (args.Contains(""--seed"")) config.Seed = true;
+                var entrypointTestsClass = SyntaxFactory.ClassDeclaration("EntrypointTests")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .AddMembers(
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "ParseArgs_Ephemeral_SetsUseEphemeral")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"var args = new[] { ""--ephemeral"" };"),
+                                SyntaxFactory.ParseStatement(@"var config = new ServerConfiguration();"),
+                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
+                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(config.UseEphemeral);"),
+                                SyntaxFactory.ParseStatement(@"Assert.False(config.Seed);")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "ParseArgs_Seed_SetsSeed")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"var args = new[] { ""--seed"" };"),
+                                SyntaxFactory.ParseStatement(@"var config = new ServerConfiguration();"),
+                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
+                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                                SyntaxFactory.ParseStatement(@"Assert.False(config.UseEphemeral);"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(config.Seed);")
+                            ))
+                    );
 
-            Assert.True(config.UseEphemeral);
-            Assert.False(config.Seed);
-        }}
+                var advancedMockTestsClass = SyntaxFactory.ClassDeclaration("AdvancedMockTests")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .WithBaseList(SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
+                        SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IClassFixture<Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>>")))))
+                    .AddMembers(
+                        SyntaxFactory.ParseMemberDeclaration("private readonly Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> _factory;")!,
+                        SyntaxFactory.ConstructorDeclaration("AdvancedMockTests")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                            .AddParameterListParameters(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("factory"))
+                                    .WithType(SyntaxFactory.ParseTypeName("Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>")))
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"_factory = factory.WithWebHostBuilder(builder => { builder.UseSetting(""applicationName"", typeof(Program).Assembly.GetName().Name); builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.ContentRootKey, System.IO.Directory.GetCurrentDirectory()); });")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Cors_AllowsCrossOriginRequests")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"var client = _factory.CreateClient();"),
+                                SyntaxFactory.ParseStatement(@"var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Options, ""/"");"),
+                                SyntaxFactory.ParseStatement(@"request.Headers.Add(""Origin"", ""http://example.com"");"),
+                                SyntaxFactory.ParseStatement(@"request.Headers.Add(""Access-Control-Request-Method"", ""GET"");"),
+                                SyntaxFactory.ParseStatement(@"var response = await client.SendAsync(request);"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NoContent);"),
+                                SyntaxFactory.ParseStatement(@"Assert.Contains(""Access-Control-Allow-Origin"", response.Headers.Select(h => h.Key));")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "StrictValidation_Returns400OnInvalidRequest")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_STRICT_VALIDATION"", ""true"");"),
+                                SyntaxFactory.ParseStatement(@"var client = _factory.CreateClient();"),
+                                SyntaxFactory.ParseStatement(@"var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/"");"),
+                                SyntaxFactory.ParseStatement(@"request.Headers.Add(""X-Trigger-Validation-Error"", ""true"");"),
+                                SyntaxFactory.ParseStatement(@"var response = await client.SendAsync(request);"),
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_STRICT_VALIDATION"", null);"),
+                                SyntaxFactory.ParseStatement(@"Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);"),
+                                SyntaxFactory.ParseStatement(@"var content = await response.Content.ReadAsStringAsync();"),
+                                SyntaxFactory.ParseStatement(@"Assert.Contains(""Field 'email' must match format 'email'"", content);")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Auth_Returns401OnUnauthorizedRequest")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_ENFORCE_AUTH"", ""true"");"),
+                                SyntaxFactory.ParseStatement(@"var client = _factory.CreateClient();"),
+                                SyntaxFactory.ParseStatement(@"var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/protected"");"),
+                                SyntaxFactory.ParseStatement(@"var response = await client.SendAsync(request);"),
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_ENFORCE_AUTH"", null);"),
+                                SyntaxFactory.ParseStatement(@"Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Idp_FullLifecycle_Succeeds")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_START_AUTH_SERVER"", ""true"");"),
+                                SyntaxFactory.ParseStatement(@"var client = _factory.CreateClient();"),
+                                SyntaxFactory.ParseStatement(@"var registerResponse = await client.PostAsync(""/auth/register"", new System.Net.Http.StringContent(""""));"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(registerResponse.IsSuccessStatusCode);"),
+                                SyntaxFactory.ParseStatement(@"var loginResponse = await client.PostAsync(""/auth/login"", new System.Net.Http.StringContent(""""));"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(loginResponse.IsSuccessStatusCode);"),
+                                SyntaxFactory.ParseStatement(@"var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/protected"");"),
+                                SyntaxFactory.ParseStatement(@"request.Headers.Add(""Authorization"", ""Bearer mock-token-123"");"),
+                                SyntaxFactory.ParseStatement(@"var protectedResponse = await client.SendAsync(request);"),
+                                SyntaxFactory.ParseStatement(@"Environment.SetEnvironmentVariable(""TEST_START_AUTH_SERVER"", null);"),
+                                SyntaxFactory.ParseStatement(@"Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, protectedResponse.StatusCode);")
+                            )),
+                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Webhook_Trigger_Succeeds")
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                            .AddAttributeLists(factAttr)
+                            .WithBody(SyntaxFactory.Block(
+                                SyntaxFactory.ParseStatement(@"var client = _factory.CreateClient();"),
+                                SyntaxFactory.ParseStatement(@"var response = await client.PostAsync(""/_mock/trigger-webhook/test_webhook"", new System.Net.Http.StringContent(""""));"),
+                                SyntaxFactory.ParseStatement(@"Assert.True(response.IsSuccessStatusCode);"),
+                                SyntaxFactory.ParseStatement(@"var content = await response.Content.ReadAsStringAsync();"),
+                                SyntaxFactory.ParseStatement(@"Assert.Contains(""Webhook test_webhook triggered"", content);")
+                            ))
+                    );
 
-        /// <summary>Tests that --seed flag sets the configuration correctly.</summary>
-        [Fact]
-        public void ParseArgs_Seed_SetsSeed()
-        {{
-            var args = new[] {{ ""--seed"" }};
-            var config = new ServerConfiguration(); // For test isolation
-            if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;
-            if (args.Contains(""--seed"")) config.Seed = true;
+                var testsNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                    .AddUsings(
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Linq")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Builder")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Xunit")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(baseNamespace)),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Configuration"))
+                    )
+                    .AddMembers(entrypointTestsClass, advancedMockTestsClass);
 
-            Assert.False(config.UseEphemeral);
-            Assert.True(config.Seed);
-        }}
-    }}
-
-    /// <summary>Tests for advanced mock capabilities.</summary>
-    public class AdvancedMockTests : IClassFixture<Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>>
-    {{
-        private readonly Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> _factory;
-
-        /// <summary>Constructor.</summary>
-        public AdvancedMockTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory)
-        {{
-            _factory = factory.WithWebHostBuilder(builder =>
-            {{
-                builder.UseSetting(""applicationName"", typeof(Program).Assembly.GetName().Name);
-                builder.UseSetting(Microsoft.AspNetCore.Hosting.WebHostDefaults.ContentRootKey, System.IO.Directory.GetCurrentDirectory());
-            }});
-        }}
-
-        /// <summary>Tests CORS preflight request.</summary>
-        [Fact]
-        public async Task Cors_AllowsCrossOriginRequests()
-        {{
-            var client = _factory.CreateClient();
-            var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Options, ""/"");
-            request.Headers.Add(""Origin"", ""http://example.com"");
-            request.Headers.Add(""Access-Control-Request-Method"", ""GET"");
-
-            var response = await client.SendAsync(request);
-
-            Assert.True(response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NoContent);
-            Assert.Contains(""Access-Control-Allow-Origin"", response.Headers.Select(h => h.Key));
-        }}
-
-        /// <summary>Tests strict validation.</summary>
-        [Fact]
-        public async Task StrictValidation_Returns400OnInvalidRequest()
-        {{
-            Environment.SetEnvironmentVariable(""TEST_STRICT_VALIDATION"", ""true"");
-            var client = _factory.CreateClient();
-
-            // In the generated Program, strict validation is triggered by X-Trigger-Validation-Error header
-            var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/"");
-            request.Headers.Add(""X-Trigger-Validation-Error"", ""true"");
-
-            var response = await client.SendAsync(request);
-            Environment.SetEnvironmentVariable(""TEST_STRICT_VALIDATION"", null);
-
-            Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.Contains(""Field 'email' must match format 'email'"", content);
-        }}
-
-        /// <summary>Tests auth middleware returns 401 when unauthorized.</summary>
-        [Fact]
-        public async Task Auth_Returns401OnUnauthorizedRequest()
-        {{
-            Environment.SetEnvironmentVariable(""TEST_ENFORCE_AUTH"", ""true"");
-            var client = _factory.CreateClient();
-
-            var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/protected"");
-            // No auth header provided
-            var response = await client.SendAsync(request);
-            Environment.SetEnvironmentVariable(""TEST_ENFORCE_AUTH"", null);
-
-            Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
-        }}
-
-        /// <summary>Tests IDP lifecycle: register, login, access protected resource.</summary>
-        [Fact]
-        public async Task Idp_FullLifecycle_Succeeds()
-        {{
-            Environment.SetEnvironmentVariable(""TEST_START_AUTH_SERVER"", ""true"");
-            var client = _factory.CreateClient();
-
-            // 1. Register
-            var registerResponse = await client.PostAsync(""/auth/register"", new System.Net.Http.StringContent(""""));
-            Assert.True(registerResponse.IsSuccessStatusCode);
-
-            // 2. Login
-            var loginResponse = await client.PostAsync(""/auth/login"", new System.Net.Http.StringContent(""""));
-            Assert.True(loginResponse.IsSuccessStatusCode);
-
-            // 3. Access protected resource with token
-            var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, ""/protected"");
-            request.Headers.Add(""Authorization"", ""Bearer mock-token-123"");
-            var protectedResponse = await client.SendAsync(request);
-            Environment.SetEnvironmentVariable(""TEST_START_AUTH_SERVER"", null);
-
-            Assert.NotEqual(System.Net.HttpStatusCode.Unauthorized, protectedResponse.StatusCode); // Could be 404 since /protected doesn't exist, but won't be 401
-        }}
-
-        /// <summary>Tests webhook trigger.</summary>
-        [Fact]
-        public async Task Webhook_Trigger_Succeeds()
-        {{
-            var client = _factory.CreateClient();
-            var response = await client.PostAsync(""/_mock/trigger-webhook/test_webhook"", new System.Net.Http.StringContent(""""));
-
-            Assert.True(response.IsSuccessStatusCode);
-            var content = await response.Content.ReadAsStringAsync();
-            Assert.Contains(""Webhook test_webhook triggered"", content);
-        }}
-    }}
-}}";
-                results.Add(new GeneratedCode { FileName = "src/Tests/EntrypointTests.cs", Code = testsCode });
+                results.Add(new GeneratedCode
+                {
+                    FileName = "src/Tests/EntrypointTests.cs",
+                    Code = WasmSafeRoslyn.FormatSafe(testsNs)
+                });
             }
 
             return results;

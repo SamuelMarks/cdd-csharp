@@ -37,9 +37,29 @@ namespace Cdd.OpenApi.Tests.Orm
             Assert.Contains("f.Random.Bool()", code[1].Code);
 
             // Reassign IntId to id so it skips
-            schemas["TestModel"].Properties.Remove("IntId");
-            schemas["TestModel"].Properties["id"] = new OpenApiSchema { Type = "integer" };
-            SeederGenerator.GenerateSeeder(schemas, "GeneratedProject", true);
+            schemas["TestModel"].Properties!.Remove("IntId");
+            schemas["TestModel"].Properties!["id"] = new OpenApiSchema { Type = "integer" };
+            schemas["TestModel"].Properties!["ParentRef"] = new OpenApiSchema { Ref = "#/components/schemas/ParentModel" };
+            schemas["TestModel"].Properties!["MissingRef"] = new OpenApiSchema { Ref = "#/components/schemas/DoesNotExist" };
+            schemas["TestModel"].Properties!["OtherModelId"] = new OpenApiSchema { Type = "string" };
+            schemas["ParentModel"] = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["id"] = new OpenApiSchema { Type = "string" }
+                }
+            };
+            schemas["OtherModel"] = new OpenApiSchema
+            {
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["id"] = new OpenApiSchema { Type = "string" }
+                }
+            };
+            var orderedRes = SeederGenerator.GenerateSeeder(schemas, "GeneratedProject", true);
+            var mainSeeder = orderedRes[0].Code;
+            Assert.True(mainSeeder.IndexOf("SeedParentModelAsync") < mainSeeder.IndexOf("SeedTestModelAsync"));
+            Assert.True(mainSeeder.IndexOf("SeedOtherModelAsync") < mainSeeder.IndexOf("SeedTestModelAsync"));
         }
     }
 }

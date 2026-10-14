@@ -238,6 +238,12 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Successfully generated spec", outputFunction);
             Assert.True(File.Exists(outPathFunction));
 
+            var outDirOpenApi = Path.Combine(tmpDir, "out_openapi");
+            var (exitCodeOpenApi, outputOpenApi) = RunMain(new[] { "sync", "-t", "openapi", "-i", outPath, "-o", outDirOpenApi });
+            Assert.Equal(0, exitCodeOpenApi);
+            Assert.Contains("Synchronizing from truth", outputOpenApi);
+            Assert.Contains("Successfully generated C# code", outputOpenApi);
+
             try { Directory.Delete(tmpDir, true); } catch { }
         }
 
@@ -251,6 +257,31 @@ namespace Cdd.OpenApi.Tests
             var (exitCode2, output2) = RunMain(new[] { "sync", "-h" });
             Assert.Equal(0, exitCode2);
             Assert.Contains("Usage:\n  cdd-csharp sync", output2);
+
+            var (exitCode3, output3) = RunMain(new[] { "to_docs_json", "--help" });
+            Assert.Equal(0, exitCode3);
+            Assert.Contains("Usage:\n  cdd-csharp to_docs_json", output3);
+
+            var (exitCode4, output4) = RunMain(new[] { "serve_json_rpc", "--help" });
+            Assert.Equal(0, exitCode4);
+            Assert.Contains("Usage:\n  cdd-csharp serve_json_rpc", output4);
+
+            var (exitCode5, output5) = RunMain(new[] { "mcp", "--help" });
+            Assert.Equal(0, exitCode5);
+            Assert.Contains("Usage:\n  cdd-csharp mcp", output5);
+
+            var (exitCode6, output6) = RunMain(new[] { "unknown_cmd", "--help" });
+            Assert.Equal(0, exitCode6);
+            Assert.Contains("Usage:\n  cdd-csharp [subcommand]", output6);
+
+            var (exitCode7, output7) = RunMain(new[] { "from_openapi", "--help" });
+            Assert.Equal(0, exitCode7);
+            Assert.Contains("Usage:\n  cdd-csharp from_openapi", output7);
+
+            var (_, parsedMcpShort) = Cdd.OpenApi.Cli.CddCli.ParseFromOpenApiArgs(new[] { "from_openapi", "-m" });
+            Assert.True(parsedMcpShort.Mcp);
+            var (_, parsedMcpLong) = Cdd.OpenApi.Cli.CddCli.ParseFromOpenApiArgs(new[] { "from_openapi", "--mcp" });
+            Assert.True(parsedMcpLong.Mcp);
         }
     }
 }

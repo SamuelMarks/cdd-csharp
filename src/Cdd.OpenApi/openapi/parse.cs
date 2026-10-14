@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -5,15 +9,19 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Parse
 {
-    /// <summary>Auto-generated documentation for OpenApiParser.</summary>
+    /// <summary>Parses OpenAPI 3.x and Swagger 2.0 JSON strings into <see cref="OpenApiDocument"/> models.</summary>
     public class OpenApiParser
     {
-        /// <summary>Auto-generated documentation for OpenApiParser.</summary>
+        /// <summary>Initializes a new instance of the <see cref="OpenApiParser"/> class.</summary>
         public OpenApiParser()
         {
         }
 
-        /// <summary>Auto-generated documentation for ParseJson.</summary>
+        /// <summary>
+        /// Parses an OpenAPI or Swagger JSON string into a normalized <see cref="OpenApiDocument"/>.
+        /// </summary>
+        /// <param name="jsonContent">The raw JSON string to parse.</param>
+        /// <returns>The deserialized and normalized <see cref="OpenApiDocument"/>.</returns>
         public OpenApiDocument ParseJson(string jsonContent)
         {
             if (string.IsNullOrWhiteSpace(jsonContent))

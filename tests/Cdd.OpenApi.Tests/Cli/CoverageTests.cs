@@ -13,17 +13,55 @@ namespace Cdd.OpenApi.Tests.Cli
     public class CoverageTests
     {
         [Fact]
-        public void FetchHttpContent_Works()
+        public async Task FetchHttpContent_Works()
         {
-            var args = new[] { "to_docs_json", "-i", "http://localhost:1/invalid" };
-            var parsed = CddCli.ParseDocsJsonArgs(args);
-            var result = CddCli.ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping);
-            Assert.Equal(0, result);
+            var argsInvalid = new[] { "to_docs_json", "-i", "http://localhost:1/invalid" };
+            var parsedInvalid = CddCli.ParseDocsJsonArgs(argsInvalid);
+            var ex = Assert.Throws<Cdd.OpenApi.Errors.CddException>(() =>
+                CddCli.ToDocsJson(parsedInvalid.inputPath, parsedInvalid.outputPath, parsedInvalid.noImports, parsedInvalid.noWrapping));
+            Assert.Equal(Cdd.OpenApi.Errors.CddErrorCode.HttpFetchError, ex.ErrorCode);
+
+            using var listener = new System.Net.HttpListener();
+            int port = 51249;
+            listener.Prefixes.Add($"http://localhost:{port}/");
+            listener.Start();
+            var serverTask = Task.Run(async () =>
+            {
+                var ctx = await listener.GetContextAsync();
+                byte[] buf = Encoding.UTF8.GetBytes("{\"openapi\":\"3.2.0\",\"paths\":{}}");
+                ctx.Response.OutputStream.Write(buf, 0, buf.Length);
+                ctx.Response.Close();
+            });
+
+            try
+            {
+                var argsValid = new[] { "to_docs_json", "-i", $"http://localhost:{port}/spec.json" };
+                var parsedValid = CddCli.ParseDocsJsonArgs(argsValid);
+                var result = CddCli.ToDocsJson(parsedValid.inputPath, parsedValid.outputPath, parsedValid.noImports, parsedValid.noWrapping);
+                Assert.Equal(0, result);
+                await serverTask;
+            }
+            finally
+            {
+                listener.Stop();
+            }
         }
 
         [Fact]
         public void ServeMcp_Works()
         {
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDir);
+            var tempSpec = Path.Combine(tempDir, "spec.json");
+            var tempCode = Path.Combine(tempDir, "Model.cs");
+            var tempOutDir = Path.Combine(tempDir, "out");
+            File.WriteAllText(tempSpec, "{\"openapi\":\"3.2.0\",\"info\":{\"title\":\"T\",\"version\":\"1.0\"},\"paths\":{\"/items\":{\"get\":{\"operationId\":\"GetItems\"}}}}");
+            File.WriteAllText(tempCode, "namespace Models { public class Item { public int Id { get; set; } } }");
+
+            var escapedSpec = tempSpec.Replace("\\", "\\\\");
+            var escapedCode = tempCode.Replace("\\", "\\\\");
+            var escapedOut = tempOutDir.Replace("\\", "\\\\");
+
             var input = "invalid json\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n" +
@@ -32,6 +70,8 @@ namespace Cdd.OpenApi.Tests.Cli
                         "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"ping\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"prompts/list\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"prompts/list\", \"params\": {\"cursor\":\"page2\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":41,\"method\":\"prompts/list\", \"params\": {\"cursor\":\"page1\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":42,\"method\":\"prompts/list\", \"params\": {}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"prompts/get\", \"params\": {\"name\":\"test\"}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":51,\"method\":\"prompts/get\", \"params\": {\"name\":\"cdd_prompt\"}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":52,\"method\":\"prompts/get\", \"params\": {\"name\":\"unknown\"}}\n" +
@@ -39,6 +79,8 @@ namespace Cdd.OpenApi.Tests.Cli
                         "{\"jsonrpc\":\"2.0\",\"id\":54,\"method\":\"prompts/get\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"resources/list\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"resources/read\"}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":71,\"method\":\"resources/read\", \"params\": {}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":72,\"method\":\"resources/read\", \"params\": {\"uri\":\"cdd://schema\"}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":8,\"method\":\"resources/read\", \"params\": {\"uri\":\"cdd://ast\"}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"resources/templates/list\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":10,\"method\":\"sampling/createMessage\"}\n" +
@@ -47,12 +89,25 @@ namespace Cdd.OpenApi.Tests.Cli
                         "{\"jsonrpc\":\"2.0\",\"method\":\"unknown_notification\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":14,\"method\":\"tools/list\"}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":15,\"method\":\"tools/list\", \"params\": {\"cursor\":\"page2\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":151,\"method\":\"tools/list\", \"params\": {\"cursor\":\"page1\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":152,\"method\":\"tools/list\", \"params\": {}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":16,\"method\":\"tools/call\"}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":161,\"method\":\"tools/call\", \"params\": {}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":17,\"method\":\"tools/call\", \"params\": {\"name\":\"unknown\"}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":18,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":181,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate\", \"arguments\": {}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":182,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate\", \"arguments\": {\"input\":\"" + escapedSpec + "\"}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":183,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate\", \"arguments\": {\"input\":\"" + escapedSpec + "\", \"output\":\"" + escapedOut + "\"}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":184,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate\", \"arguments\": {\"input\":\"does_not_exist.json\"}}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":19,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_inspect\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":191,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_inspect\", \"arguments\": {}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":192,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_inspect\", \"arguments\": {\"input\":\"" + escapedSpec + "\"}}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":20,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_extract\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":201,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_extract\", \"arguments\": {}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":202,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_extract\", \"arguments\": {\"input\":\"" + escapedCode + "\"}}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":21,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate_in_memory\"}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":211,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate_in_memory\", \"arguments\": {}}}\n" +
+                        "{\"jsonrpc\":\"2.0\",\"id\":212,\"method\":\"tools/call\", \"params\": {\"name\":\"cdd_generate_in_memory\", \"arguments\": {\"schema\":\"{\\\"openapi\\\":\\\"3.2.0\\\",\\\"paths\\\":{}}\"}}}\n" +
                         "{\"jsonrpc\":\"2.0\",\"id\":13,\"method\":\"exit\"}\n";
             var originalIn = Console.In;
             var originalOut = Console.Out;
@@ -64,30 +119,31 @@ namespace Cdd.OpenApi.Tests.Cli
             {
                 var result = CddCli.ServeMcp(new string[0]);
                 Assert.Equal(0, result);
-                Assert.Contains("cdd-meta-mcp", sw.ToString());
+                var output = sw.ToString();
+                Assert.Contains("cdd-meta-mcp", output);
+                Assert.Contains("Generated code successfully", output);
+                Assert.Contains("Schema inspected successfully", output);
+                Assert.Contains("Code-to-schema extracted successfully", output);
+                Assert.Contains("In-memory generation successful", output);
             }
             finally
             {
                 Console.SetIn(originalIn);
                 Console.SetOut(originalOut);
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
             }
         }
 
         [Fact]
         public void ServeJsonRpc_ArgParsing()
         {
-            Action<string[]> run = args =>
-            {
-                var t = new Thread(() => { try { CddCli.ServeJsonRpc(args); } catch { } });
-                t.Start();
-                Thread.Sleep(100);
-                t.Interrupt();
-                t.Join(200);
-            };
-            run(new[] { "serve_json_rpc", "--port" });
-            run(new[] { "serve_json_rpc", "-p" });
-            run(new[] { "serve_json_rpc", "--listen" });
-            run(new[] { "serve_json_rpc", "-l" });
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            Assert.Equal(0, CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "--port" }, cts.Token));
+            Assert.Equal(0, CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p" }, cts.Token));
+            Assert.Equal(0, CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "--listen" }, cts.Token));
+            Assert.Equal(0, CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-l" }, cts.Token));
         }
 
         [Fact]
@@ -95,28 +151,12 @@ namespace Cdd.OpenApi.Tests.Cli
         {
             int port = 51239;
             Environment.SetEnvironmentVariable("CDD_LISTEN", "localhost");
-            Exception? serverError = null;
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    // Call with missing param values
-                    CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", port.ToString(), "-l", "localhost" });
-                }
-                catch (Exception ex)
-                {
-                    serverError = ex;
-                }
-            });
-            thread.Start();
+            using var cts = new CancellationTokenSource();
+            var serverTask = Task.Run(() => CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", port.ToString(), "-l", "localhost" }, cts.Token));
 
             try
             {
-                await Task.Delay(500);
-                if (serverError != null && !(serverError is ThreadInterruptedException))
-                {
-                    throw new Exception("Server failed to start", serverError);
-                }
+                await Task.Delay(150);
 
                 using var client = new HttpClient();
                 // Empty body
@@ -142,6 +182,7 @@ namespace Cdd.OpenApi.Tests.Cli
                 var reqErr = new StringContent("invalid json", Encoding.UTF8, "application/json");
                 var resErr = await client.PostAsync($"http://localhost:{port}/", reqErr);
                 var contentErr = await resErr.Content.ReadAsStringAsync();
+                Assert.Contains("error", contentErr);
 
                 // Call something to generate code
                 var reqGen = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"to_openapi\", \"params\": [\"does_not_exist.cs\", null]}", Encoding.UTF8, "application/json");
@@ -157,19 +198,14 @@ namespace Cdd.OpenApi.Tests.Cli
 
                 // Call with 0.0.0.0
                 Environment.SetEnvironmentVariable("CDD_LISTEN", "0.0.0.0");
-                var thread2 = new Thread(() =>
-                {
-                    try { CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", "51240", "-l", "0.0.0.0" }); } catch { }
-                });
-                thread2.Start();
-                await Task.Delay(200);
-                thread2.Interrupt();
+                using var cts2 = new CancellationTokenSource(50);
+                try { CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", "51240", "-l", "0.0.0.0" }, cts2.Token); } catch { }
             }
             finally
             {
                 Environment.SetEnvironmentVariable("CDD_LISTEN", null);
-                thread.Interrupt();
-                thread.Join(1000);
+                cts.Cancel();
+                await serverTask;
             }
         }
     }

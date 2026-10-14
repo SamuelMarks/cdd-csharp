@@ -1,55 +1,59 @@
+// <copyright file="OpenApiParameter.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiParameter.</summary>
+    /// <summary>Describes a single operation parameter.</summary>
     public class OpenApiParameter
     {
-        /// <summary>Auto-generated documentation for Name.</summary>
+        /// <summary>Gets or sets the name of the parameter.</summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>Auto-generated documentation for In.</summary>
+        /// <summary>Gets or sets the location of the parameter (<c>query</c>, <c>header</c>, <c>path</c>, or <c>cookie</c>).</summary>
         [JsonPropertyName("in")]
         public string In { get; set; } = string.Empty;
 
-        /// <summary>Auto-generated documentation for Description.</summary>
+        /// <summary>Gets or sets a brief description of the parameter.</summary>
         [JsonPropertyName("description")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Description { get; set; }
 
-        /// <summary>Auto-generated documentation for Required.</summary>
+        /// <summary>Gets or sets a value indicating whether this parameter is mandatory.</summary>
         [JsonPropertyName("required")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Required { get; set; }
 
-        /// <summary>Auto-generated documentation for Deprecated.</summary>
+        /// <summary>Gets or sets a value indicating whether a parameter is deprecated.</summary>
         [JsonPropertyName("deprecated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Deprecated { get; set; }
 
-        /// <summary>Auto-generated documentation for AllowEmptyValue.</summary>
+        /// <summary>Gets or sets a value indicating whether the parameter value is allowed to be empty.</summary>
         [JsonPropertyName("allowEmptyValue")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? AllowEmptyValue { get; set; }
 
-        /// <summary>Auto-generated documentation for Style.</summary>
+        /// <summary>Gets or sets a description of how the parameter value will be serialized depending on the type of the parameter value.</summary>
         [JsonPropertyName("style")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Style { get; set; }
 
-        /// <summary>Auto-generated documentation for Explode.</summary>
+        /// <summary>Gets or sets a value indicating whether parameter values of type <c>array</c> or <c>object</c> generate separate parameters for each value.</summary>
         [JsonPropertyName("explode")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Explode { get; set; }
 
-        /// <summary>Auto-generated documentation for AllowReserved.</summary>
+        /// <summary>Gets or sets a value indicating whether the parameter value SHOULD allow reserved characters.</summary>
         [JsonPropertyName("allowReserved")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? AllowReserved { get; set; }
 
-        /// <summary>Auto-generated documentation for Schema.</summary>
+        /// <summary>Gets or sets the schema defining the type used for the parameter.</summary>
         [JsonPropertyName("schema")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiSchema? Schema { get; set; }
@@ -77,7 +81,7 @@ namespace Cdd.OpenApi.Models
         /// <summary>Swagger 2.0 default</summary>
         [JsonPropertyName("default")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public object? Default { get; set; }
+        public OpenApiAny? Default { get; set; }
 
         /// <summary>Swagger 2.0 maximum</summary>
         [JsonPropertyName("maximum")]
@@ -132,24 +136,24 @@ namespace Cdd.OpenApi.Models
         /// <summary>Swagger 2.0 enum</summary>
         [JsonPropertyName("enum")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public IList<object>? Enum { get; set; }
+        public IList<OpenApiAny>? Enum { get; set; }
 
         /// <summary>Swagger 2.0 multipleOf</summary>
         [JsonPropertyName("multipleOf")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? MultipleOf { get; set; }
 
-        /// <summary>Auto-generated documentation for Content.</summary>
+        /// <summary>Gets or sets a map containing the media type representations for the parameter.</summary>
         [JsonPropertyName("content")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiMediaType>? Content { get; set; }
 
-        /// <summary>Auto-generated documentation for Example.</summary>
+        /// <summary>Gets or sets an example of the parameter's potential value.</summary>
         [JsonPropertyName("example")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public object? Example { get; set; }
+        public OpenApiAny? Example { get; set; }
 
-        /// <summary>Auto-generated documentation for Examples.</summary>
+        /// <summary>Gets or sets a map of examples of the parameter's potential value.</summary>
         [JsonPropertyName("examples")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiExample>? Examples { get; set; }

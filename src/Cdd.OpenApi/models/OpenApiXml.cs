@@ -1,3 +1,7 @@
+// <copyright file="OpenApiXml.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models

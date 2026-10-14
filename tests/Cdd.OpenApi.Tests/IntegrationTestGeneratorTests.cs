@@ -202,7 +202,10 @@ namespace Cdd.OpenApi.Tests
                     ["/test-bool"] = new OpenApiPathItem { Get = new OpenApiOperation { RequestBody = new OpenApiRequestBody { Content = new System.Collections.Generic.Dictionary<string, OpenApiMediaType> { ["application/json"] = new OpenApiMediaType { Schema = new OpenApiSchema { Type = "boolean" } } } } } }
                 }
             };
-            IntegrationTestGenerator.Generate(doc);
+            var generated = IntegrationTestGenerator.Generate(doc);
+            Assert.Contains("123.45", generated);
+            Assert.Contains("true", generated);
+            Assert.Contains("Assert.NotNull(response);", generated);
         }
 
 
@@ -213,16 +216,16 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("http://localhost:8080/", generated);
 
             var doc1 = new OpenApiDocument { Servers = new System.Collections.Generic.List<OpenApiServer> { new OpenApiServer { Url = null! } } };
-            IntegrationTestGenerator.Generate(doc1);
+            Assert.Contains("http://localhost:8080/v2/", IntegrationTestGenerator.Generate(doc1));
 
             var doc2 = new OpenApiDocument { Servers = null, BasePath = null };
-            IntegrationTestGenerator.Generate(doc2);
+            Assert.Contains("http://localhost:8080/v2/", IntegrationTestGenerator.Generate(doc2));
 
             var doc3 = new OpenApiDocument { Servers = null, BasePath = "base" };
-            IntegrationTestGenerator.Generate(doc3);
+            Assert.Contains("http://localhost:8080/base/", IntegrationTestGenerator.Generate(doc3));
 
             var doc4 = new OpenApiDocument { Paths = null };
-            IntegrationTestGenerator.Generate(doc4);
+            Assert.Contains("http://localhost:8080/v2/", IntegrationTestGenerator.Generate(doc4));
         }
 
         [Fact]

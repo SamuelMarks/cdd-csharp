@@ -69,5 +69,39 @@ namespace Cdd.OpenApi.Tests
             AssertHelper.ContainsNoWhitespace("string? p3", code);
             AssertHelper.ContainsNoWhitespace("object p4", code);
         }
+
+        [Fact]
+        public void TypeMapper_MapSchemaToCSharp_CoversAllFormatsAndConstructs()
+        {
+            Assert.Equal("object", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(null));
+            Assert.Equal("Pet", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Ref = "#/components/schemas/Pet" }));
+            Assert.Equal("List<int>", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "array", Items = new Cdd.OpenApi.Models.OpenApiSchema { Type = "integer" } }));
+            Assert.Equal("Dictionary<string, string>", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "object", AdditionalProperties = new Cdd.OpenApi.Models.OpenApiSchema { Type = "string" } }));
+            Assert.Equal("object", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "object" }));
+            Assert.Equal("long", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "integer", Format = "int64" }));
+            Assert.Equal("int", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "integer", Format = "int32" }));
+            Assert.Equal("float", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "number", Format = "float" }));
+            Assert.Equal("decimal", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "number", Format = "decimal" }));
+            Assert.Equal("double", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "number", Format = "double" }));
+            Assert.Equal("Guid", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "uuid" }));
+            Assert.Equal("DateTimeOffset", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "date-time" }));
+            Assert.Equal("DateOnly", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "date" }));
+            Assert.Equal("TimeOnly", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "time" }));
+            Assert.Equal("Uri", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "uri" }));
+            Assert.Equal("byte[]", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "byte" }));
+            Assert.Equal("byte[]", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "binary" }));
+            Assert.Equal("string", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "string", Format = "custom" }));
+            Assert.Equal("bool", Cdd.OpenApi.Common.TypeMapper.MapSchemaToCSharp(new Cdd.OpenApi.Models.OpenApiSchema { Type = "boolean" }));
+
+            var ifaceWithoutMcp = Cdd.OpenApi.Routes.Emit.ToInterface("INoMcp", new Cdd.OpenApi.Models.OpenApiPaths(), includeMcp: false);
+            Assert.DoesNotContain("McpSseEndpoint", ifaceWithoutMcp.ToFormattedString());
+
+            var docWithPaths = new Cdd.OpenApi.Models.OpenApiDocument
+            {
+                Paths = new Cdd.OpenApi.Models.OpenApiPaths { ["/p"] = new Cdd.OpenApi.Models.OpenApiPathItem { Get = new Cdd.OpenApi.Models.OpenApiOperation() } }
+            };
+            var sdkWithMcp = CodeGenerator.Generate(docWithPaths, "Generated", GenerateType.Sdk, tests: false, mcp: true);
+            Assert.Contains(sdkWithMcp, f => f.FileName == "src/Cli/McpServer.cs");
+        }
     }
 }

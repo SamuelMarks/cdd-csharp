@@ -67,28 +67,28 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.NotNull(doc.Components.Schemas);
             Assert.True(doc.Components.Schemas.ContainsKey("User"));
 
-            var postOp = doc.Paths["/user"].Post;
+            var postOp = doc.Paths!["/user"].Post!;
             Assert.Null(postOp.Parameters);
             Assert.NotNull(postOp.RequestBody);
             Assert.Equal("User object", postOp.RequestBody.Description);
             Assert.True(postOp.RequestBody.Required);
             Assert.True(postOp.RequestBody.Content.ContainsKey("application/json"));
-            Assert.Equal("#/definitions/User", postOp.RequestBody.Content["application/json"].Schema.Ref);
+            Assert.Equal("#/definitions/User", postOp.RequestBody.Content["application/json"].Schema!.Ref);
 
-            var postResp = postOp.Responses["200"];
+            var postResp = postOp.Responses!["200"];
             Assert.NotNull(postResp.Content);
             Assert.True(postResp.Content.ContainsKey("application/json"));
-            Assert.Equal("string", postResp.Content["application/json"].Schema.Type);
+            Assert.Equal("string", postResp.Content["application/json"].Schema!.Type);
 
-            var putOp = doc.Paths["/user"].Put;
+            var putOp = doc.Paths["/user"].Put!;
             Assert.Null(putOp.Parameters);
             Assert.NotNull(putOp.RequestBody);
             Assert.True(putOp.RequestBody.Content.ContainsKey("application/x-www-form-urlencoded"));
-            var formSchema = putOp.RequestBody.Content["application/x-www-form-urlencoded"].Schema;
-            Assert.True(formSchema.Properties.ContainsKey("id"));
+            var formSchema = putOp.RequestBody.Content["application/x-www-form-urlencoded"].Schema!;
+            Assert.True(formSchema.Properties!.ContainsKey("id"));
             Assert.Equal("string", formSchema.Properties["id"].Type);
 
-            var getOp = doc.Paths["/user"].Get;
+            var getOp = doc.Paths["/user"].Get!;
             Assert.NotNull(getOp.Parameters);
             var limitParam = getOp.Parameters[0];
             Assert.NotNull(limitParam.Schema);

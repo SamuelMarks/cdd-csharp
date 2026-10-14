@@ -26,7 +26,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json); // System.Console.WriteLine("P IN IS: " + doc.Paths["/test"].Post.Parameters[0].In);
-            var op = doc.Paths["/test"].Post;
+            var op = doc.Paths!["/test"].Post!;
 
             Assert.Null(op.RequestBody);
             Assert.NotNull(op.Parameters);
@@ -55,7 +55,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json);
-            var op = doc.Paths["/test"].Get;
+            var op = doc.Paths!["/test"].Get!;
 
             Assert.NotNull(op.Parameters);
             Assert.Single(op.Parameters);
@@ -85,7 +85,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json);
-            var op = doc.Paths["/test"].Post;
+            var op = doc.Paths!["/test"].Post!;
             Assert.NotNull(op.RequestBody);
         }
 
@@ -109,7 +109,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json);
-            var p = doc.Paths["/test"].Get.Parameters[0];
+            var p = doc.Paths!["/test"].Get!.Parameters![0];
             Assert.Null(p.Schema);
         }
 
@@ -140,7 +140,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json);
-            var formSchema = doc.Paths["/test"].Post.RequestBody!.Content["application/x-www-form-urlencoded"].Schema;
+            var formSchema = doc.Paths!["/test"].Post!.RequestBody!.Content["application/x-www-form-urlencoded"].Schema;
             Assert.Null(formSchema); // No exception, skipped setting
         }
 
@@ -174,7 +174,7 @@ namespace Cdd.OpenApi.Tests.Parse
             }";
             var parser = new OpenApiParser();
             var doc = parser.ParseJson(json);
-            var formSchema = doc.Paths["/test"].Post.RequestBody!.Content["application/x-www-form-urlencoded"].Schema;
+            var formSchema = doc.Paths!["/test"].Post!.RequestBody!.Content["application/x-www-form-urlencoded"].Schema;
             Assert.Null(formSchema!.Properties); // No exception, skipped setting
         }
     }

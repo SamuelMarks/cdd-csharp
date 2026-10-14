@@ -1,3 +1,7 @@
+// <copyright file="CddCli.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.IO;
 using System.Linq;
@@ -17,11 +21,17 @@ namespace Cdd.OpenApi.Cli
     public static class CddCli
     {
 
+        /// <summary>Help text for the <c>from_openapi</c> command.</summary>
         public const string FromOpenApiHelp = "Generate code from an OpenAPI specification.\n\nUsage:\n  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  -d, --input-dir             Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  -m, --mcp                   Generate Model Context Protocol (MCP) server and adapter.";
+        /// <summary>Help text for the <c>to_openapi</c> command.</summary>
         public const string ToOpenApiHelp = "Usage:\n  cdd-csharp to_openapi -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to source code directory or file.\n  -o, --output   Output file or directory path.";
+        /// <summary>Help text for the <c>to_docs_json</c> command.</summary>
         public const string ToDocsJsonHelp = "Usage:\n  cdd-csharp to_docs_json -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path or URL to the OpenAPI specification.\n  -o, --output   Output file or directory path.\n  --no-imports   Omit the imports field.\n  --no-wrapping  Omit the wrapper fields.";
+        /// <summary>Help text for the <c>sync</c> command.</summary>
         public const string SyncHelp = "Usage:\n  cdd-csharp sync -t <truth> -i <input> [-o <output>]\n\nOptions:\n  -t, --truth    Designate a single source of truth for synchronization.\n  -i, --input    Path to the source files.\n  -o, --output   Output file or directory path.";
+        /// <summary>Help text for the <c>serve_json_rpc</c> command.</summary>
         public const string ServeJsonRpcHelp = "Usage:\n  cdd-csharp serve_json_rpc [-p <port>] [-l <listen>]\n\nOptions:\n  -p, --port     Port to listen on (default: 8080).\n  -l, --listen   Address to listen on (default: 127.0.0.1).";
+        /// <summary>Help text for the <c>mcp</c> command.</summary>
         public const string McpHelp = "Usage:\n  cdd-csharp mcp\n\nOptions:\n  Run the generator as an MCP server over stdio.";
 
 
@@ -30,13 +40,11 @@ namespace Cdd.OpenApi.Cli
         /// Parse arguments for generating an OpenAPI specification from source code.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
-        /// <returns>Exit code (0 for success).</returns>
+        /// <returns>Tuple of inputPath and outputPath.</returns>
         public static (string inputPath, string outputPath) ParseToOpenApiArgs(string[] args)
         {
             string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
-            if (inputPath.StartsWith("/")) inputPath = inputPath.Substring(1);
             string outputPath = Environment.GetEnvironmentVariable("CDD_OUTPUT") ?? Environment.GetEnvironmentVariable("OUTPUT_FILE") ?? "openapi.json";
-            if (outputPath.StartsWith("/")) outputPath = outputPath.Substring(1);
 
             for (int i = 1; i < args.Length; i++)
             {
@@ -92,13 +100,11 @@ namespace Cdd.OpenApi.Cli
         /// Parse arguments for generating JSON documentation with code snippets for an OpenAPI specification.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
-        /// <returns>Exit code (0 for success).</returns>
+        /// <returns>Tuple of inputPath, outputPath, noImports, and noWrapping.</returns>
         public static (string inputPath, string outputPath, bool noImports, bool noWrapping) ParseDocsJsonArgs(string[] args)
         {
             string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
-            if (inputPath.StartsWith("/")) inputPath = inputPath.Substring(1);
             string outputPath = Environment.GetEnvironmentVariable("CDD_OUTPUT") ?? Environment.GetEnvironmentVariable("OUTPUT_FILE") ?? string.Empty;
-            if (outputPath.StartsWith("/")) outputPath = outputPath.Substring(1);
             bool noImports = Environment.GetEnvironmentVariable("CDD_NO_IMPORTS") == "true" || Environment.GetEnvironmentVariable("NO_IMPORTS") == "true";
             bool noWrapping = Environment.GetEnvironmentVariable("CDD_NO_WRAPPING") == "true" || Environment.GetEnvironmentVariable("NO_WRAPPING") == "true";
 
@@ -173,6 +179,11 @@ namespace Cdd.OpenApi.Cli
             return 0;
         }
 
+        /// <summary>
+        /// Downloads the contents of a remote OpenAPI specification over HTTP or HTTPS.
+        /// </summary>
+        /// <param name="url">The HTTP or HTTPS URL of the OpenAPI specification.</param>
+        /// <returns>The downloaded OpenAPI specification content.</returns>
         private static string FetchHttpContent(string url)
         {
             try
@@ -180,9 +191,12 @@ namespace Cdd.OpenApi.Cli
                 using var client = new System.Net.Http.HttpClient();
                 return client.GetStringAsync(url).GetAwaiter().GetResult();
             }
-            catch
+            catch (Exception ex)
             {
-                return "{}";
+                throw new Cdd.OpenApi.Errors.CddException(
+                    Cdd.OpenApi.Errors.CddErrorCode.HttpFetchError,
+                    $"Failed to fetch OpenAPI content from '{url}': {ex.Message}",
+                    ex);
             }
         }
 
@@ -208,10 +222,10 @@ namespace Cdd.OpenApi.Cli
             config.CreateComposableTestsAndMocks = Environment.GetEnvironmentVariable("CDD_TESTS") == "true" || Environment.GetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS") == "true";
             config.Mcp = Environment.GetEnvironmentVariable("CDD_MCP") == "true" || Environment.GetEnvironmentVariable("MCP") == "true";
 
-            string inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
+            string? inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
             if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
 
-            string inputDirEnv = Environment.GetEnvironmentVariable("CDD_INPUT_DIR") ?? Environment.GetEnvironmentVariable("INPUT_DIR");
+            string? inputDirEnv = Environment.GetEnvironmentVariable("CDD_INPUT_DIR") ?? Environment.GetEnvironmentVariable("INPUT_DIR");
             if (!string.IsNullOrEmpty(inputDirEnv)) config.InputDir = inputDirEnv;
 
             for (int i = startIndex; i < args.Length; i++)
@@ -282,12 +296,6 @@ namespace Cdd.OpenApi.Cli
         }
 
         /// <summary>
-        /// Expose CLI interface as a JSON-RPC server.
-        /// </summary>
-        /// <param name="args">The command line arguments.</param>
-        /// <returns>Exit code (0 for success).</returns>
-
-        /// <summary>
         /// Parse arguments for the sync command.
         /// </summary>
         /// <param name="args">The command line arguments.</param>
@@ -336,6 +344,11 @@ namespace Cdd.OpenApi.Cli
                 Console.WriteLine($"Synchronizing from truth '{truth}'...");
                 return ToOpenApi(inputPath, outputPath);
             }
+            else if (truth == "openapi")
+            {
+                Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                return FromOpenApi(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath });
+            }
             else
             {
                 Console.Error.WriteLine($"Error: Truth source '{truth}' is not supported yet.");
@@ -343,12 +356,36 @@ namespace Cdd.OpenApi.Cli
             }
         }
 
+        /// <summary>
+        /// Runs the CDD toolchain as a Model Context Protocol (MCP) server over standard input and output.
+        /// </summary>
+        /// <param name="args">The command line arguments.</param>
+        /// <returns>Exit code (0 for success).</returns>
         public static int ServeMcp(string[] args)
         {
             var writer = Console.Out;
-
             var reader = Console.In;
+            var parser = new OpenApiParser();
+            var emitter = new OpenApiEmitter();
+            var activeDoc = new OpenApiDocument { OpenApi = "3.2.0", Info = new OpenApiInfo { Title = "Active API", Version = "1.0.0" }, Paths = new OpenApiPaths() };
 
+            static void WriteJsonRpc(TextWriter w, JsonNode? idNode, JsonObject? resultObj, JsonObject? errorObj = null)
+            {
+                var envelope = new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["id"] = idNode!.DeepClone()
+                };
+                if (errorObj != null)
+                {
+                    envelope["error"] = errorObj;
+                }
+                else
+                {
+                    envelope["result"] = resultObj;
+                }
+                w.WriteLine(JsonSerializer.Serialize(envelope, OpenApiJsonContext.Default.JsonObject));
+            }
 
             while (true)
             {
@@ -356,130 +393,272 @@ namespace Cdd.OpenApi.Cli
                 if (line == null) break;
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
+                JsonDocument document;
                 try
                 {
-                    var document = System.Text.Json.JsonDocument.Parse(line);
+                    document = JsonDocument.Parse(line);
+                }
+                catch (JsonException)
+                {
+                    var parseErr = new JsonObject
+                    {
+                        ["jsonrpc"] = "2.0",
+                        ["error"] = new JsonObject { ["code"] = -32700, ["message"] = "Parse error" }
+                    };
+                    writer.WriteLine(JsonSerializer.Serialize(parseErr, OpenApiJsonContext.Default.JsonObject));
+                    continue;
+                }
+
+                using (document)
+                {
                     var root = document.RootElement;
                     if (root.TryGetProperty("method", out var methodProp))
                     {
                         var method = methodProp.GetString();
-                        var id = root.TryGetProperty("id", out var idProp) ? idProp.GetRawText() : "null";
+                        JsonNode? idNode = root.TryGetProperty("id", out var idProp) ? JsonNode.Parse(idProp.GetRawText()) : null;
 
                         if (method == "initialize")
                         {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}},\"resources\":{{}}}},\"serverInfo\":{{\"name\":\"cdd-meta-mcp\",\"version\":\"1.0.0\"}}}}}");
+                            WriteJsonRpc(writer, idNode, new JsonObject
+                            {
+                                ["protocolVersion"] = "2024-11-05",
+                                ["capabilities"] = new JsonObject { ["tools"] = new JsonObject(), ["resources"] = new JsonObject() },
+                                ["serverInfo"] = new JsonObject { ["name"] = "cdd-meta-mcp", ["version"] = "1.0.0" }
+                            });
                         }
-                        else if (method == "notifications/initialized")
+                        else if (method == "notifications/initialized" || method == "notifications/cancelled" || method == "notifications/progress")
                         {
-                            // do nothing
+                            // Notification messages require no response
                         }
-                        else if (method == "notifications/cancelled")
+                        else if (method == "ping" || method == "logging/setLevel")
                         {
-                            // Handle cancellation request (no-op for synchronous loop)
-                        }
-                        else if (method == "notifications/progress")
-                        {
-                            // Handle progress tracking (no-op for now)
-                        }
-                        else if (method == "ping")
-                        {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{}}}}");
+                            WriteJsonRpc(writer, idNode, new JsonObject());
                         }
                         else if (method == "prompts/list")
                         {
-                            string nextCursor = "null";
-                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c))
+                            JsonNode? nextCursor = "page2";
+                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c) && c.GetString() == "page2")
                             {
-                                if (c.GetString() == "page2") nextCursor = "null";
+                                nextCursor = null;
                             }
-                            else
+                            WriteJsonRpc(writer, idNode, new JsonObject
                             {
-                                nextCursor = "\"page2\"";
-                            }
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"nextCursor\":" + nextCursor + ",\"prompts\":[{{\"name\":\"cdd_prompt\",\"description\":\"A default prompt\",\"arguments\":[{{\"name\":\"arg1\",\"description\":\"An argument\",\"required\":true}}]}}]}}}}");
+                                ["nextCursor"] = nextCursor,
+                                ["prompts"] = new JsonArray(
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_prompt",
+                                        ["description"] = "A default prompt",
+                                        ["arguments"] = new JsonArray(
+                                            new JsonObject { ["name"] = "arg1", ["description"] = "An argument", ["required"] = true })
+                                    })
+                            });
                         }
                         else if (method == "prompts/get")
                         {
                             if (root.TryGetProperty("params", out var p) && p.TryGetProperty("name", out var n) && n.GetString() == "cdd_prompt")
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"description\":\"A default prompt\",\"messages\":[{{\"role\":\"user\",\"content\":{{\"type\":\"text\",\"text\":\"Prompt content\"}}}]}}}}");
+                                WriteJsonRpc(writer, idNode, new JsonObject
+                                {
+                                    ["description"] = "A default prompt",
+                                    ["messages"] = new JsonArray(
+                                        new JsonObject
+                                        {
+                                            ["role"] = "user",
+                                            ["content"] = new JsonObject { ["type"] = "text", ["text"] = "Prompt content" }
+                                        })
+                                });
                             }
                             else
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"error\":{{\"code\":-32602,\"message\":\"Prompt not found\"}}}}}");
+                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32602, ["message"] = "Prompt not found" });
                             }
                         }
                         else if (method == "tools/list")
                         {
-                            string nextCursor = "null";
-                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c))
+                            JsonNode? nextCursor = "page2";
+                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c) && c.GetString() == "page2")
                             {
-                                if (c.GetString() == "page2") nextCursor = "null";
+                                nextCursor = null;
                             }
-                            else
+                            WriteJsonRpc(writer, idNode, new JsonObject
                             {
-                                nextCursor = "\"page2\"";
-                            }
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"nextCursor\":" + nextCursor + ",\"tools\":[{{\"name\":\"cdd_generate\",\"description\":\"Generate C# code from OpenAPI\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"input\":{{\"type\":\"string\"}}}},\"required\":[\"input\"]}}}}, {{\"name\":\"cdd_inspect\",\"description\":\"Inspect the active schema\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{}},\"required\":[]}}}}, {{\"name\":\"cdd_extract\",\"description\":\"Extract OpenAPI schema from C# code\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"input\":{{\"type\":\"string\"}},\"output\":{{\"type\":\"string\"}}}},\"required\":[\"input\"]}}}}, {{\"name\":\"cdd_generate_in_memory\",\"description\":\"Run generation core directly in memory\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"schema\":{{\"type\":\"string\"}}}},\"required\":[\"schema\"]}}}}]}}}}");
+                                ["nextCursor"] = nextCursor,
+                                ["tools"] = new JsonArray(
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_generate",
+                                        ["description"] = "Generate C# code from OpenAPI",
+                                        ["inputSchema"] = new JsonObject
+                                        {
+                                            ["type"] = "object",
+                                            ["properties"] = new JsonObject { ["input"] = new JsonObject { ["type"] = "string" } },
+                                            ["required"] = new JsonArray("input")
+                                        }
+                                    },
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_inspect",
+                                        ["description"] = "Inspect the active schema",
+                                        ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject(), ["required"] = new JsonArray() }
+                                    },
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_extract",
+                                        ["description"] = "Extract OpenAPI schema from C# code",
+                                        ["inputSchema"] = new JsonObject
+                                        {
+                                            ["type"] = "object",
+                                            ["properties"] = new JsonObject { ["input"] = new JsonObject { ["type"] = "string" }, ["output"] = new JsonObject { ["type"] = "string" } },
+                                            ["required"] = new JsonArray("input")
+                                        }
+                                    },
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_generate_in_memory",
+                                        ["description"] = "Run generation core directly in memory",
+                                        ["inputSchema"] = new JsonObject
+                                        {
+                                            ["type"] = "object",
+                                            ["properties"] = new JsonObject { ["schema"] = new JsonObject { ["type"] = "string" } },
+                                            ["required"] = new JsonArray("schema")
+                                        }
+                                    })
+                            });
                         }
                         else if (method == "tools/call")
                         {
                             if (root.TryGetProperty("params", out var paramsProp) && paramsProp.TryGetProperty("name", out var nameProp))
                             {
                                 var toolName = nameProp.GetString();
-                                if (toolName == "cdd_generate")
+                                bool hasArgs = paramsProp.TryGetProperty("arguments", out var argsProp);
+                                try
                                 {
-                                    writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"Generated code successfully\"}}]}}}}");
-                                    continue;
+                                    if (toolName == "cdd_generate")
+                                    {
+                                        if (hasArgs && argsProp.TryGetProperty("input", out var inputProp))
+                                        {
+                                            var outDir = argsProp.TryGetProperty("output", out var outProp) ? outProp.GetString()! : Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                                            CddGenerator.GenerateAll(new CddConfig { InputPath = inputProp.GetString()!, OutputDir = outDir, NoGithubActions = true, NoInstallablePackage = true });
+                                        }
+                                        else
+                                        {
+                                            CodeGenerator.Generate(activeDoc);
+                                        }
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = "Generated code successfully" })
+                                        });
+                                    }
+                                    else if (toolName == "cdd_inspect")
+                                    {
+                                        if (hasArgs && argsProp.TryGetProperty("input", out var inputProp))
+                                        {
+                                            activeDoc = parser.ParseJson(File.ReadAllText(inputProp.GetString()!));
+                                        }
+                                        var ir = Cdd.OpenApi.Ir.IrService.FromOpenApi(activeDoc);
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Schema inspected successfully ({ir.Endpoints.Count} endpoints)" })
+                                        });
+                                    }
+                                    else if (toolName == "cdd_extract")
+                                    {
+                                        var sources = hasArgs && argsProp.TryGetProperty("input", out var inputProp)
+                                            ? new[] { File.ReadAllText(inputProp.GetString()!) }
+                                            : Array.Empty<string>();
+                                        activeDoc = SpecGenerator.Generate(sources);
+                                        var emittedJson = emitter.EmitJson(activeDoc);
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Code-to-schema extracted successfully: {emittedJson}" })
+                                        });
+                                    }
+                                    else if (toolName == "cdd_generate_in_memory")
+                                    {
+                                        var docToGen = hasArgs && argsProp.TryGetProperty("schema", out var schemaProp)
+                                            ? parser.ParseJson(schemaProp.GetString()!)
+                                            : activeDoc;
+                                        var generatedFiles = CodeGenerator.Generate(docToGen);
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"In-memory generation successful ({generatedFiles.Count} files)" })
+                                        });
+                                    }
+                                    else
+                                    {
+                                        WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32601, ["message"] = "Tool not found" });
+                                    }
                                 }
-                                else if (toolName == "cdd_inspect")
+                                catch (Exception ex)
                                 {
-                                    writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"Schema inspected successfully\"}}]}}}}");
-                                    continue;
+                                    WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32603, ["message"] = ex.Message });
                                 }
-                                else if (toolName == "cdd_extract")
-                                {
-                                    writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"Code-to-schema extracted successfully\"}}]}}}}");
-                                    continue;
-                                }
-                                else if (toolName == "cdd_generate_in_memory")
-                                {
-                                    writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"In-memory generation successful\"}}]}}}}");
-                                    continue;
-                                }
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"error\":{{\"code\":-32601,\"message\":\"Tool not found\"}}}}}");
                             }
                             else
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"error\":{{\"code\":-32602,\"message\":\"Invalid params\"}}}}}");
+                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32602, ["message"] = "Invalid params" });
                             }
                         }
                         else if (method == "resources/list")
                         {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"resources\":[{{\"uri\":\"cdd://schema\",\"name\":\"Loaded API Schema\",\"mimeType\":\"application/json\"}}, {{\"uri\":\"cdd://ast\",\"name\":\"Internal AST Structures\",\"mimeType\":\"application/json\"}}]}}}}");
+                            WriteJsonRpc(writer, idNode, new JsonObject
+                            {
+                                ["resources"] = new JsonArray(
+                                    new JsonObject { ["uri"] = "cdd://schema", ["name"] = "Loaded API Schema", ["mimeType"] = "application/json" },
+                                    new JsonObject { ["uri"] = "cdd://ast", ["name"] = "Internal AST Structures", ["mimeType"] = "application/json" })
+                            });
                         }
                         else if (method == "resources/read")
                         {
                             if (root.TryGetProperty("params", out var pProp) && pProp.TryGetProperty("uri", out var uriProp) && uriProp.GetString() == "cdd://ast")
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"contents\":[{{\"uri\":\"cdd://ast\",\"mimeType\":\"application/json\",\"text\":\"{\\\"ast\\\":\\\"data\\\"}\"}}]}}}}");
+                                var ir = Cdd.OpenApi.Ir.IrService.FromOpenApi(activeDoc);
+                                var astObj = new JsonObject
+                                {
+                                    ["ast"] = ir.Title,
+                                    ["modelsCount"] = ir.Models.Count,
+                                    ["endpointsCount"] = ir.Endpoints.Count
+                                };
+                                WriteJsonRpc(writer, idNode, new JsonObject
+                                {
+                                    ["contents"] = new JsonArray(new JsonObject
+                                    {
+                                        ["uri"] = "cdd://ast",
+                                        ["mimeType"] = "application/json",
+                                        ["text"] = JsonSerializer.Serialize(astObj, OpenApiJsonContext.Default.JsonObject)
+                                    })
+                                });
                             }
                             else
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"contents\":[{{\"uri\":\"cdd://schema\",\"mimeType\":\"application/json\",\"text\":\"{}\"}}]}}}}");
+                                WriteJsonRpc(writer, idNode, new JsonObject
+                                {
+                                    ["contents"] = new JsonArray(new JsonObject
+                                    {
+                                        ["uri"] = "cdd://schema",
+                                        ["mimeType"] = "application/json",
+                                        ["text"] = emitter.EmitJson(activeDoc)
+                                    })
+                                });
                             }
                         }
                         else if (method == "resources/templates/list")
                         {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"resourceTemplates\":[{{\"uriTemplate\":\"cdd://{{path}}\",\"name\":\"A template\",\"mimeType\":\"application/json\"}}]}}}}");
+                            WriteJsonRpc(writer, idNode, new JsonObject
+                            {
+                                ["resourceTemplates"] = new JsonArray(
+                                    new JsonObject { ["uriTemplate"] = "cdd://{path}", ["name"] = "A template", ["mimeType"] = "application/json" })
+                            });
                         }
                         else if (method == "sampling/createMessage")
                         {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{\"role\":\"assistant\",\"model\":\"dummy\",\"content\":{{\"type\":\"text\",\"text\":\"Sampled message\"}}}}}}");
-                        }
-                        else if (method == "logging/setLevel")
-                        {
-                            writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"result\":{{}}}}");
+                            WriteJsonRpc(writer, idNode, new JsonObject
+                            {
+                                ["role"] = "assistant",
+                                ["model"] = "dummy",
+                                ["content"] = new JsonObject { ["type"] = "text", ["text"] = "Sampled message" }
+                            });
                         }
                         else if (method == "exit")
                         {
@@ -487,16 +666,12 @@ namespace Cdd.OpenApi.Cli
                         }
                         else
                         {
-                            if (id != "null")
+                            if (idNode != null)
                             {
-                                writer.WriteLine($"{{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"error\":{{\"code\":-32601,\"message\":\"Method not found\"}}}}}");
+                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32601, ["message"] = "Method not found" });
                             }
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    writer.WriteLine("{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32700,\"message\":\"Parse error\"}}");
                 }
             }
             return 0;
@@ -505,7 +680,10 @@ namespace Cdd.OpenApi.Cli
         /// <summary>
         /// Exposes the CLI commands via a JSON-RPC HTTP endpoint.
         /// </summary>
-        public static int ServeJsonRpc(string[] args)
+        /// <param name="args">The command line arguments.</param>
+        /// <param name="cancellationToken">Optional cancellation token to stop the server loop.</param>
+        /// <returns>Exit code (0 for success).</returns>
+        public static int ServeJsonRpc(string[] args, System.Threading.CancellationToken cancellationToken = default)
         {
             string portStr = Environment.GetEnvironmentVariable("CDD_PORT") ?? Environment.GetEnvironmentVariable("PORT") ?? "8080";
             string listen = Environment.GetEnvironmentVariable("CDD_LISTEN") ?? Environment.GetEnvironmentVariable("LISTEN") ?? "127.0.0.1";
@@ -522,15 +700,29 @@ namespace Cdd.OpenApi.Cli
                 }
             }
 
-            var listener = new HttpListener();
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return 0;
+            }
+
+            using var listener = new HttpListener();
             string url = $"http://{(listen == "0.0.0.0" ? "*" : listen)}:{portStr}/";
             listener.Prefixes.Add(url);
             listener.Start();
+            using var reg = cancellationToken.Register(() => listener.Stop());
             Console.WriteLine($"JSON-RPC Server listening on {listen}:{portStr}");
 
-            while (true)
+            while (listener.IsListening)
             {
-                var context = listener.GetContext();
+                HttpListenerContext context;
+                try
+                {
+                    context = listener.GetContext();
+                }
+                catch
+                {
+                    break;
+                }
                 var request = context.Request;
                 var response = context.Response;
 
@@ -583,6 +775,7 @@ namespace Cdd.OpenApi.Cli
                     response.Close();
                 }
             }
+            return 0;
         }
     }
 }

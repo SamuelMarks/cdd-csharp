@@ -1,3 +1,7 @@
+// <copyright file="Program.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.IO;
 using System.Linq;
@@ -12,12 +16,17 @@ using Cdd.OpenApi;
 
 namespace Cdd.OpenApi.Cli
 {
+    /// <summary>
+    /// Entrypoint program for the cdd-csharp command-line interface.
+    /// </summary>
     internal class Program
     {
-        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+        /// <summary>
+        /// Loads fallback command-line arguments from <c>.cdd_args</c> or environment variables when no direct arguments are passed.
+        /// </summary>
+        /// <returns>An array of command-line arguments.</returns>
         private static string[] LoadFallbackArgs()
         {
-            if (System.IO.File.Exists("/.cdd_args")) return System.IO.File.ReadAllLines("/.cdd_args");
             if (System.IO.File.Exists(".cdd_args")) return System.IO.File.ReadAllLines(".cdd_args");
             var cddCommand = Environment.GetEnvironmentVariable("CDD_COMMAND");
             var cddArgs = Environment.GetEnvironmentVariable("CDD_ARGS");
@@ -26,6 +35,11 @@ namespace Cdd.OpenApi.Cli
             return Array.Empty<string>();
         }
 
+        /// <summary>
+        /// Executes the CLI application with the specified command-line arguments.
+        /// </summary>
+        /// <param name="args">The command-line arguments passed to the application.</param>
+        /// <returns>The process exit code (<c>0</c> for success, non-zero for errors).</returns>
         internal static int Main(string[] args)
         {
             if (args.Length < 1)
@@ -133,6 +147,9 @@ namespace Cdd.OpenApi.Cli
             return Error($"Error: Unknown or incomplete command: {command}");
         }
 
+        /// <summary>
+        /// Writes the CLI usage and help instructions to standard output.
+        /// </summary>
         private static void PrintUsage()
         {
             Console.WriteLine("Usage:");
@@ -154,6 +171,11 @@ namespace Cdd.OpenApi.Cli
             Console.WriteLine("  cdd-csharp serve_json_rpc [-p|--port <port>] [-l|--listen <address>]");
         }
 
+        /// <summary>
+        /// Writes an error message to standard error and returns an error exit code.
+        /// </summary>
+        /// <param name="message">The error message to write.</param>
+        /// <returns>Always returns <c>1</c>.</returns>
         private static int Error(string message)
         {
             Console.Error.WriteLine(message);

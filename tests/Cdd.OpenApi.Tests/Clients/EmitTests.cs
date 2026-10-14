@@ -164,7 +164,7 @@ namespace Cdd.OpenApi.Tests.Clients
                                     {
                                         OperationId = "GetUsers",
                                         Description = "Gets users",
-                                        Parameters = new Dictionary<string, object> { { "userId", "$response.body#/id" } },
+                                        Parameters = new Dictionary<string, OpenApiAny> { { "userId", "$response.body#/id" } },
                                         RequestBody = "foo",
                                         Server = new OpenApiServer { Url = "http://server1" }
                                     }

@@ -1,3 +1,7 @@
+// <copyright file="OpenApiDiscriminator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -38,8 +42,12 @@ namespace Cdd.OpenApi.Models
     public class OpenApiDiscriminatorConverter : JsonConverter<OpenApiDiscriminator>
     {
         /// <summary>
-        /// Reads and converts the JSON to OpenApiDiscriminator.
+        /// Reads and converts the JSON to <see cref="OpenApiDiscriminator"/>.
         /// </summary>
+        /// <param name="reader">The UTF-8 JSON reader.</param>
+        /// <param name="typeToConvert">The target type to convert.</param>
+        /// <param name="options">The JSON serializer options.</param>
+        /// <returns>The deserialized <see cref="OpenApiDiscriminator"/>.</returns>
         public override OpenApiDiscriminator Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.String)
@@ -72,8 +80,11 @@ namespace Cdd.OpenApi.Models
         }
 
         /// <summary>
-        /// Writes a specified value as JSON.
+        /// Writes a specified <see cref="OpenApiDiscriminator"/> value as JSON.
         /// </summary>
+        /// <param name="writer">The UTF-8 JSON writer.</param>
+        /// <param name="value">The discriminator value to write.</param>
+        /// <param name="options">The JSON serializer options.</param>
         public override void Write(Utf8JsonWriter writer, OpenApiDiscriminator value, JsonSerializerOptions options)
         {
             if (value.Mapping == null && value.DefaultMapping == null)

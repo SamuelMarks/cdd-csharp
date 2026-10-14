@@ -1,10 +1,13 @@
+// <copyright file="OpenApiCallback.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    // Callbacks are maps of expressions to Path Items
-    /// <summary>Auto-generated documentation for OpenApiCallback.</summary>
+    /// <summary>A map of possible out-of-band callbacks related to the parent operation, keyed by runtime expression.</summary>
     public class OpenApiCallback : Dictionary<string, OpenApiPathItem>
     {
     }

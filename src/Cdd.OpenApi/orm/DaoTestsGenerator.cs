@@ -1,5 +1,10 @@
+// <copyright file="DaoTestsGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
@@ -8,81 +13,84 @@ namespace Cdd.OpenApi.Orm
     public static class DaoTestsGenerator
     {
         /// <summary>Generates DAO tests.</summary>
+        /// <param name="schemas">The OpenAPI schemas to generate DAO tests for.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated test classes.</param>
+        /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> GenerateDaoTests(IDictionary<string, OpenApiSchema> schemas, string baseNamespace)
         {
             var results = new List<GeneratedCode>();
 
-            var diTestCode = new StringBuilder();
-            diTestCode.AppendLine($@"namespace {baseNamespace}.Tests
-{{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using Xunit;
-    using {baseNamespace}.Daos;
-    using {baseNamespace}.Models;
-    using Microsoft.EntityFrameworkCore;
-
-    /// <summary>Unit tests for DaoServiceCollectionExtensions.</summary>
-    public class DaoServiceCollectionExtensionsTests
-    {{
-        /// <summary>Verifies DI routes to Stub DAOs by default.</summary>
-        [Fact]
-        public void AddDaos_Default_RegistersStubs()
-        {{
-            var services = new ServiceCollection();
-            services.AddDaos(false, null);
-            var provider = services.BuildServiceProvider();
-");
+            var defaultTestStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement("var services = new ServiceCollection();"),
+                SyntaxFactory.ParseStatement("services.AddDaos(false, null);"),
+                SyntaxFactory.ParseStatement("var provider = services.BuildServiceProvider();")
+            };
+            var ephemeralTestStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement("var services = new ServiceCollection();"),
+                SyntaxFactory.ParseStatement("services.AddDaos(true, null);"),
+                SyntaxFactory.ParseStatement("var provider = services.BuildServiceProvider();")
+            };
+            var postgresTestStmts = new List<StatementSyntax>
+            {
+                SyntaxFactory.ParseStatement("var services = new ServiceCollection();"),
+                SyntaxFactory.ParseStatement(@"services.AddDaos(false, ""Host=localhost;Database=test"");"),
+                SyntaxFactory.ParseStatement("var provider = services.BuildServiceProvider();")
+            };
 
             foreach (var schemaKvp in schemas)
             {
                 var schemaName = schemaKvp.Key;
-                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                diTestCode.AppendLine($@"            Assert.IsType<Stub{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
+                var varName = $"{schemaName.ToLowerInvariant()}Dao";
+                defaultTestStmts.Add(SyntaxFactory.ParseStatement($"var {varName} = provider.GetRequiredService<I{schemaName}Dao>();"));
+                defaultTestStmts.Add(SyntaxFactory.ParseStatement($"Assert.IsType<Stub{schemaName}Dao>({varName});"));
+
+                ephemeralTestStmts.Add(SyntaxFactory.ParseStatement($"var {varName} = provider.GetRequiredService<I{schemaName}Dao>();"));
+                ephemeralTestStmts.Add(SyntaxFactory.ParseStatement($"Assert.IsType<Concrete{schemaName}Dao>({varName});"));
+
+                postgresTestStmts.Add(SyntaxFactory.ParseStatement($"var {varName} = provider.GetRequiredService<I{schemaName}Dao>();"));
+                postgresTestStmts.Add(SyntaxFactory.ParseStatement($"Assert.IsType<Concrete{schemaName}Dao>({varName});"));
             }
 
-            diTestCode.AppendLine($@"        }}
+            var factAttr = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Fact"))));
 
-        /// <summary>Verifies DI routes to Concrete DAOs with Ephemeral DB.</summary>
-        [Fact]
-        public void AddDaos_Ephemeral_RegistersConcrete()
-        {{
-            var services = new ServiceCollection();
-            services.AddDaos(true, null);
-            var provider = services.BuildServiceProvider();
-");
+            var diTestClass = SyntaxFactory.ClassDeclaration("DaoServiceCollectionExtensionsTests")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddMembers(
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "AddDaos_Default_RegistersStubs")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddAttributeLists(factAttr)
+                        .WithBody(SyntaxFactory.Block(defaultTestStmts)),
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "AddDaos_Ephemeral_RegistersConcrete")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddAttributeLists(factAttr)
+                        .WithBody(SyntaxFactory.Block(ephemeralTestStmts)),
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "AddDaos_Postgres_RegistersConcrete")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddAttributeLists(factAttr)
+                        .WithBody(SyntaxFactory.Block(postgresTestStmts))
+                );
 
-            foreach (var schemaKvp in schemas)
+            var diTestNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                .AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Linq")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Xunit")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Daos")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore"))
+                )
+                .AddMembers(diTestClass);
+
+            results.Add(new GeneratedCode
             {
-                var schemaName = schemaKvp.Key;
-                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                diTestCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
-            }
-
-            diTestCode.AppendLine($@"        }}
-
-        /// <summary>Verifies DI routes to Concrete DAOs with Postgres.</summary>
-        [Fact]
-        public void AddDaos_Postgres_RegistersConcrete()
-        {{
-            var services = new ServiceCollection();
-            services.AddDaos(false, ""Host=localhost;Database=test"");
-            var provider = services.BuildServiceProvider();
-");
-
-            foreach (var schemaKvp in schemas)
-            {
-                var schemaName = schemaKvp.Key;
-                diTestCode.AppendLine($@"            var {schemaName.ToLowerInvariant()}Dao = provider.GetRequiredService<I{schemaName}Dao>();");
-                diTestCode.AppendLine($@"            Assert.IsType<Concrete{schemaName}Dao>({schemaName.ToLowerInvariant()}Dao);");
-            }
-
-            diTestCode.AppendLine($@"        }}
-    }}
-}}");
-            results.Add(new GeneratedCode { FileName = "src/Tests/DaoServiceCollectionExtensionsTests.cs", Code = diTestCode.ToString() });
+                FileName = "src/Tests/DaoServiceCollectionExtensionsTests.cs",
+                Code = WasmSafeRoslyn.FormatSafe(diTestNs)
+            });
 
             foreach (var schemaKvp in schemas)
             {
@@ -101,61 +109,47 @@ namespace Cdd.OpenApi.Orm
 
                 if (!hasId) continue;
 
-                var schemaTestCode = new StringBuilder();
-                schemaTestCode.AppendLine($@"namespace {baseNamespace}.Tests
-{{
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using Xunit;
-    using {baseNamespace}.Daos;
-    using {baseNamespace}.Models;
-    using Microsoft.EntityFrameworkCore;
+                var crudMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "Crud_Works")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                    .AddAttributeLists(factAttr)
+                    .WithBody(SyntaxFactory.Block(
+                        SyntaxFactory.ParseStatement("var services = new ServiceCollection();"),
+                        SyntaxFactory.ParseStatement("services.AddDaos(true, null);"),
+                        SyntaxFactory.ParseStatement("var provider = services.BuildServiceProvider();"),
+                        SyntaxFactory.ParseStatement("var dbContext = provider.GetRequiredService<AppDbContext>();"),
+                        SyntaxFactory.ParseStatement("await dbContext.Database.OpenConnectionAsync();"),
+                        SyntaxFactory.ParseStatement("await dbContext.Database.EnsureCreatedAsync();"),
+                        SyntaxFactory.ParseStatement($"var dao = provider.GetRequiredService<I{schemaName}Dao>();"),
+                        SyntaxFactory.ParseStatement($"var faker = new Bogus.Faker<{schemaName}>().RuleForType(typeof(string), f => f.Lorem.Word()).RuleForType(typeof(int), f => f.Random.Int(1, 100)).RuleForType(typeof(long), f => f.Random.Long(1, 100)).RuleForType(typeof(bool), f => f.Random.Bool());"),
+                        SyntaxFactory.ParseStatement("var newEntity = faker.Generate();"),
+                        SyntaxFactory.ParseStatement("if (newEntity != null) { await dao.CreateAsync(newEntity); }"),
+                        SyntaxFactory.ParseStatement("var all = await dao.GetAllAsync();"),
+                        SyntaxFactory.ParseStatement("Assert.NotEmpty(all);"),
+                        SyntaxFactory.ParseStatement("await dbContext.Database.EnsureDeletedAsync();")
+                    ));
 
-    /// <summary>Unit tests for {schemaName}Dao.</summary>
-    public class {schemaName}DaoTests
-    {{
-        /// <summary>Tests basic CRUD operations on Concrete{schemaName}Dao using Sqlite In-Memory.</summary>
-        [Fact]
-        public async Task Crud_Works()
-        {{
-            var services = new ServiceCollection();
-            services.AddDaos(true, null);
-            var provider = services.BuildServiceProvider();
+                var schemaTestClass = SyntaxFactory.ClassDeclaration($"{schemaName}DaoTests")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .AddMembers(crudMethod);
 
-            // Setup DB
-            var dbContext = provider.GetRequiredService<AppDbContext>();
-            await dbContext.Database.OpenConnectionAsync();
-            await dbContext.Database.EnsureCreatedAsync();
+                var schemaTestNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
+                    .AddUsings(
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Linq")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Xunit")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Daos")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore"))
+                    )
+                    .AddMembers(schemaTestClass);
 
-            var dao = provider.GetRequiredService<I{schemaName}Dao>();
-
-            // We must mock any properties that might violate NOT NULL constraints in SQLite for tests
-            // Create
-            var faker = new Bogus.Faker<{schemaName}>()
-                .RuleForType(typeof(string), f => f.Lorem.Word())
-                .RuleForType(typeof(int), f => f.Random.Int(1, 100))
-                .RuleForType(typeof(long), f => f.Random.Long(1, 100))
-                .RuleForType(typeof(bool), f => f.Random.Bool());
-            var newEntity = faker.Generate();
-
-            // Populate required objects
-            if (newEntity != null)
-            {{
-                await dao.CreateAsync(newEntity);
-            }}
-
-            // Read
-            var all = await dao.GetAllAsync();
-            Assert.NotEmpty(all);
-
-            // Ensure DB Cleanup
-            await dbContext.Database.EnsureDeletedAsync();
-        }}
-    }}
-}}");
-                results.Add(new GeneratedCode { FileName = $"src/Tests/{schemaName}DaoTests.cs", Code = schemaTestCode.ToString() });
+                results.Add(new GeneratedCode
+                {
+                    FileName = $"src/Tests/{schemaName}DaoTests.cs",
+                    Code = WasmSafeRoslyn.FormatSafe(schemaTestNs)
+                });
             }
 
             return results;

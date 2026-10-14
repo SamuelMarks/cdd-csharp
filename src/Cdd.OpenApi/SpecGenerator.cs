@@ -1,3 +1,7 @@
+// <copyright file="SpecGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,10 +11,14 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
-    /// <summary>Auto-generated documentation for SpecGenerator.</summary>
+    /// <summary>Extracts an <see cref="OpenApiDocument"/> specification from C# source code files.</summary>
     public static class SpecGenerator
     {
-        /// <summary>Auto-generated documentation for Generate.</summary>
+        /// <summary>
+        /// Parses a collection of C# source code strings and generates a unified <see cref="OpenApiDocument"/>.
+        /// </summary>
+        /// <param name="csharpSourceCodes">The C# source code texts to analyze.</param>
+        /// <returns>The extracted <see cref="OpenApiDocument"/>.</returns>
         public static OpenApiDocument Generate(IEnumerable<string> csharpSourceCodes)
         {
             var doc = new OpenApiDocument

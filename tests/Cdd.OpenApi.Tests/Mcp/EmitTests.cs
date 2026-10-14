@@ -153,12 +153,9 @@ namespace Cdd.OpenApi.Tests.Mcp
         [Fact]
         public void ToSnakeCase_EmptyString_Coverage()
         {
-            var methodInfo = typeof(Cdd.OpenApi.Mcp.Emit).GetMethod("ToSnakeCase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            var resultNull = methodInfo.Invoke(null, new object?[] { null });
-            Assert.Null(resultNull);
-
-            var resultEmpty = methodInfo.Invoke(null, new object[] { "" });
-            Assert.Equal("", resultEmpty);
+            Assert.Null(Cdd.OpenApi.Mcp.Emit.ToSnakeCase(null!));
+            Assert.Equal("", Cdd.OpenApi.Mcp.Emit.ToSnakeCase(""));
+            Assert.Equal("get_user_by_id", Cdd.OpenApi.Mcp.Emit.ToSnakeCase("GetUserById"));
         }
     }
 }

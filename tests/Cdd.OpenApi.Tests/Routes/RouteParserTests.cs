@@ -155,9 +155,9 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(op.Responses.ContainsKey("204"));
             Assert.Equal("Success with header", op.Responses["204"].Description);
             Assert.NotNull(op.Responses["204"].Headers);
-            Assert.True(op.Responses["204"].Headers.ContainsKey("X-RateLimit"));
+            Assert.True(op.Responses["204"].Headers!.ContainsKey("X-RateLimit"));
             Assert.NotNull(op.Responses["204"].Links);
-            Assert.True(op.Responses["204"].Links.ContainsKey("GetUsers"));
+            Assert.True(op.Responses["204"].Links!.ContainsKey("GetUsers"));
             Assert.True(op.Responses.ContainsKey("404"));
         }
         [Fact]
@@ -457,7 +457,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
             Assert.Contains("read:users", op.Security[0]["OAuth2"]);
 
-            Assert.Equal(9, op.Parameters.Count);
+            Assert.Equal(9, op.Parameters!.Count);
         }
         [Fact]
         public void ToPaths_WithParameterExamples_ParsesThem()
@@ -532,15 +532,15 @@ namespace Cdd.OpenApi.Tests.Routes
             var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
             var classNode = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
-            var op = paths["/t"].Post;
+            var op = paths["/t"].Post!;
 
-            Assert.Equal("integer", op.Parameters.First(p => p.Name == "p1").Schema.Type);
-            Assert.Equal("integer", op.Parameters.First(p => p.Name == "p2").Schema.Type);
-            Assert.Equal("number", op.Parameters.First(p => p.Name == "p3").Schema.Type);
-            Assert.Equal("number", op.Parameters.First(p => p.Name == "p4").Schema.Type);
-            Assert.Equal("boolean", op.Parameters.First(p => p.Name == "p5").Schema.Type);
-            Assert.Equal("string", op.Parameters.First(p => p.Name == "p6").Schema.Type);
-            Assert.Equal("string", op.Parameters.First(p => p.Name == "p7").Schema.Type);
+            Assert.Equal("integer", op.Parameters!.First(p => p.Name == "p1").Schema!.Type);
+            Assert.Equal("integer", op.Parameters!.First(p => p.Name == "p2").Schema!.Type);
+            Assert.Equal("number", op.Parameters!.First(p => p.Name == "p3").Schema!.Type);
+            Assert.Equal("number", op.Parameters!.First(p => p.Name == "p4").Schema!.Type);
+            Assert.Equal("boolean", op.Parameters!.First(p => p.Name == "p5").Schema!.Type);
+            Assert.Equal("string", op.Parameters!.First(p => p.Name == "p6").Schema!.Type);
+            Assert.Equal("string", op.Parameters!.First(p => p.Name == "p7").Schema!.Type);
         }
 
         [Fact]
@@ -562,11 +562,11 @@ namespace Cdd.OpenApi.Tests.Routes
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 
             Assert.NotNull(paths["/query"].Query);
-            Assert.Equal("QueryMethod", paths["/query"].Query.OperationId);
+            Assert.Equal("QueryMethod", paths["/query"].Query!.OperationId);
 
             Assert.NotNull(paths["/purge"].AdditionalOperations);
-            Assert.True(paths["/purge"].AdditionalOperations.ContainsKey("PURGE"));
-            Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations["PURGE"].OperationId);
+            Assert.True(paths["/purge"].AdditionalOperations!.ContainsKey("PURGE"));
+            Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations!["PURGE"].OperationId);
         }
     }
 }

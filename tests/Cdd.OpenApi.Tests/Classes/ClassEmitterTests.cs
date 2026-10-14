@@ -167,7 +167,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.NotNull(schema.Discriminator);
             Assert.Equal("petType", schema.Discriminator.PropertyName);
             Assert.Equal("dog", schema.Discriminator.DefaultMapping);
-            Assert.True(schema.Discriminator.Mapping.ContainsKey("cat"));
+            Assert.True(schema.Discriminator.Mapping!.ContainsKey("cat"));
             Assert.Equal("https://pet.docs", schema.ExternalDocs?.Url);
 
             Assert.NotNull(schema.Xml);

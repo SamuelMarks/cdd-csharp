@@ -1,26 +1,30 @@
+// <copyright file="OpenApiExample.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiExample.</summary>
+    /// <summary>Represents an example of a media type, parameter, or schema payload.</summary>
     public class OpenApiExample
     {
-        /// <summary>Auto-generated documentation for Summary.</summary>
+        /// <summary>Gets or sets a short description of the example.</summary>
         [JsonPropertyName("summary")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Summary { get; set; }
 
-        /// <summary>Auto-generated documentation for Description.</summary>
+        /// <summary>Gets or sets a long description for the example.</summary>
         [JsonPropertyName("description")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Description { get; set; }
 
-        /// <summary>Auto-generated documentation for Value.</summary>
+        /// <summary>Gets or sets the embedded literal example value.</summary>
         [JsonPropertyName("value")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public object? Value { get; set; }
+        public OpenApiAny? Value { get; set; }
 
-        /// <summary>Auto-generated documentation for ExternalValue.</summary>
+        /// <summary>Gets or sets a URI that points to the literal example value.</summary>
         [JsonPropertyName("externalValue")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ExternalValue { get; set; }

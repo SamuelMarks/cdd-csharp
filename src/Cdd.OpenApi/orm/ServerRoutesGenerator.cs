@@ -1,5 +1,11 @@
+// <copyright file="ServerRoutesGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
@@ -8,6 +14,10 @@ namespace Cdd.OpenApi.Orm
     public static class ServerRoutesGenerator
     {
         /// <summary>Generates modular route extensions for the grouped OpenAPI paths.</summary>
+        /// <param name="groupedPaths">The OpenAPI paths grouped by tag.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <param name="schemas">The OpenAPI schemas used to match route payloads and parameters to DAOs.</param>
+        /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> GenerateRoutes(IDictionary<string, OpenApiPaths> groupedPaths, string baseNamespace, IDictionary<string, OpenApiSchema> schemas)
         {
             var results = new List<GeneratedCode>();
@@ -16,25 +26,7 @@ namespace Cdd.OpenApi.Orm
             {
                 var tag = group.Key;
                 var subPaths = group.Value;
-                var sb = new StringBuilder();
-
-                sb.AppendLine($@"namespace {baseNamespace}.Routes
-{{
-    using System;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.AspNetCore.Routing;
-    using Microsoft.Extensions.DependencyInjection;
-    using {baseNamespace}.Models;
-    using {baseNamespace}.Daos;
-
-    /// <summary>Routes for {tag}.</summary>
-    public static class {tag}Routes
-    {{
-        /// <summary>Maps {tag} endpoints.</summary>
-        public static void Map{tag}Routes(this IEndpointRouteBuilder app)
-        {{");
+                var statements = new List<StatementSyntax>();
 
                 foreach (var pathKvp in subPaths)
                 {
@@ -63,7 +55,7 @@ namespace Cdd.OpenApi.Orm
 
                         if (operation.Responses != null)
                         {
-                            var successResponse = System.Linq.Enumerable.FirstOrDefault(operation.Responses, r => r.Key.StartsWith("2"));
+                            var successResponse = Enumerable.FirstOrDefault(operation.Responses, r => r.Key.StartsWith("2"));
                             if (successResponse.Value?.Content != null && successResponse.Value.Content.TryGetValue("application/json", out var respMediaType))
                             {
                                 if (respMediaType.Schema != null)
@@ -157,44 +149,57 @@ namespace Cdd.OpenApi.Orm
                             handlerBody = "if (dao == null) return Results.StatusCode(501);";
 
                             if (httpMethod == "Get" && hasPathId && idTypeMatches)
-                                handlerBody += $"\n                    return Results.Ok(await dao.GetByIdAsync({methodParams[0]}));";
+                                handlerBody += $" return Results.Ok(await dao.GetByIdAsync({methodParams[0]}));";
                             else if (httpMethod == "Get" && !hasPathId)
-                                handlerBody += $"\n                    return Results.Ok(await dao.GetAllAsync());";
+                                handlerBody += " return Results.Ok(await dao.GetAllAsync());";
                             else if (httpMethod == "Post" && hasBody && bodyTypeMatches)
-                                handlerBody += $"\n                    return Results.Created(\"\", await dao.CreateAsync(body));";
+                                handlerBody += @" return Results.Created("""", await dao.CreateAsync(body));";
                             else if (httpMethod == "Put" && hasBody && bodyTypeMatches)
-                                handlerBody += $"\n                    return Results.Ok(await dao.UpdateAsync(body));";
+                                handlerBody += " return Results.Ok(await dao.UpdateAsync(body));";
                             else if (httpMethod == "Delete" && hasPathId && idTypeMatches)
-                                handlerBody += $"\n                    await dao.DeleteAsync({methodParams[0]});\n                    return Results.NoContent();";
+                                handlerBody += $" await dao.DeleteAsync({methodParams[0]}); return Results.NoContent();";
                             else
-                                handlerBody += $"\n                    return Results.StatusCode(501);";
+                                handlerBody += " return Results.StatusCode(501);";
                         }
 
                         string delegateSignature = string.Join(", ", delegateParams);
 
-                        sb.AppendLine($@"            app.Map{httpMethod}(""{routePath}"", async ({delegateSignature}) =>
-            {{
-                try
-                {{
-                    {handlerBody}
-                }}
-                catch (NotImplementedException)
-                {{
-                    return Results.StatusCode(501);
-                }}
-                catch (Exception ex)
-                {{
-                    return Results.Problem(detail: ex.Message, statusCode: 500);
-                }}
-            }});");
+                        var mapStmt = SyntaxFactory.ParseStatement(
+                            $@"app.Map{httpMethod}(""{routePath}"", async ({delegateSignature}) => {{ try {{ {handlerBody} }} catch (NotImplementedException) {{ return Results.StatusCode(501); }} catch (Exception ex) {{ return Results.Problem(detail: ex.Message, statusCode: 500); }} }});");
+                        statements.Add(mapStmt);
                     }
                 }
 
-                sb.AppendLine(@"        }");
-                sb.AppendLine(@"    }");
-                sb.AppendLine(@"}");
+                var mapMethod = SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), $"Map{tag}Routes")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                    .AddParameterListParameters(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("app"))
+                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.ThisKeyword))
+                            .WithType(SyntaxFactory.ParseTypeName("IEndpointRouteBuilder")))
+                    .WithBody(SyntaxFactory.Block(statements));
 
-                results.Add(new GeneratedCode { FileName = $"src/Routes/{tag}Routes.cs", Code = sb.ToString() });
+                var routesClass = SyntaxFactory.ClassDeclaration($"{tag}Routes")
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                    .AddMembers(mapMethod);
+
+                var routeNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Routes"))
+                    .AddUsings(
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Builder")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Http")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Routing")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                        SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Daos"))
+                    )
+                    .AddMembers(routesClass);
+
+                results.Add(new GeneratedCode
+                {
+                    FileName = $"src/Routes/{tag}Routes.cs",
+                    Code = WasmSafeRoslyn.FormatSafe(routeNs)
+                });
             }
 
             return results;

@@ -1,16 +1,20 @@
+// <copyright file="OpenApiResponse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiResponse.</summary>
+    /// <summary>Describes a single response from an API Operation.</summary>
     public class OpenApiResponse
     {
-        /// <summary>Auto-generated documentation for Description.</summary>
+        /// <summary>Gets or sets a short description of the response.</summary>
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>Auto-generated documentation for Content.</summary>
+        /// <summary>Gets or sets a map containing descriptions of potential response payloads keyed by media type.</summary>
         [JsonPropertyName("content")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiMediaType>? Content { get; set; }
@@ -20,7 +24,7 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiSchema? Schema { get; set; }
 
-        /// <summary>Auto-generated documentation for Headers.</summary>
+        /// <summary>Gets or sets a map of headers that are sent with the response.</summary>
         [JsonPropertyName("headers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiHeader>? Headers { get; set; }
@@ -28,9 +32,9 @@ namespace Cdd.OpenApi.Models
         /// <summary>Swagger 2.0 examples</summary>
         [JsonPropertyName("examples")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public IDictionary<string, object>? Examples { get; set; }
+        public IDictionary<string, OpenApiAny>? Examples { get; set; }
 
-        /// <summary>Auto-generated documentation for Links.</summary>
+        /// <summary>Gets or sets a map of operations links that can be followed from the response.</summary>
         [JsonPropertyName("links")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiLink>? Links { get; set; }

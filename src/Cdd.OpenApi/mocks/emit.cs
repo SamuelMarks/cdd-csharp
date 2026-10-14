@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,10 +9,16 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Mocks
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits C# mock API implementation classes from <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToMock.</summary>
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a mock implementation of the OpenAPI operations.
+        /// </summary>
+        /// <param name="name">The name of the generated mock class.</param>
+        /// <param name="paths">The OpenAPI paths to mock.</param>
+        /// <param name="tests">Whether to implement the route interface for composable unit tests.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToMock(string name, OpenApiPaths paths, bool tests = false)
         {
             var classDecl = SyntaxFactory.ClassDeclaration(name)
@@ -64,6 +74,13 @@ namespace Cdd.OpenApi.Mocks
             return classDecl.AddMembers(members.ToArray());
         }
 
+        /// <summary>
+        /// Creates a mock method declaration for a single OpenAPI operation.
+        /// </summary>
+        /// <param name="method">The PascalCase HTTP verb.</param>
+        /// <param name="route">The route path template.</param>
+        /// <param name="op">The OpenAPI operation metadata.</param>
+        /// <returns>The generated <see cref="MethodDeclarationSyntax"/>.</returns>
         private static MethodDeclarationSyntax CreateMockMethod(string method, string route, OpenApiOperation op)
         {
             var methodName = op.OperationId ?? $"{method}{route.Replace("/", "").Replace("{", "").Replace("}", "")}";

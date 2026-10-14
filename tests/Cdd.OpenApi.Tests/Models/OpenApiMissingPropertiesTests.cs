@@ -1,55 +1,95 @@
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Parse;
+using Cdd.OpenApi.Emit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
     public class OpenApiMissingPropertiesTests
     {
         [Fact]
-        public void Response_HeadersAndLinks_CanBeSet()
+        public void Response_HeadersAndLinks_RoundTrip()
         {
-            var res = new OpenApiResponse
+            var doc = new OpenApiDocument
             {
-                Headers = new Dictionary<string, OpenApiHeader> { ["X-Rate-Limit"] = new OpenApiHeader() },
-                Links = new Dictionary<string, OpenApiLink> { ["GetItem"] = new OpenApiLink() }
-            };
-            Assert.Single(res.Headers);
-            Assert.Single(res.Links);
-        }
-
-        [Fact]
-        public void Link_Properties_CanBeSet()
-        {
-            var link = new OpenApiLink
-            {
-                Parameters = new Dictionary<string, object> { ["id"] = "123" },
-                RequestBody = new { Name = "test" },
-                Server = new OpenApiServer { Url = "http://test" }
-            };
-            Assert.Single(link.Parameters);
-            Assert.NotNull(link.RequestBody);
-            Assert.Equal("http://test", link.Server.Url);
-        }
-
-        [Fact]
-        public void SecurityScheme_FlowsAndOpenId_CanBeSet()
-        {
-            var sec = new OpenApiSecurityScheme
-            {
-                OpenIdConnectUrl = "http://openid",
-                Flows = new OpenApiOAuthFlows
+                Paths = new OpenApiPaths
                 {
-                    Implicit = new OpenApiOAuthFlow { AuthorizationUrl = "http://auth" },
-                    Password = new OpenApiOAuthFlow { TokenUrl = "http://token" },
-                    ClientCredentials = new OpenApiOAuthFlow { RefreshUrl = "http://refresh" },
-                    AuthorizationCode = new OpenApiOAuthFlow { Scopes = new Dictionary<string, string> { ["read"] = "Read access" } }
+                    ["/items"] = new OpenApiPathItem
+                    {
+                        Get = new OpenApiOperation
+                        {
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse
+                                {
+                                    Description = "OK",
+                                    Headers = new Dictionary<string, OpenApiHeader> { ["X-Rate-Limit"] = new OpenApiHeader { Description = "Limit" } },
+                                    Links = new Dictionary<string, OpenApiLink>
+                                    {
+                                        ["GetItem"] = new OpenApiLink
+                                        {
+                                            Parameters = new Dictionary<string, OpenApiAny> { ["id"] = "123" },
+                                            RequestBody = "body_expr",
+                                            Server = new OpenApiServer { Url = "http://test" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             };
+
+            var json = new OpenApiEmitter().EmitJson(doc);
+            var parsedDoc = new OpenApiParser().ParseJson(json);
+            var res = parsedDoc.Paths!["/items"].Get!.Responses!["200"];
+
+            Assert.NotNull(res.Headers);
+            Assert.Single(res.Headers);
+            Assert.NotNull(res.Links);
+            Assert.Single(res.Links);
+            var link = res.Links["GetItem"];
+            Assert.NotNull(link.Parameters);
+            Assert.Single(link.Parameters);
+            Assert.NotNull(link.RequestBody);
+            Assert.Equal("http://test", link.Server?.Url);
+        }
+
+        [Fact]
+        public void SecurityScheme_FlowsAndOpenId_RoundTrip()
+        {
+            var doc = new OpenApiDocument
+            {
+                Components = new OpenApiComponents
+                {
+                    SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme>
+                    {
+                        ["Sec"] = new OpenApiSecurityScheme
+                        {
+                            Type = "oauth2",
+                            OpenIdConnectUrl = "http://openid",
+                            Flows = new OpenApiOAuthFlows
+                            {
+                                Implicit = new OpenApiOAuthFlow { AuthorizationUrl = "http://auth" },
+                                Password = new OpenApiOAuthFlow { TokenUrl = "http://token" },
+                                ClientCredentials = new OpenApiOAuthFlow { RefreshUrl = "http://refresh" },
+                                AuthorizationCode = new OpenApiOAuthFlow { Scopes = new Dictionary<string, string> { ["read"] = "Read access" } }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var json = new OpenApiEmitter().EmitJson(doc);
+            var parsedDoc = new OpenApiParser().ParseJson(json);
+            var sec = parsedDoc.Components!.SecuritySchemes!["Sec"];
+
             Assert.Equal("http://openid", sec.OpenIdConnectUrl);
-            Assert.Equal("http://auth", sec.Flows.Implicit.AuthorizationUrl);
-            Assert.Equal("http://token", sec.Flows.Password.TokenUrl);
-            Assert.Equal("http://refresh", sec.Flows.ClientCredentials.RefreshUrl);
+            Assert.Equal("http://auth", sec.Flows?.Implicit?.AuthorizationUrl);
+            Assert.Equal("http://token", sec.Flows?.Password?.TokenUrl);
+            Assert.Equal("http://refresh", sec.Flows?.ClientCredentials?.RefreshUrl);
+            Assert.NotNull(sec.Flows?.AuthorizationCode?.Scopes);
             Assert.Single(sec.Flows.AuthorizationCode.Scopes);
         }
     }

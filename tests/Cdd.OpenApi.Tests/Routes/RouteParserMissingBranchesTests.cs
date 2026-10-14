@@ -30,7 +30,7 @@ namespace Cdd.OpenApi.Tests.Routes
             var getOp = paths["/cov"].Get;
 
             Assert.NotNull(getOp);
-            Assert.True(getOp.Responses.ContainsKey("200"));
+            Assert.True(getOp.Responses!.ContainsKey("200"));
             Assert.True(getOp.Responses.ContainsKey("400"));
             Assert.True(getOp.Responses.ContainsKey("default"));
         }
@@ -61,12 +61,12 @@ namespace Cdd.OpenApi.Tests.Routes
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
 
             Assert.NotNull(paths);
-            Assert.Equal("integer", paths["/t1"].Get.Responses["200"].Content["application/json"].Schema.Type);
-            Assert.Equal("integer", paths["/t4"].Get.Responses["200"].Content["application/json"].Schema.Type);
-            Assert.Null(paths["/t2"].Get.Responses["200"].Content);
-            Assert.Null(paths["/t3"].Get.Responses["200"].Content);
-            Assert.Null(paths["/t5"].Get.Responses["200"].Content);
-            Assert.Null(paths["/t6"].Get.Responses["200"].Content);
+            Assert.Equal("integer", paths["/t1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
+            Assert.Equal("integer", paths["/t4"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
+            Assert.Null(paths["/t2"].Get!.Responses!["200"].Content);
+            Assert.Null(paths["/t3"].Get!.Responses!["200"].Content);
+            Assert.Null(paths["/t5"].Get!.Responses!["200"].Content);
+            Assert.Null(paths["/t6"].Get!.Responses!["200"].Content);
         }
 
         [Fact]

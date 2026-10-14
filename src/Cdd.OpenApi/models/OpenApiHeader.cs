@@ -1,12 +1,13 @@
+// <copyright file="OpenApiHeader.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiHeader.</summary>
+    /// <summary>Represents a header parameter definition in an OpenAPI response or encoding object.</summary>
     public class OpenApiHeader : OpenApiParameter
     {
-        // Headers are basically parameters without the 'name' and 'in' properties
-        // but since C# requires strictness, we just inherit to re-use properties.
-        // The OAS states `name` and `in` are ignored if present for headers.
     }
 }

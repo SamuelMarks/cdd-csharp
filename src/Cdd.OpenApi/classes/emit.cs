@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -7,10 +11,15 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits C# model class syntax declarations from <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Emit
     {
-        /// <summary>Auto-generated documentation for ToClass.</summary>
+        /// <summary>
+        /// Converts an <see cref="OpenApiSchema"/> into a Roslyn <see cref="ClassDeclarationSyntax"/>.
+        /// </summary>
+        /// <param name="className">The name of the C# class to generate.</param>
+        /// <param name="schema">The OpenAPI schema defining the class properties and metadata.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToClass(string className, OpenApiSchema schema)
         {
             var classNode = SyntaxFactory.ClassDeclaration(className)
@@ -143,16 +152,14 @@ namespace Cdd.OpenApi.Classes
             return classNode.AddMembers(members.ToArray());
         }
 
+        /// <summary>
+        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
+        /// </summary>
+        /// <param name="openApiType">The OpenAPI type string.</param>
+        /// <returns>The mapped C# type name.</returns>
         private static string MapTypeToCSharp(string? openApiType)
         {
-            return openApiType switch
-            {
-                "integer" => "int",
-                "number" => "double",
-                "boolean" => "bool",
-                "string" => "string",
-                _ => "object"
-            };
+            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "object");
         }
     }
 }

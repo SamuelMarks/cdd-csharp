@@ -1,3 +1,7 @@
+// <copyright file="parse.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -6,16 +10,25 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Docstrings
 {
-    /// <summary>Auto-generated documentation for Parse.</summary>
+    /// <summary>Parses structured XML documentation comments from Roslyn syntax nodes.</summary>
     public static class Parse
     {
-        /// <summary>Auto-generated documentation for GetSummary.</summary>
+        /// <summary>
+        /// Extracts the inner text of the <c>&lt;summary&gt;</c> XML documentation tag from a syntax node.
+        /// </summary>
+        /// <param name="node">The syntax node to inspect.</param>
+        /// <returns>The trimmed summary text, or <c>null</c> if not present.</returns>
         public static string? GetSummary(SyntaxNode node)
         {
             return GetTag(node, "summary");
         }
 
-        /// <summary>Auto-generated documentation for GetTag.</summary>
+        /// <summary>
+        /// Extracts the inner text of a named XML documentation tag from a syntax node.
+        /// </summary>
+        /// <param name="node">The syntax node to inspect.</param>
+        /// <param name="tagName">The XML element name to search for.</param>
+        /// <returns>The trimmed inner text of the first matching tag, or <c>null</c> if not present.</returns>
         public static string? GetTag(SyntaxNode node, string tagName)
         {
             var trivia = node.GetLeadingTrivia()
@@ -40,7 +53,12 @@ namespace Cdd.OpenApi.Docstrings
             return string.Join(" ", textLines);
         }
 
-        /// <summary>Auto-generated documentation for GetTagsWithAttributes.</summary>
+        /// <summary>
+        /// Extracts all matching XML documentation tags along with their attribute dictionaries and inner text from a syntax node.
+        /// </summary>
+        /// <param name="node">The syntax node to inspect.</param>
+        /// <param name="tagName">The XML element name to search for.</param>
+        /// <returns>An enumerable of attribute dictionary and inner text tuples for each matching XML element.</returns>
         public static IEnumerable<(IDictionary<string, string> Attributes, string Text)> GetTagsWithAttributes(SyntaxNode node, string tagName)
         {
             var trivia = node.GetLeadingTrivia()
@@ -76,7 +94,11 @@ namespace Cdd.OpenApi.Docstrings
             }
         }
 
-        /// <summary>Auto-generated documentation for GetServers.</summary>
+        /// <summary>
+        /// Extracts <see cref="Cdd.OpenApi.Models.OpenApiServer"/> definitions from <c>&lt;server&gt;</c> XML documentation tags on a syntax node.
+        /// </summary>
+        /// <param name="node">The syntax node to inspect.</param>
+        /// <returns>An enumerable of parsed <see cref="Cdd.OpenApi.Models.OpenApiServer"/> instances.</returns>
         public static IEnumerable<Cdd.OpenApi.Models.OpenApiServer> GetServers(SyntaxNode node)
         {
             var trivia = node.GetLeadingTrivia()

@@ -1,3 +1,7 @@
+// <copyright file="emit.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -5,7 +9,7 @@ using System.Linq;
 
 namespace Cdd.OpenApi.Docstrings
 {
-    /// <summary>Auto-generated documentation for Emit.</summary>
+    /// <summary>Emits XML documentation comment trivia and attaches XML tags onto Roslyn syntax nodes.</summary>
     public static class Emit
     {
         /// <summary>

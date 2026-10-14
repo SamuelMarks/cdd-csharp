@@ -1,32 +1,36 @@
+// <copyright file="OpenApiOperation.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Cdd.OpenApi.Models
 {
-    /// <summary>Auto-generated documentation for OpenApiOperation.</summary>
+    /// <summary>Describes a single API operation on a path.</summary>
     public class OpenApiOperation
     {
-        /// <summary>Auto-generated documentation for Tags.</summary>
+        /// <summary>Gets or sets a list of tags for API documentation control.</summary>
         [JsonPropertyName("tags")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IList<string>? Tags { get; set; }
 
-        /// <summary>Auto-generated documentation for Summary.</summary>
+        /// <summary>Gets or sets a short summary of what the operation does.</summary>
         [JsonPropertyName("summary")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Summary { get; set; }
 
-        /// <summary>Auto-generated documentation for Description.</summary>
+        /// <summary>Gets or sets a verbose explanation of the operation behavior.</summary>
         [JsonPropertyName("description")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Description { get; set; }
 
-        /// <summary>Auto-generated documentation for ExternalDocs.</summary>
+        /// <summary>Gets or sets additional external documentation for this operation.</summary>
         [JsonPropertyName("externalDocs")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiExternalDocs? ExternalDocs { get; set; }
 
-        /// <summary>Auto-generated documentation for OperationId.</summary>
+        /// <summary>Gets or sets a unique string used to identify the operation.</summary>
         [JsonPropertyName("operationId")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? OperationId { get; set; }
@@ -46,37 +50,37 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IList<string>? Schemes { get; set; }
 
-        /// <summary>Auto-generated documentation for Parameters.</summary>
+        /// <summary>Gets or sets a list of parameters that are applicable for this operation.</summary>
         [JsonPropertyName("parameters")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IList<OpenApiParameter>? Parameters { get; set; }
 
-        /// <summary>Auto-generated documentation for RequestBody.</summary>
+        /// <summary>Gets or sets the request body applicable for this operation.</summary>
         [JsonPropertyName("requestBody")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiRequestBody? RequestBody { get; set; }
 
-        /// <summary>Auto-generated documentation for Responses.</summary>
+        /// <summary>Gets or sets the list of possible responses as they are returned from executing this operation.</summary>
         [JsonPropertyName("responses")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiResponses? Responses { get; set; }
 
-        /// <summary>Auto-generated documentation for Callbacks.</summary>
+        /// <summary>Gets or sets a map of possible out-of-band callbacks related to the parent operation.</summary>
         [JsonPropertyName("callbacks")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IDictionary<string, OpenApiCallback>? Callbacks { get; set; }
 
-        /// <summary>Auto-generated documentation for Deprecated.</summary>
+        /// <summary>Gets or sets a value indicating whether this operation is deprecated.</summary>
         [JsonPropertyName("deprecated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? Deprecated { get; set; }
 
-        /// <summary>Auto-generated documentation for Security.</summary>
+        /// <summary>Gets or sets a declaration of which security mechanisms can be used for this operation.</summary>
         [JsonPropertyName("security")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IList<IDictionary<string, IList<string>>>? Security { get; set; }
 
-        /// <summary>Auto-generated documentation for Servers.</summary>
+        /// <summary>Gets or sets an alternative server array to service this operation.</summary>
         [JsonPropertyName("servers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public IList<OpenApiServer>? Servers { get; set; }

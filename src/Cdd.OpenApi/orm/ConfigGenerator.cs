@@ -1,5 +1,10 @@
+// <copyright file="ConfigGenerator.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Orm
 {
@@ -7,84 +12,75 @@ namespace Cdd.OpenApi.Orm
     public static class ConfigGenerator
     {
         /// <summary>Generates the ServerConfiguration and AppInitializer classes.</summary>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> GenerateConfig(string baseNamespace)
         {
             var results = new List<GeneratedCode>();
 
-            var configCode = $@"namespace {baseNamespace}.Configuration
-{{
-    using System;
+            var serverConfigClass = SyntaxFactory.ClassDeclaration("ServerConfiguration")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddMembers(
+                    SyntaxFactory.ParseMemberDeclaration(@"/// <summary>Gets or sets a value indicating whether to use an ephemeral, in-memory database.</summary>
+public bool UseEphemeral { get; set; }")!,
+                    SyntaxFactory.ParseMemberDeclaration(@"/// <summary>Gets or sets the connection string for the primary database. Overridden if UseEphemeral is true.</summary>
+public string? DatabaseUrl { get; set; }")!,
+                    SyntaxFactory.ParseMemberDeclaration(@"/// <summary>Gets or sets a value indicating whether to run the fake data seeder on startup.</summary>
+public bool Seed { get; set; }")!,
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("ServerConfiguration"), "FromEnvironment")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                        .WithBody(SyntaxFactory.Block(
+                            SyntaxFactory.ParseStatement(@"var config = new ServerConfiguration();"),
+                            SyntaxFactory.ParseStatement(@"var dbUrl = Environment.GetEnvironmentVariable(""DATABASE_URL"");"),
+                            SyntaxFactory.ParseStatement(@"if (!string.IsNullOrEmpty(dbUrl)) { config.DatabaseUrl = dbUrl; }"),
+                            SyntaxFactory.ParseStatement(@"var ephemeral = Environment.GetEnvironmentVariable(""EPHEMERAL_DB"");"),
+                            SyntaxFactory.ParseStatement(@"if (ephemeral == ""true"" || ephemeral == ""1"") { config.UseEphemeral = true; }"),
+                            SyntaxFactory.ParseStatement(@"return config;")
+                        ))
+                );
 
-    /// <summary>Represents the server configuration derived from environment variables and CLI flags.</summary>
-    public class ServerConfiguration
-    {{
-        /// <summary>Gets or sets a value indicating whether to use an ephemeral, in-memory database.</summary>
-        public bool UseEphemeral {{ get; set; }}
+            var configNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Configuration"))
+                .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))
+                .AddMembers(serverConfigClass);
 
-        /// <summary>Gets or sets the connection string for the primary database. Overridden if UseEphemeral is true.</summary>
-        public string? DatabaseUrl {{ get; set; }}
+            results.Add(new GeneratedCode
+            {
+                FileName = "src/Configuration/ServerConfiguration.cs",
+                Code = WasmSafeRoslyn.FormatSafe(configNs)
+            });
 
-        /// <summary>Gets or sets a value indicating whether to run the fake data seeder on startup.</summary>
-        public bool Seed {{ get; set; }}
+            var appInitializerClass = SyntaxFactory.ClassDeclaration("AppInitializer")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword))
+                .AddMembers(
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("Task"), "InitializeAsync")
+                        .AddModifiers(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                            SyntaxFactory.Token(SyntaxKind.AsyncKeyword))
+                        .AddParameterListParameters(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceProvider"))
+                                .WithType(SyntaxFactory.ParseTypeName("IServiceProvider")))
+                        .WithBody(SyntaxFactory.Block(
+                            SyntaxFactory.ParseStatement(@"using var scope = serviceProvider.CreateScope();"),
+                            SyntaxFactory.ParseStatement(@"var context = scope.ServiceProvider.GetService<AppDbContext>();"),
+                            SyntaxFactory.ParseStatement(@"if (context != null) { if (context.Database.IsSqlite()) { await context.Database.OpenConnectionAsync(); await context.Database.EnsureCreatedAsync(); } else { await context.Database.EnsureCreatedAsync(); } }")
+                        ))
+                );
 
-        /// <summary>Creates a configuration from environment variables.</summary>
-        public static ServerConfiguration FromEnvironment()
-        {{
-            var config = new ServerConfiguration();
+            var initializerNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Configuration"))
+                .AddUsings(
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.Extensions.DependencyInjection")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
+                .AddMembers(appInitializerClass);
 
-            var dbUrl = Environment.GetEnvironmentVariable(""DATABASE_URL"");
-            if (!string.IsNullOrEmpty(dbUrl))
-            {{
-                config.DatabaseUrl = dbUrl;
-            }}
-
-            var ephemeral = Environment.GetEnvironmentVariable(""EPHEMERAL_DB"");
-            if (ephemeral == ""true"" || ephemeral == ""1"")
-            {{
-                config.UseEphemeral = true;
-            }}
-
-            return config;
-        }}
-    }}
-}}";
-            results.Add(new GeneratedCode { FileName = "src/Configuration/ServerConfiguration.cs", Code = configCode });
-
-            var initializerCode = $@"namespace {baseNamespace}.Configuration
-{{
-    using System;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-    using {baseNamespace}.Models;
-    using Microsoft.EntityFrameworkCore;
-
-    /// <summary>Handles application startup tasks such as database migrations and seeding.</summary>
-    public static class AppInitializer
-    {{
-        /// <summary>Initializes the database programmatically.</summary>
-        public static async Task InitializeAsync(IServiceProvider serviceProvider)
-        {{
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetService<AppDbContext>();
-
-            if (context != null)
-            {{
-                // Open connection if sqlite in-memory
-                if (context.Database.IsSqlite())
-                {{
-                    await context.Database.OpenConnectionAsync();
-                    await context.Database.EnsureCreatedAsync();
-                }}
-                else
-                {{
-                    // Use migrations for Postgres, or EnsureCreated for simplicity in stubs
-                    await context.Database.EnsureCreatedAsync();
-                }}
-            }}
-        }}
-    }}
-}}";
-            results.Add(new GeneratedCode { FileName = "src/Configuration/AppInitializer.cs", Code = initializerCode });
+            results.Add(new GeneratedCode
+            {
+                FileName = "src/Configuration/AppInitializer.cs",
+                Code = WasmSafeRoslyn.FormatSafe(initializerNs)
+            });
 
             return results;
         }
