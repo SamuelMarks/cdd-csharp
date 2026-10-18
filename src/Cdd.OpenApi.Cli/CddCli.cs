@@ -25,6 +25,10 @@ namespace Cdd.OpenApi.Cli
         public const string FromOpenApiHelp = "Generate code from an OpenAPI specification.\n\nUsage:\n  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  -d, --input-dir             Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  -m, --mcp                   Generate Model Context Protocol (MCP) server and adapter.";
         /// <summary>Help text for the <c>to_openapi</c> command.</summary>
         public const string ToOpenApiHelp = "Usage:\n  cdd-csharp to_openapi -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to source code directory or file.\n  -o, --output   Output file or directory path.";
+        /// <summary>Help text for the <c>from_arazzo</c> command.</summary>
+        public const string FromArazzoHelp = "Generate code from an Arazzo 1.1.0 specification.\n\nUsage:\n  cdd-csharp from_arazzo [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path to the Arazzo specification.\n  -d, --input-dir             Directory containing Arazzo specifications.\n  -o, --output                Output directory path.\n  --tests                     Generate workflow integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.";
+        /// <summary>Help text for the <c>to_arazzo</c> command.</summary>
+        public const string ToArazzoHelp = "Usage:\n  cdd-csharp to_arazzo -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to C# workflow source code directory or file.\n  -o, --output   Output Arazzo specification file path (JSON or YAML).";
         /// <summary>Help text for the <c>to_docs_json</c> command.</summary>
         public const string ToDocsJsonHelp = "Usage:\n  cdd-csharp to_docs_json -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path or URL to the OpenAPI specification.\n  -o, --output   Output file or directory path.\n  --no-imports   Omit the imports field.\n  --no-wrapping  Omit the wrapper fields.";
         /// <summary>Help text for the <c>sync</c> command.</summary>
@@ -349,9 +353,101 @@ namespace Cdd.OpenApi.Cli
                 Console.WriteLine($"Synchronizing from truth '{truth}'...");
                 return FromOpenApi(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath });
             }
+            else if (truth == "arazzo")
+            {
+                Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                return FromArazzo(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath, NoGithubActions = true, NoInstallablePackage = true });
+            }
+            else if (truth == "workflow")
+            {
+                Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                return ToArazzo(inputPath, outputPath);
+            }
             else
             {
                 Console.Error.WriteLine($"Error: Truth source '{truth}' is not supported yet.");
+                return 1;
+            }
+        }
+
+        /// <summary>
+        /// Parses command-line arguments for the <c>to_arazzo</c> command.
+        /// </summary>
+        /// <param name="args">The command-line arguments.</param>
+        /// <returns>A tuple of <c>inputPath</c> and <c>outputPath</c>.</returns>
+        public static (string inputPath, string outputPath) ParseToArazzoArgs(string[] args)
+        {
+            return ParseToOpenApiArgs(args);
+        }
+
+        /// <summary>
+        /// Generates an Arazzo 1.1.0 specification from C# workflow source code.
+        /// </summary>
+        /// <param name="inputPath">Path to C# source code directory or file.</param>
+        /// <param name="outputPath">Output Arazzo file path (<c>.json</c>, <c>.yaml</c>, or <c>.yml</c>).</param>
+        /// <returns>Exit code (0 for success, 1 for error).</returns>
+        public static int ToArazzo(string inputPath, string outputPath)
+        {
+            if (string.IsNullOrEmpty(inputPath))
+            {
+                Console.Error.WriteLine(ToArazzoHelp);
+                return 1;
+            }
+
+            if (!File.Exists(inputPath) && !Directory.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"Error: Input '{inputPath}' not found.");
+                return 1;
+            }
+
+            var files = Directory.Exists(inputPath)
+                ? Directory.GetFiles(inputPath, "*.cs", SearchOption.AllDirectories)
+                : new[] { inputPath };
+
+            var codes = files.Select(f => File.ReadAllText(f));
+            var doc = ArazzoSpecGenerator.Generate(codes);
+            var isYaml = outputPath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase);
+            var serialized = isYaml ? Arazzo.ArazzoEmitter.EmitYaml(doc) : Arazzo.ArazzoEmitter.EmitJson(doc);
+
+            File.WriteAllBytes(outputPath, System.Text.Encoding.UTF8.GetBytes(serialized));
+            Console.WriteLine($"Successfully generated Arazzo spec at '{outputPath}'.");
+            return 0;
+        }
+
+        /// <summary>
+        /// Parses command-line arguments for the <c>from_arazzo</c> command.
+        /// </summary>
+        /// <param name="args">The command-line arguments.</param>
+        /// <returns>A tuple of <see cref="GenerateType"/> and <see cref="CddConfig"/>.</returns>
+        public static (GenerateType type, CddConfig config) ParseFromArazzoArgs(string[] args)
+        {
+            return ParseFromOpenApiArgs(args);
+        }
+
+        /// <summary>
+        /// Generates C# code from an Arazzo 1.1.0 specification.
+        /// </summary>
+        /// <param name="type">The target generation mode (<c>Sdk</c>, <c>SdkCli</c>, <c>Server</c>, or <c>All</c>).</param>
+        /// <param name="config">The generation configuration.</param>
+        /// <returns>Exit code (0 for success, 1 for error).</returns>
+        public static int FromArazzo(GenerateType type, CddConfig config)
+        {
+            if (string.IsNullOrEmpty(config.InputPath) && string.IsNullOrEmpty(config.InputDir) && !config.InputPaths.Any())
+            {
+                Console.Error.WriteLine(FromArazzoHelp);
+                return 1;
+            }
+
+            try
+            {
+                CddGenerator.GenerateFromArazzo(config, type);
+                Console.WriteLine($"Successfully generated C# workflow code in '{config.OutputDir}'.");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Operation failed: {ex.Message}");
+                Console.WriteLine(ex.ToString());
                 return 1;
             }
         }
@@ -523,6 +619,28 @@ namespace Cdd.OpenApi.Cli
                                             ["properties"] = new JsonObject { ["schema"] = new JsonObject { ["type"] = "string" } },
                                             ["required"] = new JsonArray("schema")
                                         }
+                                    },
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_from_arazzo",
+                                        ["description"] = "Generate C# workflow code from an Arazzo 1.1.0 specification",
+                                        ["inputSchema"] = new JsonObject
+                                        {
+                                            ["type"] = "object",
+                                            ["properties"] = new JsonObject { ["arazzo"] = new JsonObject { ["type"] = "string" } },
+                                            ["required"] = new JsonArray("arazzo")
+                                        }
+                                    },
+                                    new JsonObject
+                                    {
+                                        ["name"] = "cdd_to_arazzo",
+                                        ["description"] = "Extract Arazzo 1.1.0 specification from C# workflow code",
+                                        ["inputSchema"] = new JsonObject
+                                        {
+                                            ["type"] = "object",
+                                            ["properties"] = new JsonObject { ["code"] = new JsonObject { ["type"] = "string" } },
+                                            ["required"] = new JsonArray("code")
+                                        }
                                     })
                             });
                         }
@@ -583,6 +701,26 @@ namespace Cdd.OpenApi.Cli
                                         WriteJsonRpc(writer, idNode, new JsonObject
                                         {
                                             ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"In-memory generation successful ({generatedFiles.Count} files)" })
+                                        });
+                                    }
+                                    else if (toolName == "cdd_from_arazzo")
+                                    {
+                                        var arazzoText = argsProp.GetProperty("arazzo").GetString()!;
+                                        var arazzoDoc = Arazzo.ArazzoParser.ParseYamlOrJson(arazzoText);
+                                        var generatedFiles = ArazzoCodeGenerator.Generate(arazzoDoc);
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Generated Arazzo workflow code successfully ({generatedFiles.Count} files)" })
+                                        });
+                                    }
+                                    else if (toolName == "cdd_to_arazzo")
+                                    {
+                                        var csText = argsProp.GetProperty("code").GetString()!;
+                                        var arazzoDoc = ArazzoSpecGenerator.Generate(csText);
+                                        var emittedArazzo = Arazzo.ArazzoEmitter.EmitJson(arazzoDoc);
+                                        WriteJsonRpc(writer, idNode, new JsonObject
+                                        {
+                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = emittedArazzo })
                                         });
                                     }
                                     else
@@ -739,7 +877,7 @@ namespace Cdd.OpenApi.Cli
 
                     if (method == "version")
                     {
-                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.3" };
+                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.4" };
                         byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
                         response.OutputStream.Write(buf, 0, buf.Length);
                     }
@@ -757,6 +895,8 @@ namespace Cdd.OpenApi.Cli
                         int retCode = 1;
                         if (method == "from_openapi") { var parsed = ParseFromOpenApiArgs(invokeArgs.ToArray()); retCode = FromOpenApi(parsed.type, parsed.config); }
                         else if (method == "to_openapi") { var parsed = ParseToOpenApiArgs(invokeArgs.ToArray()); retCode = ToOpenApi(parsed.inputPath, parsed.outputPath); }
+                        else if (method == "from_arazzo") { var parsed = ParseFromArazzoArgs(invokeArgs.ToArray()); retCode = FromArazzo(parsed.type, parsed.config); }
+                        else if (method == "to_arazzo") { var parsed = ParseToArazzoArgs(invokeArgs.ToArray()); retCode = ToArazzo(parsed.inputPath, parsed.outputPath); }
                         else if (method == "to_docs_json") { var parsed = ParseDocsJsonArgs(invokeArgs.ToArray()); retCode = ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping); }
 
                         var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = retCode };

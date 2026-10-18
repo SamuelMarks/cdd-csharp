@@ -60,7 +60,7 @@ namespace Cdd.OpenApi
                 {
                     foreach (var trivia in token.LeadingTrivia)
                     {
-                        var triviaStr = trivia.ToString().Trim();
+                        var triviaStr = trivia.ToFullString().Trim();
                         if (!string.IsNullOrEmpty(triviaStr))
                         {
                             sb.AppendLine();

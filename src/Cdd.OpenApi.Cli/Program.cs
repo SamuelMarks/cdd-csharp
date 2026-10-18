@@ -65,7 +65,7 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (command == "--version" || command == "-v" || command == "version")
                 {
-                    Console.WriteLine("0.0.3");
+                    Console.WriteLine("0.0.4");
                     return 0;
                 }
 
@@ -75,6 +75,10 @@ namespace Cdd.OpenApi.Cli
                         Console.WriteLine(CddCli.FromOpenApiHelp);
                     else if (command == "to_openapi")
                         Console.WriteLine(CddCli.ToOpenApiHelp);
+                    else if (command == "from_arazzo")
+                        Console.WriteLine(CddCli.FromArazzoHelp);
+                    else if (command == "to_arazzo")
+                        Console.WriteLine(CddCli.ToArazzoHelp);
                     else if (command == "to_docs_json")
                         Console.WriteLine(CddCli.ToDocsJsonHelp);
                     else if (command == "sync")
@@ -97,6 +101,16 @@ namespace Cdd.OpenApi.Cli
                 {
                     var parsed = CddCli.ParseToOpenApiArgs(args);
                     return CddCli.ToOpenApi(parsed.inputPath, parsed.outputPath);
+                }
+                else if (command == "from_arazzo")
+                {
+                    var parsed = CddCli.ParseFromArazzoArgs(args);
+                    return CddCli.FromArazzo(parsed.type, parsed.config);
+                }
+                else if (command == "to_arazzo")
+                {
+                    var parsed = CddCli.ParseToArazzoArgs(args);
+                    return CddCli.ToArazzo(parsed.inputPath, parsed.outputPath);
                 }
                 else if (command == "to_docs_json")
                 {

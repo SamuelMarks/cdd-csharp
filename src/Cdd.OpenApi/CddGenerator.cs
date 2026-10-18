@@ -79,6 +79,62 @@ namespace Cdd.OpenApi
         public static void GenerateAll(CddConfig config) => Generate(config, GenerateType.All);
 
         /// <summary>
+        /// Generates C# workflow artifacts (SDK orchestrators, CLI runners, Server E2E workflow tests, and stateful mocks) from Arazzo 1.1.0 specification files.
+        /// </summary>
+        /// <param name="config">The generation configuration.</param>
+        /// <param name="type">The target generation mode.</param>
+        public static void GenerateFromArazzo(CddConfig config, GenerateType type = GenerateType.All)
+        {
+            var inputPaths = new List<string>();
+            if (!string.IsNullOrEmpty(config.InputPath))
+            {
+                inputPaths.Add(config.InputPath);
+            }
+
+            if (config.InputPaths.Any())
+            {
+                inputPaths.AddRange(config.InputPaths);
+            }
+
+            if (!string.IsNullOrEmpty(config.InputDir) && Directory.Exists(config.InputDir))
+            {
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.json", SearchOption.AllDirectories));
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yaml", SearchOption.AllDirectories));
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yml", SearchOption.AllDirectories));
+            }
+
+            if (!inputPaths.Any())
+            {
+                throw new ArgumentException("No input paths provided in config.");
+            }
+
+            var outputDir = string.IsNullOrEmpty(config.OutputDir) ? Directory.GetCurrentDirectory() : config.OutputDir;
+            var sourceDir = config.NoInstallablePackage ? outputDir : Path.Combine(outputDir, "src", "GeneratedProject");
+
+            foreach (var inputPath in inputPaths)
+            {
+                if (!File.Exists(inputPath))
+                {
+                    throw new FileNotFoundException($"Input '{inputPath}' not found.");
+                }
+
+                var arazzoDoc = Arazzo.ArazzoParser.ParseYamlOrJson(File.ReadAllText(inputPath));
+                var codes = ArazzoCodeGenerator.Generate(arazzoDoc, "Generated", type, config.CreateComposableTestsAndMocks);
+                foreach (var code in codes)
+                {
+                    var fullPath = Path.Combine(sourceDir, code.FileName);
+                    var dir = Path.GetDirectoryName(fullPath);
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        SafeCreateDirectory(dir);
+                    }
+
+                    File.WriteAllBytes(fullPath, System.Text.Encoding.UTF8.GetBytes(code.Code));
+                }
+            }
+        }
+
+        /// <summary>
         /// Executes the code and project scaffolding generation for the specified <see cref="GenerateType"/>.
         /// </summary>
         /// <param name="config">The generation configuration.</param>

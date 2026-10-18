@@ -6,9 +6,97 @@ using System.Collections.Generic;
 using System.Linq;
 using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Models.Arazzo;
 
 namespace Cdd.OpenApi.Ir
 {
+    /// <summary>
+    /// Represents a source specification binding in the Intermediate Representation.
+    /// </summary>
+    public class IrSourceDescription
+    {
+        /// <summary>
+        /// Gets or sets the unique name of the source description.
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the URL or relative reference to the source specification.
+        /// </summary>
+        public string Url { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the specification protocol type (<c>"openapi"</c>, <c>"asyncapi"</c>, or <c>"arazzo"</c>).
+        /// </summary>
+        public string? Type { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a single workflow step in the Intermediate Representation.
+    /// </summary>
+    public class IrWorkflowStep
+    {
+        /// <summary>
+        /// Gets or sets the unique step identifier within its workflow.
+        /// </summary>
+        public string StepId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the human-readable description of the step.
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target operationId if invoking an OpenAPI operation by ID.
+        /// </summary>
+        public string? OperationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target operationPath if invoking an OpenAPI operation by JSON Pointer path.
+        /// </summary>
+        public string? OperationPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target channelPath if invoking an AsyncAPI channel.
+        /// </summary>
+        public string? ChannelPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target workflowId if invoking a sub-workflow.
+        /// </summary>
+        public string? WorkflowId { get; set; }
+    }
+
+    /// <summary>
+    /// Represents an executable Arazzo workflow in the Intermediate Representation.
+    /// </summary>
+    public class IrWorkflow
+    {
+        /// <summary>
+        /// Gets or sets the unique workflow identifier.
+        /// </summary>
+        public string WorkflowId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the workflow summary.
+        /// </summary>
+        public string? Summary { get; set; }
+
+        /// <summary>
+        /// Gets or sets the workflow description.
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the prerequisite workflow identifiers.
+        /// </summary>
+        public List<string> DependsOn { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the ordered list of steps in the workflow.
+        /// </summary>
+        public List<IrWorkflowStep> Steps { get; set; } = new List<IrWorkflowStep>();
+    }
     /// <summary>
     /// Represents a strongly-typed Intermediate Representation (IR) of a type reference.
     /// </summary>
@@ -184,6 +272,114 @@ namespace Cdd.OpenApi.Ir
         /// Gets or sets the collection of endpoints defined in the service.
         /// </summary>
         public List<IrEndpoint> Endpoints { get; set; } = new List<IrEndpoint>();
+
+        /// <summary>
+        /// Gets or sets the collection of Arazzo source descriptions referenced by the service.
+        /// </summary>
+        public List<IrSourceDescription> SourceDescriptions { get; set; } = new List<IrSourceDescription>();
+
+        /// <summary>
+        /// Gets or sets the collection of Arazzo workflows defined in the service.
+        /// </summary>
+        public List<IrWorkflow> Workflows { get; set; } = new List<IrWorkflow>();
+
+        /// <summary>
+        /// Constructs an <see cref="IrService"/> from an <see cref="ArazzoDocument"/>.
+        /// </summary>
+        /// <param name="doc">The source Arazzo 1.1.0 document.</param>
+        /// <returns>A populated <see cref="IrService"/> instance.</returns>
+        public static IrService FromArazzo(ArazzoDocument doc)
+        {
+            var service = new IrService
+            {
+                Title = doc.Info.Title,
+                Version = doc.Info.Version
+            };
+
+            foreach (var sd in doc.SourceDescriptions)
+            {
+                service.SourceDescriptions.Add(new IrSourceDescription
+                {
+                    Name = sd.Name,
+                    Url = sd.Url,
+                    Type = sd.Type
+                });
+            }
+
+            foreach (var wf in doc.Workflows)
+            {
+                var irWf = new IrWorkflow
+                {
+                    WorkflowId = wf.WorkflowId,
+                    Summary = wf.Summary,
+                    Description = wf.Description,
+                    DependsOn = wf.DependsOn != null ? wf.DependsOn.ToList() : new List<string>()
+                };
+
+                foreach (var step in wf.Steps)
+                {
+                    irWf.Steps.Add(new IrWorkflowStep
+                    {
+                        StepId = step.StepId,
+                        Description = step.Description,
+                        OperationId = step.OperationId,
+                        OperationPath = step.OperationPath,
+                        ChannelPath = step.ChannelPath,
+                        WorkflowId = step.WorkflowId
+                    });
+                }
+
+                service.Workflows.Add(irWf);
+            }
+
+            return service;
+        }
+
+        /// <summary>
+        /// Converts this <see cref="IrService"/> back into an <see cref="ArazzoDocument"/>.
+        /// </summary>
+        /// <returns>A synthesized <see cref="ArazzoDocument"/>.</returns>
+        public ArazzoDocument ToArazzo()
+        {
+            var doc = new ArazzoDocument
+            {
+                Arazzo = "1.1.0",
+                Info = new ArazzoInfo
+                {
+                    Title = Title,
+                    Version = Version
+                },
+                SourceDescriptions = SourceDescriptions.Count > 0
+                    ? SourceDescriptions.Select(sd => new ArazzoSourceDescription
+                    {
+                        Name = sd.Name,
+                        Url = sd.Url,
+                        Type = sd.Type
+                    }).ToList()
+                    : new List<ArazzoSourceDescription>
+                    {
+                        new ArazzoSourceDescription { Name = "default", Url = "./openapi.json", Type = "openapi" }
+                    },
+                Workflows = Workflows.Select(wf => new ArazzoWorkflow
+                {
+                    WorkflowId = wf.WorkflowId,
+                    Summary = wf.Summary,
+                    Description = wf.Description,
+                    DependsOn = wf.DependsOn.Count > 0 ? wf.DependsOn : null,
+                    Steps = wf.Steps.Select(s => new ArazzoStep
+                    {
+                        StepId = s.StepId,
+                        Description = s.Description,
+                        OperationId = s.OperationId,
+                        OperationPath = s.OperationPath,
+                        ChannelPath = s.ChannelPath,
+                        WorkflowId = s.WorkflowId
+                    }).ToList()
+                }).ToList()
+            };
+
+            return doc;
+        }
 
         /// <summary>
         /// Constructs an <see cref="IrService"/> from an <see cref="OpenApiDocument"/>.

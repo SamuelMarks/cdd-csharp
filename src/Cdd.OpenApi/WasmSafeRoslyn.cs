@@ -111,7 +111,7 @@ namespace Cdd.OpenApi
             }
             foreach (var attr in attributes)
             {
-                sb.AppendLine(WasmSafeFormatter.Format(attr));
+                sb.AppendLine(WasmSafeFormatter.Format(attr.WithoutLeadingTrivia()));
             }
         }
 

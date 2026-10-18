@@ -63,3 +63,15 @@ repos:
         entry: python3 scripts/run_slow.py python3 scripts/run_generated_petstore_tests.py
         language: system
         pass_filenames: false
+
+    -   id: ml-framework-snapshots-grounding
+        name: Ground OpenAPI and Arazzo against ../ml-framework-snapshots
+        entry: python3 scripts/fallback_runner.py python3 scripts/ground_ml_framework_snapshots.py --snapshots-dir ../ml-framework-snapshots
+        language: system
+        pass_filenames: false
+
+    -   id: arazzo-conformance-tests
+        name: Run Arazzo 1.1.0 End-to-End Conformance Tests
+        entry: python3 scripts/run_slow.py python3 scripts/run_arazzo_tests.py
+        language: system
+        pass_filenames: false

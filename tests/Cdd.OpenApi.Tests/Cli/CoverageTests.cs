@@ -176,7 +176,7 @@ namespace Cdd.OpenApi.Tests.Cli
                 var req = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"version\"}", Encoding.UTF8, "application/json");
                 var res = await client.PostAsync($"http://localhost:{port}/", req);
                 var content = await res.Content.ReadAsStringAsync();
-                Assert.Contains("0.0.3", content);
+                Assert.Contains("0.0.4", content);
 
                 // Add branch coverage for error handling
                 var reqErr = new StringContent("invalid json", Encoding.UTF8, "application/json");
@@ -191,6 +191,12 @@ namespace Cdd.OpenApi.Tests.Cli
                 // Call from_openapi
                 var reqFrom = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"from_openapi\", \"params\": [\"to_sdk\", \"-i\", \"spec.json\"]}", Encoding.UTF8, "application/json");
                 await client.PostAsync($"http://localhost:{port}/", reqFrom);
+
+                // Call from_arazzo and to_arazzo
+                var reqFromArazzo = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":31,\"method\":\"from_arazzo\", \"params\": [\"to_sdk\", \"-i\", \"spec.arazzo.json\"]}", Encoding.UTF8, "application/json");
+                await client.PostAsync($"http://localhost:{port}/", reqFromArazzo);
+                var reqToArazzo = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":32,\"method\":\"to_arazzo\", \"params\": [\"-i\", \"does_not_exist.cs\"]}", Encoding.UTF8, "application/json");
+                await client.PostAsync($"http://localhost:{port}/", reqToArazzo);
 
                 // Call to_docs_json
                 var reqDocs = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"to_docs_json\", \"params\": [\"-i\", \"spec.json\"]}", Encoding.UTF8, "application/json");
