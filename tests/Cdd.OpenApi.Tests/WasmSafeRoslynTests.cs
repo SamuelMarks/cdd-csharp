@@ -77,6 +77,7 @@ namespace Cdd.OpenApi.Tests
         public void WasmSafeRoslyn_FormatsAttributesAndExpressionBodies()
         {
             string code = @"
+// Leading file comment
 namespace N {
     [Serializable]
     public class C {
@@ -95,6 +96,7 @@ namespace N {
 ";
             var ns = ParseMember<Microsoft.CodeAnalysis.CSharp.Syntax.NamespaceDeclarationSyntax>(code);
             var result = WasmSafeRoslyn.FormatSafe(ns);
+            Assert.Contains("// Leading file comment", result);
             Assert.Contains("[Serializable]", result);
             Assert.Contains("[Obsolete]", result);
             Assert.Contains("=> 1;", result);

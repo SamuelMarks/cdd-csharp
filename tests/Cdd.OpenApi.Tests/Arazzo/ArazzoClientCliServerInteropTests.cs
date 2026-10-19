@@ -175,6 +175,34 @@ namespace Cdd.OpenApi.Tests.Arazzo
             var serverRoundTrip = Cdd.OpenApi.Arazzo.Servers.Parse.ToArazzoDocument(serverClasses);
             Assert.Equal(2, serverRoundTrip.Workflows.Count);
 
+            var customServerMockCode = @"
+public class CustomServerSimulator
+{
+    public System.Collections.Generic.List<string> ExecutedSteps = new();
+    public void Simulate()
+    {
+        ExecutedSteps.Add(""orderFlow:stepOne"");
+        ExecutedSteps.Add(""orderFlow:stepTwo"");
+        ExecutedSteps.Add(""invalidNoColon"");
+        ExecutedSteps.Add(123);
+        ExecutedSteps.Add();
+        ExecutedSteps.Clear();
+        OtherMethod();
+    }
+    public void OtherMethod() {}
+}";
+            var customServerMockTree = CSharpSyntaxTree.ParseText(customServerMockCode);
+            var customServerMockClasses = customServerMockTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>();
+            var customServerMockDoc = Cdd.OpenApi.Arazzo.Servers.Parse.ToArazzoDocument(customServerMockClasses);
+            Assert.Single(customServerMockDoc.Workflows);
+            Assert.Equal("orderFlow", customServerMockDoc.Workflows[0].WorkflowId);
+            Assert.Equal(2, customServerMockDoc.Workflows[0].Steps.Count);
+
+            var emptyServerTree = CSharpSyntaxTree.ParseText("public class PlainServerClass { public void Ping() {} }");
+            var emptyServerDoc = Cdd.OpenApi.Arazzo.Servers.Parse.ToArazzoDocument(emptyServerTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>());
+            Assert.Single(emptyServerDoc.Workflows);
+            Assert.Equal("ping", emptyServerDoc.Workflows[0].WorkflowId);
+
             // Hand-written C# workflow class without <workflow-spec> tag
             var handwritten = @"
 public class CheckoutInput

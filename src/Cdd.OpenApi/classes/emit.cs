@@ -71,7 +71,7 @@ namespace Cdd.OpenApi.Classes
                     var isRequired = schema.Required != null && schema.Required.Contains(propName);
                     var isKey = propName.Equals("id", System.StringComparison.OrdinalIgnoreCase);
 
-                    var csharpType = MapTypeToCSharp(propSchema.Type);
+                    var csharpType = Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(propSchema.Type, "object");
 
                     if (!isRequired && csharpType != "object" && csharpType != "string")
                     {
@@ -150,16 +150,6 @@ namespace Cdd.OpenApi.Classes
             }
 
             return classNode.AddMembers(members.ToArray());
-        }
-
-        /// <summary>
-        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
-        /// </summary>
-        /// <param name="openApiType">The OpenAPI type string.</param>
-        /// <returns>The mapped C# type name.</returns>
-        private static string MapTypeToCSharp(string? openApiType)
-        {
-            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "object");
         }
     }
 }

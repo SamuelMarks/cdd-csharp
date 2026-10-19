@@ -30,6 +30,19 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Equal("Test API", doc.Info.Title);
             Assert.Equal("1.0.0", doc.Info.Version);
             Assert.NotNull(doc.Paths);
+
+            var yaml = "openapi: 3.2.0\ninfo:\n  title: Yaml API\n  version: 2.0.0\n";
+            var yamlDoc = parser.ParseYamlOrJson(yaml);
+            Assert.Equal("Yaml API", yamlDoc.Info.Title);
+            Assert.Equal("2.0.0", yamlDoc.Info.Version);
+
+            var jsonViaYamlOrJson = parser.ParseYamlOrJson(json);
+            Assert.Equal("Test API", jsonViaYamlOrJson.Info.Title);
+
+            var nullDoc = parser.ParseYamlOrJson("null");
+            Assert.Equal("3.2.0", nullDoc.OpenApi);
+
+            Assert.Throws<System.ArgumentException>(() => parser.ParseYamlOrJson(""));
         }
     }
 }

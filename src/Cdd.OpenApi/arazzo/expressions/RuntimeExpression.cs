@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Nodes;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Errors;
 using Cdd.OpenApi.Models.Arazzo;
 
@@ -357,7 +358,7 @@ namespace Cdd.OpenApi.Arazzo.Expressions
         /// <returns>A valid C# expression string.</returns>
         public static string ToCSharpExpression(string expressionOrLiteral)
         {
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             if (string.IsNullOrEmpty(expressionOrLiteral))
             {
                 return dq + dq;
@@ -571,9 +572,7 @@ namespace Cdd.OpenApi.Arazzo.Expressions
         /// <returns>The escaped string.</returns>
         private static string EscapeCSharpString(string str)
         {
-            var bs = ((char)92).ToString();
-            var dq = ((char)34).ToString();
-            return str.Replace(bs, bs + bs).Replace(dq, bs + dq);
+            return StringEscaper.EscapeCSharpLiteral(str);
         }
     }
 }

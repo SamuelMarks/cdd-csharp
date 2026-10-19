@@ -335,9 +335,9 @@ namespace Cdd.OpenApi.Tests.Routes
                             {
                                 Content = new Dictionary<string, OpenApiMediaType>
                                 {
-                                    ["application/xml"] = new OpenApiMediaType
+                                    ["application/json"] = new OpenApiMediaType
                                     {
-                                        Schema = new OpenApiSchema { Type = "string" }
+                                        Schema = new OpenApiSchema { Type = null }
                                     }
                                 }
                             }
@@ -516,12 +516,23 @@ namespace Cdd.OpenApi.Tests.Routes
                         OperationId = "PatchMissing",
                         Responses = new OpenApiResponses
                         {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = null
+                                    }
+                                }
+                            },
                             ["400"] = new OpenApiResponse
                             {
                                 Headers = new Dictionary<string, OpenApiHeader>
                                 {
                                     ["X-Test-No-Schema"] = new OpenApiHeader
                                     {
+                                        Schema = null,
                                         Content = new Dictionary<string, OpenApiMediaType>
                                         {
                                             ["application/json"] = new OpenApiMediaType { Schema = null }
@@ -531,6 +542,30 @@ namespace Cdd.OpenApi.Tests.Routes
                                 Content = new Dictionary<string, OpenApiMediaType>
                                 {
                                     ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Head = new OpenApiOperation
+                    {
+                        OperationId = "HeadMissing",
+                        Responses = new OpenApiResponses
+                        {
+                            ["200"] = new OpenApiResponse
+                            {
+                                Headers = new Dictionary<string, OpenApiHeader>
+                                {
+                                    ["X-Test-Schema-No-Type"] = new OpenApiHeader
+                                    {
+                                        Schema = new OpenApiSchema { Type = null }
+                                    }
+                                },
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/xml"] = new OpenApiMediaType
                                     {
                                         Schema = new OpenApiSchema { Type = "string" }
                                     }

@@ -103,5 +103,56 @@ namespace Cdd.OpenApi.Tests
             var sdkWithMcp = CodeGenerator.Generate(docWithPaths, "Generated", GenerateType.Sdk, tests: false, mcp: true);
             Assert.Contains(sdkWithMcp, f => f.FileName == "src/Cli/McpServer.cs");
         }
+
+        [Fact]
+        public void RouteParseMapType_HandlesDecimal_Double_Float_Bool()
+        {
+            var code = @"
+            public class C {
+                [HttpGet] public void M(decimal d, double db, float f, bool b, object o) {}
+            }";
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var classNode = System.Linq.Enumerable.First(System.Linq.Enumerable.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>(tree.GetRoot().DescendantNodes()));
+
+            var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
+            var p = paths["/"].Get?.Parameters;
+
+            Assert.Equal("number", p?[0].Schema?.Type);
+            Assert.Equal("number", p?[1].Schema?.Type);
+            Assert.Equal("number", p?[2].Schema?.Type);
+            Assert.Equal("boolean", p?[3].Schema?.Type);
+            Assert.Equal("string", p?[4].Schema?.Type);
+        }
+
+        [Fact]
+        public void ClassParseMapType_HandlesDecimal_Double_Float_Bool()
+        {
+            var code = @"
+            public class C {
+                public decimal D {get;set;}
+                public double Db {get;set;}
+                public float F {get;set;}
+                public bool B {get;set;}
+                public long L {get;set;}
+                public System.Guid G {get;set;}
+            }";
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var classNode = System.Linq.Enumerable.First(System.Linq.Enumerable.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>(tree.GetRoot().DescendantNodes()));
+
+            var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
+            var p = schema.Properties;
+
+            Assert.Equal("number", p?["D"].Type);
+            Assert.Equal("decimal", p?["D"].Format);
+            Assert.Equal("number", p?["Db"].Type);
+            Assert.Null(p?["Db"].Format);
+            Assert.Equal("number", p?["F"].Type);
+            Assert.Equal("float", p?["F"].Format);
+            Assert.Equal("boolean", p?["B"].Type);
+            Assert.Equal("integer", p?["L"].Type);
+            Assert.Equal("int64", p?["L"].Format);
+            Assert.Equal("string", p?["G"].Type);
+            Assert.Equal("uuid", p?["G"].Format);
+        }
     }
 }

@@ -4,10 +4,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Cdd.OpenApi.Common;
+using Cdd.OpenApi.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Clients
 {
@@ -42,10 +43,7 @@ namespace Cdd.OpenApi.Clients
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
                         SyntaxFactory.IdentifierName("_httpClient"),
-                        SyntaxFactory.IdentifierName("httpClient")
-                    )
-                )
-            );
+                        SyntaxFactory.IdentifierName("httpClient"))));
 
             var ctorNode = SyntaxFactory.ConstructorDeclaration(className)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
@@ -60,7 +58,7 @@ namespace Cdd.OpenApi.Clients
                 var routePath = pathKvp.Key;
                 var pathItem = pathKvp.Value;
 
-                var operations = Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem);
+                var operations = OperationHelpers.GetOperationsByPascalVerb(pathItem);
 
                 foreach (var opKvp in operations)
                 {
@@ -72,38 +70,18 @@ namespace Cdd.OpenApi.Clients
                     if (!methodName.EndsWith("Async")) methodName += "Async";
 
                     var returnTypeName = "string";
-                    if (operation.Responses != null)
-                        if (operation.Responses.Any())
+                    if (operation.Responses != null && operation.Responses.Any())
+                    {
+                        var successResponse = operation.Responses.FirstOrDefault(r => r.Key.StartsWith("2"));
+                        if (successResponse.Value?.Content != null && successResponse.Value.Content.TryGetValue("application/json", out var mediaType))
                         {
-                            var successResponse = operation.Responses.FirstOrDefault(r => r.Key.StartsWith("2"));
-                            if (successResponse.Value != null && successResponse.Value.Content != null && successResponse.Value.Content.TryGetValue("application/json", out var mediaType))
+                            var schema = mediaType.Schema;
+                            if (schema != null)
                             {
-                                var schema = mediaType.Schema;
-                                if (schema != null)
-                                {
-                                    if (!string.IsNullOrEmpty(schema.Ref))
-                                    {
-                                        returnTypeName = schema.Ref.Split('/').Last();
-                                    }
-                                    else if (schema.Type == "array" && schema.Items?.Ref != null)
-                                    {
-                                        returnTypeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
-                                    }
-                                    else if (schema.Type == "array" && schema.Items?.Type != null)
-                                    {
-                                        returnTypeName = $"System.Collections.Generic.List<{MapTypeToCSharp(schema.Items.Type)}>";
-                                    }
-                                    else if (schema.Type != null)
-                                    {
-                                        returnTypeName = MapTypeToCSharp(schema.Type);
-                                    }
-                                    else if (schema.Items?.Ref != null)
-                                    {
-                                        returnTypeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
-                                    }
-                                }
+                                returnTypeName = ResolveClientSchemaType(schema);
                             }
                         }
+                    }
 
                     var methodNode = SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName($"System.Threading.Tasks.Task<{returnTypeName}>"), methodName)
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.AsyncKeyword));
@@ -113,156 +91,22 @@ namespace Cdd.OpenApi.Clients
                     {
                         foreach (var p in operation.Parameters)
                         {
-                            string paramType = "string";
-                            if (p.Schema != null)
-                            {
-                                if (!string.IsNullOrEmpty(p.Schema.Ref)) paramType = p.Schema.Ref.Split('/').Last();
-                                else if (p.Schema.Type == "array" && p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
-                                else if (p.Schema.Type == "array" && p.Schema.Items?.Type != null) paramType = $"System.Collections.Generic.List<{MapTypeToCSharp(p.Schema.Items.Type)}>";
-                                else if (p.Schema.Type != null) paramType = MapTypeToCSharp(p.Schema.Type);
-                                else if (p.Schema.Items?.Ref != null) paramType = $"System.Collections.Generic.List<{p.Schema.Items.Ref.Split('/').Last()}>";
-                            }
-
+                            string paramType = p.Schema != null ? ResolveClientSchemaType(p.Schema) : "string";
                             var pNode = SyntaxFactory.Parameter(SyntaxFactory.Identifier(p.Name))
                                 .WithType(SyntaxFactory.ParseTypeName(paramType));
 
-                            if (p.Deprecated == true)
-                            {
-                                var obsoleteAttr = SyntaxFactory.AttributeList(
-                                    SyntaxFactory.SingletonSeparatedList(
-                                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("System.Obsolete"))
-                                    )
-                                );
-                                pNode = pNode.AddAttributeLists(obsoleteAttr);
-                            }
-
-                            if (p.AllowEmptyValue == true)
-                            {
-                                var allowEmptyAttr = SyntaxFactory.AttributeList(
-                                    SyntaxFactory.SingletonSeparatedList(
-                                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("AllowEmptyValue"))
-                                    )
-                                );
-                                pNode = pNode.AddAttributeLists(allowEmptyAttr);
-                            }
-
-                            if (p.Example != null)
-                            {
-                                string exampleStr = p.Example.ToString()!;
-                                ExpressionSyntax defaultValue;
-                                if (p.Schema?.Type == "string")
-                                {
-                                    defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(exampleStr));
-                                }
-                                else if (p.Schema?.Type == "boolean")
-                                {
-                                    defaultValue = SyntaxFactory.LiteralExpression(exampleStr.ToLower() == "true" ? SyntaxKind.TrueLiteralExpression : SyntaxKind.FalseLiteralExpression);
-                                }
-                                else
-                                {
-                                    if (int.TryParse(exampleStr, out int i)) defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(i));
-                                    else if (double.TryParse(exampleStr, out double d)) defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(d));
-                                    else defaultValue = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
-                                }
-
-                                pNode = pNode.WithDefault(SyntaxFactory.EqualsValueClause(defaultValue));
-                            }
-
-
-                            if (p.Examples != null)
-                                if (p.Examples.Count > 0)
-                                {
-                                    var exampleArgs = new List<AttributeArgumentSyntax>();
-                                    foreach (var ex in p.Examples)
-                                    {
-                                        exampleArgs.Add(SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(ex.Key))));
-                                        var exVal = ex.Value.Value?.ToString() ?? "";
-                                        exampleArgs.Add(SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(exVal))));
-                                    }
-                                    pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Examples"))
-                                            .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(exampleArgs)))
-                                    )));
-                                }
-                            if (p.Style != null)
-                            {
-                                pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Style"))
-                                        .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SingletonSeparatedList(
-                                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(p.Style)))
-                                        )))
-                                )));
-                            }
-                            if (p.Explode == true && p.Schema?.Type != "array")
-                            {
-                                pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Explode"))
-                                )));
-                            }
-                            if (p.AllowReserved == true)
-                            {
-                                pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                                    SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("AllowReserved"))
-                                )));
-                            }
-                            if (p.Content != null)
-                                if (p.Content.Count > 0)
-                                {
-                                    var firstContent = p.Content.First();
-                                    var mediaType = firstContent.Key;
-                                    var schemaType = firstContent.Value.Schema?.Type ?? "string";
-                                    pNode = pNode.AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
-                                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Content"))
-                                            .WithArgumentList(SyntaxFactory.AttributeArgumentList(SyntaxFactory.SeparatedList(new[]
-                                            {
-                                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(mediaType))),
-                                            SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(schemaType)))
-                                            })))
-                                    )));
-                                }
-
+                            pNode = OperationSignatureBuilder.ApplyParameterMetadata(pNode, p);
                             parameters.Add(pNode);
                         }
                     }
 
-                    if (operation.RequestBody != null)
+                    if (operation.RequestBody?.Content != null &&
+                        operation.RequestBody.Content.TryGetValue("application/json", out var reqMediaType) &&
+                        reqMediaType.Schema != null)
                     {
-                        var reqBody = operation.RequestBody;
-                        if (reqBody.Content != null)
-                        {
-                            var contentDict = reqBody.Content;
-                            if (contentDict.TryGetValue("application/json", out var mediaType))
-                            {
-                                var schema = mediaType.Schema;
-                                if (schema != null)
-                                {
-                                    string typeName = "string";
-                                    if (!string.IsNullOrEmpty(schema.Ref))
-                                    {
-                                        typeName = schema.Ref.Split('/').Last();
-                                    }
-                                    else if (schema.Type == "array")
-                                    {
-                                        if (schema.Items != null)
-                                        {
-                                            if (schema.Items.Ref != null) typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
-                                            else if (schema.Items.Type != null) typeName = $"System.Collections.Generic.List<{MapTypeToCSharp(schema.Items.Type)}>";
-                                        }
-                                    }
-                                    else if (schema.Type != null)
-                                    {
-                                        typeName = MapTypeToCSharp(schema.Type);
-                                    }
-                                    else if (schema.Items != null && schema.Items.Ref != null)
-                                    {
-                                        typeName = $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
-                                    }
-
-                                    parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body"))
-                                        .WithType(SyntaxFactory.ParseTypeName(typeName)));
-                                }
-                            }
-                        }
+                        string typeName = ResolveClientSchemaType(reqMediaType.Schema);
+                        parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("body"))
+                            .WithType(SyntaxFactory.ParseTypeName(typeName)));
                     }
 
                     if (parameters.Any())
@@ -270,113 +114,91 @@ namespace Cdd.OpenApi.Clients
                         methodNode = methodNode.AddParameterListParameters(parameters.ToArray());
                     }
 
-                    string interpolatedPath = routePath;
-                    if (interpolatedPath.StartsWith("/"))
-                    {
-                        interpolatedPath = interpolatedPath.Substring(1);
-                    }
+                    string interpolatedPath = routePath.TrimStart('/');
 
-                    var pathParams = operation.Parameters?.Where(p => p.In == "path").ToList();
-                    if (pathParams != null)
+                    if (operation.Parameters != null)
                     {
+                        var pathParams = operation.Parameters.Where(p => p.In == "path").ToList();
                         foreach (var pp in pathParams)
                         {
                             interpolatedPath = interpolatedPath.Replace($"{{{pp.Name}}}", $"{{System.Uri.EscapeDataString(System.Convert.ToString({pp.Name}) ?? string.Empty)}}");
                         }
-                    }
 
-                    var queryParams = operation.Parameters?.Where(p => p.In == "query").ToList();
-                    if (queryParams != null && queryParams.Any())
-                    {
-                        var qb = new List<string>();
-                        foreach (var qp in queryParams)
+                        var queryParams = operation.Parameters.Where(p => p.In == "query").ToList();
+                        if (queryParams.Any())
                         {
-                            var qpType = "string";
-                            if (qp.Schema != null)
+                            var qb = new List<string>();
+                            foreach (var qp in queryParams)
                             {
-                                if (qp.Schema.Type == "array")
+                                var qpType = "string";
+                                if (qp.Schema != null && qp.Schema.Type == OpenApiDataType.Array)
                                 {
-                                    qpType = "array";
+                                    qpType = OpenApiDataType.Array;
+                                }
+
+                                if (qpType == OpenApiDataType.Array)
+                                {
+                                    qb.Add($$"""{{qp.Name}}={string.Join("&{{qp.Name}}=", {{qp.Name}} != null ? System.Linq.Enumerable.Select({{qp.Name}}, x => System.Uri.EscapeDataString(System.Convert.ToString(x) ?? string.Empty)) : System.Linq.Enumerable.Empty<string>())}""");
+                                }
+                                else
+                                {
+                                    qb.Add($$"""{{qp.Name}}={System.Uri.EscapeDataString(System.Convert.ToString({{qp.Name}}) ?? string.Empty)}""");
                                 }
                             }
-                            if (qpType == "array")
-                            {
-                                qb.Add($"{qp.Name}={{string.Join(\"&{qp.Name}=\", {qp.Name} != null ? System.Linq.Enumerable.Select({qp.Name}, x => System.Uri.EscapeDataString(System.Convert.ToString(x) ?? string.Empty)) : System.Linq.Enumerable.Empty<string>())}}");
-                            }
-                            else
-                            {
-                                qb.Add($"{qp.Name}={{System.Uri.EscapeDataString(System.Convert.ToString({qp.Name}) ?? string.Empty)}}");
-                            }
+                            interpolatedPath += "?" + string.Join("&", qb);
                         }
-                        interpolatedPath += "?" + string.Join("&", qb);
                     }
 
-                    ExpressionSyntax routePathExpr;
+                    ExpressionSyntax routePathExpr = interpolatedPath.Contains("{")
+                        ? SyntaxFactory.ParseExpression($$"""$"{{interpolatedPath}}" """)
+                        : SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(interpolatedPath));
 
-                    if (interpolatedPath.Contains("{"))
+                    var stmts = new List<StatementSyntax>
                     {
-                        routePathExpr = SyntaxFactory.ParseExpression($"$\"{interpolatedPath}\"");
-                    }
-                    else
-                    {
-                        routePathExpr = SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(interpolatedPath));
-                    }
-
-                    var stmts = new List<StatementSyntax>();
-
-                    stmts.Add(SyntaxFactory.LocalDeclarationStatement(
-                        SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator("request")
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(
-                                SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Net.Http.HttpRequestMessage"))
-                                .AddArgumentListArguments(
-                                    SyntaxFactory.Argument(SyntaxFactory.ParseExpression($"new System.Net.Http.HttpMethod(\"{httpMethod.ToUpperInvariant()}\")")),
-                                    SyntaxFactory.Argument(routePathExpr)
-                                )
-                            ))
-                        )
-                    ));
+                        SyntaxFactory.LocalDeclarationStatement(
+                            SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                                .AddVariables(
+                                    SyntaxFactory.VariableDeclarator("request")
+                                        .WithInitializer(SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Net.Http.HttpRequestMessage"))
+                                                .AddArgumentListArguments(
+                                                    SyntaxFactory.Argument(SyntaxFactory.ParseExpression($$"""new System.Net.Http.HttpMethod("{{httpMethod.ToUpperInvariant()}}")""")),
+                                                    SyntaxFactory.Argument(routePathExpr))))))
+                    };
 
                     var headerParams = operation.Parameters?.Where(p => p.In == "header").ToList();
                     if (headerParams != null)
                     {
                         foreach (var hp in headerParams)
                         {
-                            stmts.Add(SyntaxFactory.ParseStatement($"if ({hp.Name} != null) request.Headers.Add(\"{hp.Name}\", {hp.Name}.ToString());\n"));
+                            stmts.Add(SyntaxFactory.ParseStatement($$"""if ({{hp.Name}} != null) request.Headers.Add("{{hp.Name}}", {{hp.Name}}.ToString());"""));
                         }
                     }
 
                     if (operation.RequestBody?.Content != null && operation.RequestBody.Content.ContainsKey("application/json"))
                     {
-                        stmts.Add(SyntaxFactory.ParseStatement("request.Content = System.Net.Http.Json.JsonContent.Create(body);\n"));
+                        stmts.Add(SyntaxFactory.ParseStatement("request.Content = System.Net.Http.Json.JsonContent.Create(body);"));
                     }
 
                     var sendCall = SyntaxFactory.InvocationExpression(
                         SyntaxFactory.MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             SyntaxFactory.IdentifierName("_httpClient"),
-                            SyntaxFactory.IdentifierName("SendAsync")
-                        )
-                    ).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request")));
+                            SyntaxFactory.IdentifierName("SendAsync")))
+                        .AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("request")));
 
                     stmts.Add(SyntaxFactory.LocalDeclarationStatement(
                         SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator("response")
-                            .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.AwaitExpression(sendCall)))
-                        )
-                    ));
+                            .AddVariables(
+                                SyntaxFactory.VariableDeclarator("response")
+                                    .WithInitializer(SyntaxFactory.EqualsValueClause(SyntaxFactory.AwaitExpression(sendCall))))));
 
                     stmts.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
                             SyntaxFactory.MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 SyntaxFactory.IdentifierName("response"),
-                                SyntaxFactory.IdentifierName("EnsureSuccessStatusCode")
-                            )
-                        )
-                    ));
+                                SyntaxFactory.IdentifierName("EnsureSuccessStatusCode")))));
 
                     var readAsStringCall = SyntaxFactory.InvocationExpression(
                         SyntaxFactory.MemberAccessExpression(
@@ -384,18 +206,13 @@ namespace Cdd.OpenApi.Clients
                             SyntaxFactory.MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 SyntaxFactory.IdentifierName("response"),
-                                SyntaxFactory.IdentifierName("Content")
-                            ),
-                            SyntaxFactory.IdentifierName("ReadAsStringAsync")
-                        )
-                    );
+                                SyntaxFactory.IdentifierName("Content")),
+                            SyntaxFactory.IdentifierName("ReadAsStringAsync")));
 
                     StatementSyntax statement3;
                     if (returnTypeName == "string")
                     {
-                        statement3 = SyntaxFactory.ReturnStatement(
-                            SyntaxFactory.AwaitExpression(readAsStringCall)
-                        );
+                        statement3 = SyntaxFactory.ReturnStatement(SyntaxFactory.AwaitExpression(readAsStringCall));
                     }
                     else
                     {
@@ -404,138 +221,38 @@ namespace Cdd.OpenApi.Clients
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 SyntaxFactory.IdentifierName("System.Text.Json.JsonSerializer"),
                                 SyntaxFactory.GenericName("Deserialize")
-                                .WithTypeArgumentList(
-                                    SyntaxFactory.TypeArgumentList(
-                                        SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                                            SyntaxFactory.ParseTypeName(returnTypeName)
-                                        )
-                                    )
-                                )
-                            )
-                        ).AddArgumentListArguments(
-                            SyntaxFactory.Argument(SyntaxFactory.AwaitExpression(readAsStringCall)),
-                            SyntaxFactory.Argument(
-                                SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Text.Json.JsonSerializerOptions"))
-                                .WithInitializer(
-                                    SyntaxFactory.InitializerExpression(SyntaxKind.ObjectInitializerExpression)
-                                    .AddExpressions(
-                                        SyntaxFactory.AssignmentExpression(
-                                            SyntaxKind.SimpleAssignmentExpression,
-                                            SyntaxFactory.IdentifierName("PropertyNameCaseInsensitive"),
-                                            SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
-                                        )
-                                    )
-                                )
-                            )
-                        );
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(returnTypeName))))))
+                            .AddArgumentListArguments(
+                                SyntaxFactory.Argument(SyntaxFactory.AwaitExpression(readAsStringCall)),
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Text.Json.JsonSerializerOptions"))
+                                        .WithInitializer(
+                                            SyntaxFactory.InitializerExpression(SyntaxKind.ObjectInitializerExpression)
+                                                .AddExpressions(
+                                                    SyntaxFactory.AssignmentExpression(
+                                                        SyntaxKind.SimpleAssignmentExpression,
+                                                        SyntaxFactory.IdentifierName("PropertyNameCaseInsensitive"),
+                                                        SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression))))));
                         statement3 = SyntaxFactory.ReturnStatement(jsonDeserializeCall);
                     }
 
                     stmts.Add(statement3);
                     methodNode = methodNode.WithBody(SyntaxFactory.Block(stmts));
-
-                    if (!string.IsNullOrWhiteSpace(operation.Summary))
-                    {
-                        methodNode = Docstrings.Emit.WithSummary(methodNode, operation.Summary);
-                    }
-
-                    if (operation.Parameters != null)
-                    {
-                        foreach (var opParam in operation.Parameters)
-                        {
-                            if (!string.IsNullOrEmpty(opParam.Description))
-                            {
-                                methodNode = Docstrings.Emit.WithTag(methodNode, "param", new Dictionary<string, string> { { "name", opParam.Name } }, opParam.Description);
-                            }
-                        }
-                    }
-
-                    if (operation.Responses != null)
-                    {
-                        foreach (var respKvp in operation.Responses)
-                        {
-                            var attrs = new Dictionary<string, string> { { "code", respKvp.Key } };
-                            if (respKvp.Value.Headers != null)
-                                if (respKvp.Value.Headers.Count > 0)
-                                {
-                                    var headerKvp = respKvp.Value.Headers.First();
-                                    attrs["header"] = headerKvp.Key;
-                                    var h = headerKvp.Value;
-                                    if (!string.IsNullOrEmpty(h.Description)) attrs["header-description"] = h.Description;
-                                    if (h.Required.HasValue) attrs["header-required"] = h.Required.Value.ToString().ToLower();
-                                    if (h.Deprecated.HasValue) attrs["header-deprecated"] = h.Deprecated.Value.ToString().ToLower();
-                                    if (h.Example != null) attrs["header-example"] = h.Example.ToString()!;
-                                    if (h.Examples != null)
-                                        if (h.Examples.Count > 0)
-                                        {
-                                            attrs["header-examples"] = string.Join(",", h.Examples.Select(e => $"{e.Key}:{e.Value.Value}"));
-                                        }
-                                    if (!string.IsNullOrEmpty(h.Style)) attrs["header-style"] = h.Style;
-                                    if (h.Explode.HasValue) attrs["header-explode"] = h.Explode.Value.ToString().ToLower();
-                                    if (h.Schema?.Type != null) attrs["header-schema"] = h.Schema.Type;
-                                    if (h.Content != null)
-                                    {
-                                        if (h.Content.Count > 0)
-                                        {
-                                            var c = h.Content.First();
-                                            string? schemaType = null;
-                                            if (c.Value.Schema != null)
-                                            {
-                                                schemaType = c.Value.Schema.Type;
-                                            }
-                                            attrs["header-content"] = $"{c.Key}:{schemaType}";
-                                        }
-                                    }
-                                }
-                            string respDesc = "Response";
-                            if (respKvp.Value.Description != null)
-                            {
-                                respDesc = respKvp.Value.Description;
-                            }
-                            methodNode = Docstrings.Emit.WithTag(methodNode, "response", attrs, respDesc);
-                        }
-                    }
-
-                    if (operation.Servers != null)
-                    {
-                        foreach (var s in operation.Servers)
-                        {
-                            var attrs = new Dictionary<string, string> { { "url", s.Url } };
-                            if (!string.IsNullOrEmpty(s.Description)) attrs["description"] = s.Description;
-                            methodNode = Docstrings.Emit.WithTag(methodNode, "server", attrs, "");
-                        }
-                    }
-
-                    if (operation.Callbacks != null)
-                    {
-                        foreach (var cKvp in operation.Callbacks)
-                        {
-                            var cName = cKvp.Key;
-                            var cbObj = cKvp.Value;
-                            if (cbObj.Count > 0)
-                            {
-                                var expKvp = cbObj.First();
-                                var expression = expKvp.Key;
-                                var opItem = expKvp.Value;
-                                var desc = opItem.Post?.Description ?? opItem.Get?.Description ?? "Callback";
-
-                                var attrs = new Dictionary<string, string> { { "name", cName }, { "expression", expression } };
-                                methodNode = Docstrings.Emit.WithTag(methodNode, "callback", attrs, desc);
-                            }
-                        }
-                    }
+                    methodNode = OperationSignatureBuilder.ApplyOperationDocstrings(methodNode, operation, includeParamDocs: true);
 
                     members.Add(methodNode);
                 }
             }
-
 
             var mcpClassDecl = SyntaxFactory.ClassDeclaration("NativeMcpAdapter")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                 .AddMembers(
                     SyntaxFactory.FieldDeclaration(
                         SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(className))
-                        .AddVariables(SyntaxFactory.VariableDeclarator("_client")))
+                            .AddVariables(SyntaxFactory.VariableDeclarator("_client")))
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword), SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)),
                     SyntaxFactory.ConstructorDeclaration("NativeMcpAdapter")
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
@@ -544,19 +261,16 @@ namespace Cdd.OpenApi.Clients
                     SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>"), "GetTools")
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                         .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))),
-                                        SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<string>"), "ExecuteToolAsync")
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task<string>"), "ExecuteToolAsync")
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                         .AddParameterListParameters(
                             SyntaxFactory.Parameter(SyntaxFactory.Identifier("toolName")).WithType(SyntaxFactory.ParseTypeName("string")),
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.Dictionary<string, object>"))
-                        )
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("System.Collections.Generic.Dictionary<string, object>")))
                         .WithBody(SyntaxFactory.Block(
-                            SyntaxFactory.ReturnStatement(SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task"), SyntaxFactory.IdentifierName("FromResult"))).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal("")))))
-                        )),
+                            SyntaxFactory.ReturnStatement(SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task"), SyntaxFactory.IdentifierName("FromResult"))).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(""))))))),
                     SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>"), "GetResources")
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList()))))
-                );
+                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))));
 
             var mcpPropDecl = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("NativeMcpAdapter"), "Mcp")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
@@ -569,13 +283,39 @@ namespace Cdd.OpenApi.Clients
         }
 
         /// <summary>
-        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
+        /// Resolves a client-facing C# type name for an <see cref="OpenApiSchema"/>.
         /// </summary>
-        /// <param name="openApiType">The OpenAPI type string.</param>
-        /// <returns>The mapped C# type name.</returns>
-        private static string MapTypeToCSharp(string? openApiType)
+        /// <param name="schema">The OpenAPI schema to resolve.</param>
+        /// <returns>The resolved C# type name.</returns>
+        private static string ResolveClientSchemaType(OpenApiSchema schema)
         {
-            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "string");
+            if (!string.IsNullOrEmpty(schema.Ref))
+            {
+                return schema.Ref.Split('/').Last();
+            }
+
+            if (schema.Type == OpenApiDataType.Array)
+            {
+                if (schema.Items?.Ref != null)
+                {
+                    return $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+                }
+
+                if (schema.Items?.Type != null)
+                {
+                    return $"System.Collections.Generic.List<{TypeMapper.MapOpenApiToCSharp(schema.Items.Type, "string")}>";
+                }
+            }
+            else if (schema.Type != null)
+            {
+                return TypeMapper.MapOpenApiToCSharp(schema.Type, "string");
+            }
+            else if (schema.Items?.Ref != null)
+            {
+                return $"System.Collections.Generic.List<{schema.Items.Ref.Split('/').Last()}>";
+            }
+
+            return "string";
         }
     }
 }

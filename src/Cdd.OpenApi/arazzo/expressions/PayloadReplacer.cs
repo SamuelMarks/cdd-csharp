@@ -9,6 +9,8 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml;
+using Cdd.OpenApi.Common;
+using Cdd.OpenApi.Errors;
 using Cdd.OpenApi.Models;
 using Cdd.OpenApi.Models.Arazzo;
 
@@ -164,7 +166,7 @@ namespace Cdd.OpenApi.Arazzo.Expressions
         private static string ConvertSimpleJsonPathToPointer(string jsonPath)
         {
             var p = jsonPath.Trim().TrimStart('$').TrimStart('.');
-            p = p.Replace("[", "/").Replace("]", string.Empty).Replace("'", string.Empty).Replace(((char)34).ToString(), string.Empty).Replace(".", "/");
+            p = p.Replace("[", "/").Replace("]", string.Empty).Replace("'", string.Empty).Replace(StringEscaper.DoubleQuote, string.Empty).Replace(".", "/");
             return "/" + p.TrimStart('/');
         }
 

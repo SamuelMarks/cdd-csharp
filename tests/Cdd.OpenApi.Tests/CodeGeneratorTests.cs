@@ -138,47 +138,68 @@ namespace Cdd.OpenApi.Tests
         }
 
         [Fact]
-        public void AddDocTags_CoversBranches()
+        public void GroupPathsByTag_InheritsPathLevelParametersAndPreservesOverrides()
         {
             var doc = new OpenApiDocument
             {
-                Paths = new OpenApiPaths { ["/"] = new OpenApiPathItem { Get = new OpenApiOperation() } },
-                Components = new OpenApiComponents
+                Paths = new OpenApiPaths
                 {
-                    Schemas = new Dictionary<string, OpenApiSchema>
+                    ["/items/{id}"] = new OpenApiPathItem
                     {
-                        ["ImplicitObject"] = new OpenApiSchema
+                        Parameters = new List<OpenApiParameter>
                         {
-                            Type = null,
-                            Properties = new Dictionary<string, OpenApiSchema> { ["id"] = new OpenApiSchema { Type = "integer" } }
+                            new OpenApiParameter
+                            {
+                                Name = "id",
+                                In = "path",
+                                Required = true,
+                                Schema = new OpenApiSchema { Type = "integer" }
+                            },
+                            new OpenApiParameter
+                            {
+                                Name = "tenant",
+                                In = "header",
+                                Required = false,
+                                Schema = new OpenApiSchema { Type = "string" }
+                            }
                         },
-                        ["PrimitiveAlias"] = new OpenApiSchema
+                        Get = new OpenApiOperation
                         {
-                            Type = "string",
-                            Properties = null
+                            OperationId = "GetItem",
+                            Tags = new List<string> { "items" },
+                            Parameters = new List<OpenApiParameter>
+                            {
+                                new OpenApiParameter
+                                {
+                                    Name = "id",
+                                    In = "path",
+                                    Required = true,
+                                    Schema = new OpenApiSchema { Type = "integer" }
+                                },
+                                new OpenApiParameter
+                                {
+                                    Name = "filter",
+                                    In = "query",
+                                    Required = false,
+                                    Schema = new OpenApiSchema { Type = "string" }
+                                }
+                            }
+                        },
+                        Delete = new OpenApiOperation
+                        {
+                            OperationId = "DeleteItem",
+                            Tags = new List<string> { "items" },
+                            Parameters = null
                         }
                     }
-                },
-                Self = "myself",
-                JsonSchemaDialect = "dialect",
-                Info = new OpenApiInfo
-                {
-                    TermsOfService = "terms",
-                    License = new OpenApiLicense { Identifier = "MIT" }
                 }
             };
+
             var res1 = CodeGenerator.Generate(doc);
-            Assert.NotEmpty(res1);
-
-            var doc2 = new OpenApiDocument
-            {
-                Info = new OpenApiInfo()
-            };
-            var res2 = CodeGenerator.Generate(doc2);
-            Assert.Empty(res2);
-
-            var resNull = CodeGenerator.Generate(null!);
-            Assert.Empty(resNull);
+            var apiFile = res1.First(r => r.FileName == "src/Api/IItemsApi.cs");
+            Assert.Contains("int id", apiFile.Code);
+            Assert.Contains("string tenant", apiFile.Code);
+            Assert.Contains("string filter", apiFile.Code);
 
             var doc3 = new OpenApiDocument { Paths = new OpenApiPaths() };
             var res3 = CodeGenerator.Generate(doc3);

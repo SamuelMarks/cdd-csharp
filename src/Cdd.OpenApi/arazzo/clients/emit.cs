@@ -69,7 +69,7 @@ namespace Cdd.OpenApi.Arazzo.Clients
                 throw new ArgumentNullException(nameof(doc));
             }
 
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             var sb = new StringBuilder();
 
             AppendDocMetadataHeader(sb, doc, "Arazzo workflow orchestrator.");
@@ -183,7 +183,7 @@ namespace Cdd.OpenApi.Arazzo.Clients
         /// <param name="wf">The workflow definition.</param>
         private static void AppendWorkflowMethod(StringBuilder sb, ArazzoWorkflow wf)
         {
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             var wfPascal = RuntimeExpression.ToPascalIdentifier(wf.WorkflowId);
             var wfJson = JsonSerializer.Serialize(wf, ArazzoJsonContext.Default.ArazzoWorkflow);
             var wfB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(wfJson));
@@ -274,15 +274,7 @@ namespace Cdd.OpenApi.Arazzo.Clients
         /// <returns>The XML-escaped single-line string.</returns>
         internal static string EscapeXml(string text)
         {
-            var lf = ((char)10).ToString();
-            var cr = ((char)13).ToString();
-            return text
-                .Replace("&", "&amp;")
-                .Replace("<", "&lt;")
-                .Replace(">", "&gt;")
-                .Replace(((char)34).ToString(), "&quot;")
-                .Replace(cr, " ")
-                .Replace(lf, " ");
+            return StringEscaper.EscapeXmlComment(text);
         }
 
         /// <summary>
@@ -292,11 +284,7 @@ namespace Cdd.OpenApi.Arazzo.Clients
         /// <returns>The escaped C# string literal body.</returns>
         internal static string EscapeCSharp(string text)
         {
-            var bs = ((char)92).ToString();
-            var dq = ((char)34).ToString();
-            var lf = ((char)10).ToString();
-            var cr = ((char)13).ToString();
-            return text.Replace(bs, bs + bs).Replace(dq, bs + dq).Replace(cr, string.Empty).Replace(lf, " ");
+            return StringEscaper.EscapeCSharpLiteral(text);
         }
     }
 }

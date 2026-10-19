@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using Cdd.OpenApi.Arazzo.Expressions;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
 using Cdd.OpenApi.Models.Arazzo;
 using Microsoft.CodeAnalysis;
@@ -37,6 +38,8 @@ namespace Cdd.OpenApi
             {
                 throw new ArgumentNullException(nameof(doc));
             }
+
+            doc = IrService.FromArazzo(doc).ToArazzo();
 
             var results = new List<GeneratedCode>();
             if (sourceOpenApiDocs != null)

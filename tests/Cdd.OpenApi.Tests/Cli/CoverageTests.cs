@@ -204,8 +204,10 @@ namespace Cdd.OpenApi.Tests.Cli
 
                 // Call with 0.0.0.0
                 Environment.SetEnvironmentVariable("CDD_LISTEN", "0.0.0.0");
-                using var cts2 = new CancellationTokenSource(50);
-                try { CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", "51240", "-l", "0.0.0.0" }, cts2.Token); } catch { }
+                using var cts2 = new CancellationTokenSource();
+                cts2.Cancel();
+                var exitCodeZeroListen = CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-p", "51240", "-l", "0.0.0.0" }, cts2.Token);
+                Assert.True(exitCodeZeroListen == 0 || exitCodeZeroListen == 1);
             }
             finally
             {

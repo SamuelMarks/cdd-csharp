@@ -5,13 +5,8 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using System.Net;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using Cdd.OpenApi.Parse;
 using Cdd.OpenApi.Emit;
-using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Parse;
 
 namespace Cdd.OpenApi.Cli
 {
@@ -20,29 +15,35 @@ namespace Cdd.OpenApi.Cli
     /// </summary>
     public static class CddCli
     {
-
         /// <summary>Help text for the <c>from_openapi</c> command.</summary>
-        public const string FromOpenApiHelp = "Generate code from an OpenAPI specification.\n\nUsage:\n  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path or URL to the OpenAPI specification.\n  -d, --input-dir             Directory containing OpenAPI specifications.\n  -o, --output                Output file or directory path.\n  --tests                     Generate integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.\n  -m, --mcp                   Generate Model Context Protocol (MCP) server and adapter.";
+        public const string FromOpenApiHelp = CliHelpText.FromOpenApiHelp;
+
         /// <summary>Help text for the <c>to_openapi</c> command.</summary>
-        public const string ToOpenApiHelp = "Usage:\n  cdd-csharp to_openapi -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to source code directory or file.\n  -o, --output   Output file or directory path.";
+        public const string ToOpenApiHelp = CliHelpText.ToOpenApiHelp;
+
         /// <summary>Help text for the <c>from_arazzo</c> command.</summary>
-        public const string FromArazzoHelp = "Generate code from an Arazzo 1.1.0 specification.\n\nUsage:\n  cdd-csharp from_arazzo [to_sdk|to_sdk_cli|to_server] -i <input> | -d|--input-dir <dir> [-o <output>]\n\nOptions:\n  -i, --input                 Path to the Arazzo specification.\n  -d, --input-dir             Directory containing Arazzo specifications.\n  -o, --output                Output directory path.\n  --tests                     Generate workflow integration tests and mocks.\n  --no-github-actions         Do not generate GitHub Actions scaffolding.\n  --no-installable-package    Do not generate installable package scaffolding.";
+        public const string FromArazzoHelp = CliHelpText.FromArazzoHelp;
+
         /// <summary>Help text for the <c>to_arazzo</c> command.</summary>
-        public const string ToArazzoHelp = "Usage:\n  cdd-csharp to_arazzo -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path to C# workflow source code directory or file.\n  -o, --output   Output Arazzo specification file path (JSON or YAML).";
+        public const string ToArazzoHelp = CliHelpText.ToArazzoHelp;
+
         /// <summary>Help text for the <c>to_docs_json</c> command.</summary>
-        public const string ToDocsJsonHelp = "Usage:\n  cdd-csharp to_docs_json -i <input> [-o <output>]\n\nOptions:\n  -i, --input    Path or URL to the OpenAPI specification.\n  -o, --output   Output file or directory path.\n  --no-imports   Omit the imports field.\n  --no-wrapping  Omit the wrapper fields.";
+        public const string ToDocsJsonHelp = CliHelpText.ToDocsJsonHelp;
+
         /// <summary>Help text for the <c>sync</c> command.</summary>
-        public const string SyncHelp = "Usage:\n  cdd-csharp sync -t <truth> -i <input> [-o <output>]\n\nOptions:\n  -t, --truth    Designate a single source of truth for synchronization.\n  -i, --input    Path to the source files.\n  -o, --output   Output file or directory path.";
+        public const string SyncHelp = CliHelpText.SyncHelp;
+
         /// <summary>Help text for the <c>serve_json_rpc</c> command.</summary>
-        public const string ServeJsonRpcHelp = "Usage:\n  cdd-csharp serve_json_rpc [-p <port>] [-l <listen>]\n\nOptions:\n  -p, --port     Port to listen on (default: 8080).\n  -l, --listen   Address to listen on (default: 127.0.0.1).";
+        public const string ServeJsonRpcHelp = CliHelpText.ServeJsonRpcHelp;
+
         /// <summary>Help text for the <c>mcp</c> command.</summary>
-        public const string McpHelp = "Usage:\n  cdd-csharp mcp\n\nOptions:\n  Run the generator as an MCP server over stdio.";
+        public const string McpHelp = CliHelpText.McpHelp;
+
         /// <summary>Help text for the <c>parse</c> command.</summary>
-        public const string ParseHelp = "Usage:\n  cdd-csharp parse <input>\n\nOptions:\n  <input>    Path to the OpenAPI specification to parse and inspect.";
+        public const string ParseHelp = CliHelpText.ParseHelp;
+
         /// <summary>Help text for the <c>emit</c> command.</summary>
-        public const string EmitHelp = "Usage:\n  cdd-csharp emit <input> <output>\n\nOptions:\n  <input>    Path to the input OpenAPI specification.\n  <output>   Path to write the re-emitted OpenAPI JSON.";
-
-
+        public const string EmitHelp = CliHelpText.EmitHelp;
 
         /// <summary>
         /// Parse arguments for generating an OpenAPI specification from source code.
@@ -51,24 +52,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Tuple of inputPath and outputPath.</returns>
         public static (string inputPath, string outputPath) ParseToOpenApiArgs(string[] args)
         {
-            string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
-            string outputPath = Environment.GetEnvironmentVariable("CDD_OUTPUT") ?? Environment.GetEnvironmentVariable("OUTPUT_FILE") ?? "openapi.json";
-
-            for (int i = 1; i < args.Length; i++)
-            {
-                if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
-                {
-                    inputPath = args[++i];
-                }
-                else if (args[i] == "-o" || args[i] == "--output")
-                {
-                    if (i + 1 < args.Length)
-                    {
-                        outputPath = args[++i];
-                    }
-                }
-            }
-            return (inputPath, outputPath);
+            return CliArgumentParser.ParseToOpenApiArgs(args);
         }
 
         /// <summary>
@@ -79,7 +63,6 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static int ToOpenApi(string inputPath, string outputPath)
         {
-
             if (string.IsNullOrEmpty(inputPath))
             {
                 Console.Error.WriteLine(ToOpenApiHelp);
@@ -111,34 +94,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Tuple of inputPath, outputPath, noImports, and noWrapping.</returns>
         public static (string inputPath, string outputPath, bool noImports, bool noWrapping) ParseDocsJsonArgs(string[] args)
         {
-            string inputPath = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT_FILE") ?? string.Empty;
-            string outputPath = Environment.GetEnvironmentVariable("CDD_OUTPUT") ?? Environment.GetEnvironmentVariable("OUTPUT_FILE") ?? string.Empty;
-            bool noImports = Environment.GetEnvironmentVariable("CDD_NO_IMPORTS") == "true" || Environment.GetEnvironmentVariable("NO_IMPORTS") == "true";
-            bool noWrapping = Environment.GetEnvironmentVariable("CDD_NO_WRAPPING") == "true" || Environment.GetEnvironmentVariable("NO_WRAPPING") == "true";
-
-            for (int i = 1; i < args.Length; i++)
-            {
-                if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
-                {
-                    inputPath = args[++i];
-                }
-                else if (args[i] == "-o" || args[i] == "--output")
-                {
-                    if (i + 1 < args.Length)
-                    {
-                        outputPath = args[++i];
-                    }
-                }
-                else if (args[i] == "--no-imports")
-                {
-                    noImports = true;
-                }
-                else if (args[i] == "--no-wrapping")
-                {
-                    noWrapping = true;
-                }
-            }
-            return (inputPath, outputPath, noImports, noWrapping);
+            return CliArgumentParser.ParseDocsJsonArgs(args);
         }
 
         /// <summary>
@@ -151,7 +107,6 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static int ToDocsJson(string inputPath, string outputPath, bool noImports, bool noWrapping)
         {
-
             if (string.IsNullOrEmpty(inputPath))
             {
                 Console.Error.WriteLine(ToDocsJsonHelp);
@@ -170,6 +125,7 @@ namespace Cdd.OpenApi.Cli
                     Console.Error.WriteLine($"Error: Input '{inputPath}' not found.");
                     return 1;
                 }
+
                 jsonContent = File.ReadAllText(inputPath);
             }
 
@@ -184,6 +140,7 @@ namespace Cdd.OpenApi.Cli
             {
                 Console.WriteLine(outputJson);
             }
+
             return 0;
         }
 
@@ -215,59 +172,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static (GenerateType type, CddConfig config) ParseFromOpenApiArgs(string[] args)
         {
-            var subCommand = args.Length > 1 ? args[1].ToLowerInvariant() : "";
-            GenerateType type = GenerateType.All;
-            int startIndex = 1;
-
-            if (subCommand == "to_sdk") { type = GenerateType.Sdk; startIndex = 2; }
-            else if (subCommand == "to_sdk_cli") { type = GenerateType.SdkCli; startIndex = 2; }
-            else if (subCommand == "to_server") { type = GenerateType.Server; startIndex = 2; }
-
-            var config = new CddConfig();
-            config.OutputDir = Environment.GetEnvironmentVariable("CDD_OUTPUT") ?? Environment.GetEnvironmentVariable("OUTPUT_DIR") ?? Directory.GetCurrentDirectory();
-            config.NoGithubActions = Environment.GetEnvironmentVariable("CDD_NO_GITHUB_ACTIONS") == "true" || Environment.GetEnvironmentVariable("NO_GITHUB_ACTIONS") == "true";
-            config.NoInstallablePackage = Environment.GetEnvironmentVariable("CDD_NO_INSTALLABLE_PACKAGE") == "true" || Environment.GetEnvironmentVariable("NO_INSTALLABLE_PACKAGE") == "true";
-            config.CreateComposableTestsAndMocks = Environment.GetEnvironmentVariable("CDD_TESTS") == "true" || Environment.GetEnvironmentVariable("CREATE_COMPOSABLE_TESTS_AND_MOCKS") == "true";
-            config.Mcp = Environment.GetEnvironmentVariable("CDD_MCP") == "true" || Environment.GetEnvironmentVariable("MCP") == "true";
-
-            string? inputEnv = Environment.GetEnvironmentVariable("CDD_INPUT") ?? Environment.GetEnvironmentVariable("INPUT");
-            if (!string.IsNullOrEmpty(inputEnv)) config.InputPath = inputEnv;
-
-            string? inputDirEnv = Environment.GetEnvironmentVariable("CDD_INPUT_DIR") ?? Environment.GetEnvironmentVariable("INPUT_DIR");
-            if (!string.IsNullOrEmpty(inputDirEnv)) config.InputDir = inputDirEnv;
-
-            for (int i = startIndex; i < args.Length; i++)
-            {
-                if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
-                {
-                    config.InputPaths.Add(args[++i]);
-                }
-                else if ((args[i] == "-d" || args[i] == "--input-dir") && i + 1 < args.Length)
-                {
-                    config.InputDir = args[++i];
-                }
-                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
-                {
-                    config.OutputDir = args[++i];
-                }
-                else if (args[i] == "--no-github-actions")
-                {
-                    config.NoGithubActions = true;
-                }
-                else if (args[i] == "--no-installable-package")
-                {
-                    config.NoInstallablePackage = true;
-                }
-                else if (args[i] == "--tests")
-                {
-                    config.CreateComposableTestsAndMocks = true;
-                }
-                else if (args[i] == "-m" || args[i] == "--mcp")
-                {
-                    config.Mcp = true;
-                }
-            }
-            return (type, config);
+            return CliArgumentParser.ParseFromOpenApiArgs(args);
         }
 
         /// <summary>
@@ -278,7 +183,6 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static int FromOpenApi(GenerateType type, CddConfig config)
         {
-
             if (string.IsNullOrEmpty(config.InputPath) && string.IsNullOrEmpty(config.InputDir) && !config.InputPaths.Any())
             {
                 Console.Error.WriteLine(FromOpenApiHelp);
@@ -310,26 +214,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>A tuple containing the truth source, input path, and output path.</returns>
         public static (string truth, string inputPath, string outputPath) ParseSyncArgs(string[] args)
         {
-            string truth = string.Empty;
-            string inputPath = string.Empty;
-            string outputPath = string.Empty;
-
-            for (int i = 1; i < args.Length; i++)
-            {
-                if ((args[i] == "-t" || args[i] == "--truth") && i + 1 < args.Length)
-                {
-                    truth = args[++i];
-                }
-                else if ((args[i] == "-i" || args[i] == "--input") && i + 1 < args.Length)
-                {
-                    inputPath = args[++i];
-                }
-                else if ((args[i] == "-o" || args[i] == "--output") && i + 1 < args.Length)
-                {
-                    outputPath = args[++i];
-                }
-            }
-            return (truth, inputPath, outputPath);
+            return CliArgumentParser.ParseSyncArgs(args);
         }
 
         /// <summary>
@@ -381,7 +266,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>A tuple of <c>inputPath</c> and <c>outputPath</c>.</returns>
         public static (string inputPath, string outputPath) ParseToArazzoArgs(string[] args)
         {
-            return ParseToOpenApiArgs(args);
+            return CliArgumentParser.ParseToOpenApiArgs(args);
         }
 
         /// <summary>
@@ -425,7 +310,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>A tuple of <see cref="GenerateType"/> and <see cref="CddConfig"/>.</returns>
         public static (GenerateType type, CddConfig config) ParseFromArazzoArgs(string[] args)
         {
-            return ParseFromOpenApiArgs(args);
+            return CliArgumentParser.ParseFromOpenApiArgs(args);
         }
 
         /// <summary>
@@ -463,360 +348,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static int ServeMcp(string[] args)
         {
-            var writer = Console.Out;
-            var reader = Console.In;
-            var parser = new OpenApiParser();
-            var emitter = new OpenApiEmitter();
-            var activeDoc = new OpenApiDocument { OpenApi = "3.2.0", Info = new OpenApiInfo { Title = "Active API", Version = "1.0.0" }, Paths = new OpenApiPaths() };
-
-            static void WriteJsonRpc(TextWriter w, JsonNode? idNode, JsonObject? resultObj, JsonObject? errorObj = null)
-            {
-                var envelope = new JsonObject
-                {
-                    ["jsonrpc"] = "2.0",
-                    ["id"] = idNode!.DeepClone()
-                };
-                if (errorObj != null)
-                {
-                    envelope["error"] = errorObj;
-                }
-                else
-                {
-                    envelope["result"] = resultObj;
-                }
-                w.WriteLine(JsonSerializer.Serialize(envelope, OpenApiJsonContext.Default.JsonObject));
-            }
-
-            while (true)
-            {
-                var line = reader.ReadLine();
-                if (line == null) break;
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                JsonDocument document;
-                try
-                {
-                    document = JsonDocument.Parse(line);
-                }
-                catch (JsonException)
-                {
-                    var parseErr = new JsonObject
-                    {
-                        ["jsonrpc"] = "2.0",
-                        ["error"] = new JsonObject { ["code"] = -32700, ["message"] = "Parse error" }
-                    };
-                    writer.WriteLine(JsonSerializer.Serialize(parseErr, OpenApiJsonContext.Default.JsonObject));
-                    continue;
-                }
-
-                using (document)
-                {
-                    var root = document.RootElement;
-                    if (root.TryGetProperty("method", out var methodProp))
-                    {
-                        var method = methodProp.GetString();
-                        JsonNode? idNode = root.TryGetProperty("id", out var idProp) ? JsonNode.Parse(idProp.GetRawText()) : null;
-
-                        if (method == "initialize")
-                        {
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["protocolVersion"] = "2024-11-05",
-                                ["capabilities"] = new JsonObject { ["tools"] = new JsonObject(), ["resources"] = new JsonObject() },
-                                ["serverInfo"] = new JsonObject { ["name"] = "cdd-meta-mcp", ["version"] = "1.0.0" }
-                            });
-                        }
-                        else if (method == "notifications/initialized" || method == "notifications/cancelled" || method == "notifications/progress")
-                        {
-                            // Notification messages require no response
-                        }
-                        else if (method == "ping" || method == "logging/setLevel")
-                        {
-                            WriteJsonRpc(writer, idNode, new JsonObject());
-                        }
-                        else if (method == "prompts/list")
-                        {
-                            JsonNode? nextCursor = "page2";
-                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c) && c.GetString() == "page2")
-                            {
-                                nextCursor = null;
-                            }
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["nextCursor"] = nextCursor,
-                                ["prompts"] = new JsonArray(
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_prompt",
-                                        ["description"] = "A default prompt",
-                                        ["arguments"] = new JsonArray(
-                                            new JsonObject { ["name"] = "arg1", ["description"] = "An argument", ["required"] = true })
-                                    })
-                            });
-                        }
-                        else if (method == "prompts/get")
-                        {
-                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("name", out var n) && n.GetString() == "cdd_prompt")
-                            {
-                                WriteJsonRpc(writer, idNode, new JsonObject
-                                {
-                                    ["description"] = "A default prompt",
-                                    ["messages"] = new JsonArray(
-                                        new JsonObject
-                                        {
-                                            ["role"] = "user",
-                                            ["content"] = new JsonObject { ["type"] = "text", ["text"] = "Prompt content" }
-                                        })
-                                });
-                            }
-                            else
-                            {
-                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32602, ["message"] = "Prompt not found" });
-                            }
-                        }
-                        else if (method == "tools/list")
-                        {
-                            JsonNode? nextCursor = "page2";
-                            if (root.TryGetProperty("params", out var p) && p.TryGetProperty("cursor", out var c) && c.GetString() == "page2")
-                            {
-                                nextCursor = null;
-                            }
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["nextCursor"] = nextCursor,
-                                ["tools"] = new JsonArray(
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_generate",
-                                        ["description"] = "Generate C# code from OpenAPI",
-                                        ["inputSchema"] = new JsonObject
-                                        {
-                                            ["type"] = "object",
-                                            ["properties"] = new JsonObject { ["input"] = new JsonObject { ["type"] = "string" } },
-                                            ["required"] = new JsonArray("input")
-                                        }
-                                    },
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_inspect",
-                                        ["description"] = "Inspect the active schema",
-                                        ["inputSchema"] = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject(), ["required"] = new JsonArray() }
-                                    },
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_extract",
-                                        ["description"] = "Extract OpenAPI schema from C# code",
-                                        ["inputSchema"] = new JsonObject
-                                        {
-                                            ["type"] = "object",
-                                            ["properties"] = new JsonObject { ["input"] = new JsonObject { ["type"] = "string" }, ["output"] = new JsonObject { ["type"] = "string" } },
-                                            ["required"] = new JsonArray("input")
-                                        }
-                                    },
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_generate_in_memory",
-                                        ["description"] = "Run generation core directly in memory",
-                                        ["inputSchema"] = new JsonObject
-                                        {
-                                            ["type"] = "object",
-                                            ["properties"] = new JsonObject { ["schema"] = new JsonObject { ["type"] = "string" } },
-                                            ["required"] = new JsonArray("schema")
-                                        }
-                                    },
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_from_arazzo",
-                                        ["description"] = "Generate C# workflow code from an Arazzo 1.1.0 specification",
-                                        ["inputSchema"] = new JsonObject
-                                        {
-                                            ["type"] = "object",
-                                            ["properties"] = new JsonObject { ["arazzo"] = new JsonObject { ["type"] = "string" } },
-                                            ["required"] = new JsonArray("arazzo")
-                                        }
-                                    },
-                                    new JsonObject
-                                    {
-                                        ["name"] = "cdd_to_arazzo",
-                                        ["description"] = "Extract Arazzo 1.1.0 specification from C# workflow code",
-                                        ["inputSchema"] = new JsonObject
-                                        {
-                                            ["type"] = "object",
-                                            ["properties"] = new JsonObject { ["code"] = new JsonObject { ["type"] = "string" } },
-                                            ["required"] = new JsonArray("code")
-                                        }
-                                    })
-                            });
-                        }
-                        else if (method == "tools/call")
-                        {
-                            if (root.TryGetProperty("params", out var paramsProp) && paramsProp.TryGetProperty("name", out var nameProp))
-                            {
-                                var toolName = nameProp.GetString();
-                                bool hasArgs = paramsProp.TryGetProperty("arguments", out var argsProp);
-                                try
-                                {
-                                    if (toolName == "cdd_generate")
-                                    {
-                                        if (hasArgs && argsProp.TryGetProperty("input", out var inputProp))
-                                        {
-                                            var outDir = argsProp.TryGetProperty("output", out var outProp) ? outProp.GetString()! : Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                                            CddGenerator.GenerateAll(new CddConfig { InputPath = inputProp.GetString()!, OutputDir = outDir, NoGithubActions = true, NoInstallablePackage = true });
-                                        }
-                                        else
-                                        {
-                                            CodeGenerator.Generate(activeDoc);
-                                        }
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = "Generated code successfully" })
-                                        });
-                                    }
-                                    else if (toolName == "cdd_inspect")
-                                    {
-                                        if (hasArgs && argsProp.TryGetProperty("input", out var inputProp))
-                                        {
-                                            activeDoc = parser.ParseJson(File.ReadAllText(inputProp.GetString()!));
-                                        }
-                                        var ir = Cdd.OpenApi.Ir.IrService.FromOpenApi(activeDoc);
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Schema inspected successfully ({ir.Endpoints.Count} endpoints)" })
-                                        });
-                                    }
-                                    else if (toolName == "cdd_extract")
-                                    {
-                                        var sources = hasArgs && argsProp.TryGetProperty("input", out var inputProp)
-                                            ? new[] { File.ReadAllText(inputProp.GetString()!) }
-                                            : Array.Empty<string>();
-                                        activeDoc = SpecGenerator.Generate(sources);
-                                        var emittedJson = emitter.EmitJson(activeDoc);
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Code-to-schema extracted successfully: {emittedJson}" })
-                                        });
-                                    }
-                                    else if (toolName == "cdd_generate_in_memory")
-                                    {
-                                        var docToGen = hasArgs && argsProp.TryGetProperty("schema", out var schemaProp)
-                                            ? parser.ParseJson(schemaProp.GetString()!)
-                                            : activeDoc;
-                                        var generatedFiles = CodeGenerator.Generate(docToGen);
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"In-memory generation successful ({generatedFiles.Count} files)" })
-                                        });
-                                    }
-                                    else if (toolName == "cdd_from_arazzo")
-                                    {
-                                        var arazzoText = argsProp.GetProperty("arazzo").GetString()!;
-                                        var arazzoDoc = Arazzo.ArazzoParser.ParseYamlOrJson(arazzoText);
-                                        var generatedFiles = ArazzoCodeGenerator.Generate(arazzoDoc);
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = $"Generated Arazzo workflow code successfully ({generatedFiles.Count} files)" })
-                                        });
-                                    }
-                                    else if (toolName == "cdd_to_arazzo")
-                                    {
-                                        var csText = argsProp.GetProperty("code").GetString()!;
-                                        var arazzoDoc = ArazzoSpecGenerator.Generate(csText);
-                                        var emittedArazzo = Arazzo.ArazzoEmitter.EmitJson(arazzoDoc);
-                                        WriteJsonRpc(writer, idNode, new JsonObject
-                                        {
-                                            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = emittedArazzo })
-                                        });
-                                    }
-                                    else
-                                    {
-                                        WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32601, ["message"] = "Tool not found" });
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32603, ["message"] = ex.Message });
-                                }
-                            }
-                            else
-                            {
-                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32602, ["message"] = "Invalid params" });
-                            }
-                        }
-                        else if (method == "resources/list")
-                        {
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["resources"] = new JsonArray(
-                                    new JsonObject { ["uri"] = "cdd://schema", ["name"] = "Loaded API Schema", ["mimeType"] = "application/json" },
-                                    new JsonObject { ["uri"] = "cdd://ast", ["name"] = "Internal AST Structures", ["mimeType"] = "application/json" })
-                            });
-                        }
-                        else if (method == "resources/read")
-                        {
-                            if (root.TryGetProperty("params", out var pProp) && pProp.TryGetProperty("uri", out var uriProp) && uriProp.GetString() == "cdd://ast")
-                            {
-                                var ir = Cdd.OpenApi.Ir.IrService.FromOpenApi(activeDoc);
-                                var astObj = new JsonObject
-                                {
-                                    ["ast"] = ir.Title,
-                                    ["modelsCount"] = ir.Models.Count,
-                                    ["endpointsCount"] = ir.Endpoints.Count
-                                };
-                                WriteJsonRpc(writer, idNode, new JsonObject
-                                {
-                                    ["contents"] = new JsonArray(new JsonObject
-                                    {
-                                        ["uri"] = "cdd://ast",
-                                        ["mimeType"] = "application/json",
-                                        ["text"] = JsonSerializer.Serialize(astObj, OpenApiJsonContext.Default.JsonObject)
-                                    })
-                                });
-                            }
-                            else
-                            {
-                                WriteJsonRpc(writer, idNode, new JsonObject
-                                {
-                                    ["contents"] = new JsonArray(new JsonObject
-                                    {
-                                        ["uri"] = "cdd://schema",
-                                        ["mimeType"] = "application/json",
-                                        ["text"] = emitter.EmitJson(activeDoc)
-                                    })
-                                });
-                            }
-                        }
-                        else if (method == "resources/templates/list")
-                        {
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["resourceTemplates"] = new JsonArray(
-                                    new JsonObject { ["uriTemplate"] = "cdd://{path}", ["name"] = "A template", ["mimeType"] = "application/json" })
-                            });
-                        }
-                        else if (method == "sampling/createMessage")
-                        {
-                            WriteJsonRpc(writer, idNode, new JsonObject
-                            {
-                                ["role"] = "assistant",
-                                ["model"] = "dummy",
-                                ["content"] = new JsonObject { ["type"] = "text", ["text"] = "Sampled message" }
-                            });
-                        }
-                        else if (method == "exit")
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            if (idNode != null)
-                            {
-                                WriteJsonRpc(writer, idNode, null, new JsonObject { ["code"] = -32601, ["message"] = "Method not found" });
-                            }
-                        }
-                    }
-                }
-            }
-            return 0;
+            return JsonRpcServer.ServeMcp(args);
         }
 
         /// <summary>
@@ -827,99 +359,7 @@ namespace Cdd.OpenApi.Cli
         /// <returns>Exit code (0 for success).</returns>
         public static int ServeJsonRpc(string[] args, System.Threading.CancellationToken cancellationToken = default)
         {
-            string portStr = Environment.GetEnvironmentVariable("CDD_PORT") ?? Environment.GetEnvironmentVariable("PORT") ?? "8080";
-            string listen = Environment.GetEnvironmentVariable("CDD_LISTEN") ?? Environment.GetEnvironmentVariable("LISTEN") ?? "127.0.0.1";
-
-            for (int i = 1; i < args.Length; i++)
-            {
-                if ((args[i] == "--port" || args[i] == "-p") && i + 1 < args.Length)
-                {
-                    portStr = args[++i];
-                }
-                else if ((args[i] == "--listen" || args[i] == "-l") && i + 1 < args.Length)
-                {
-                    listen = args[++i];
-                }
-            }
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return 0;
-            }
-
-            using var listener = new HttpListener();
-            string url = $"http://{(listen == "0.0.0.0" ? "*" : listen)}:{portStr}/";
-            listener.Prefixes.Add(url);
-            listener.Start();
-            using var reg = cancellationToken.Register(() => listener.Stop());
-            Console.WriteLine($"JSON-RPC Server listening on {listen}:{portStr}");
-
-            while (listener.IsListening)
-            {
-                HttpListenerContext context;
-                try
-                {
-                    context = listener.GetContext();
-                }
-                catch
-                {
-                    break;
-                }
-                var request = context.Request;
-                var response = context.Response;
-
-                try
-                {
-                    using var reader = new StreamReader(request.InputStream);
-                    string json = reader.ReadToEnd();
-                    if (string.IsNullOrWhiteSpace(json)) continue;
-
-                    var jRpcReq = JsonNode.Parse(json);
-                    string method = jRpcReq?["method"]?.ToString() ?? "";
-                    var parameters = jRpcReq?["params"] as JsonArray;
-                    var idNode = jRpcReq?["id"];
-
-                    if (method == "version")
-                    {
-                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.4" };
-                        byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
-                        response.OutputStream.Write(buf, 0, buf.Length);
-                    }
-                    else
-                    {
-                        var invokeArgs = new List<string> { method };
-                        if (parameters != null)
-                        {
-                            foreach (var p in parameters)
-                            {
-                                invokeArgs.Add(p?.ToString() ?? "");
-                            }
-                        }
-
-                        int retCode = 1;
-                        if (method == "from_openapi") { var parsed = ParseFromOpenApiArgs(invokeArgs.ToArray()); retCode = FromOpenApi(parsed.type, parsed.config); }
-                        else if (method == "to_openapi") { var parsed = ParseToOpenApiArgs(invokeArgs.ToArray()); retCode = ToOpenApi(parsed.inputPath, parsed.outputPath); }
-                        else if (method == "from_arazzo") { var parsed = ParseFromArazzoArgs(invokeArgs.ToArray()); retCode = FromArazzo(parsed.type, parsed.config); }
-                        else if (method == "to_arazzo") { var parsed = ParseToArazzoArgs(invokeArgs.ToArray()); retCode = ToArazzo(parsed.inputPath, parsed.outputPath); }
-                        else if (method == "to_docs_json") { var parsed = ParseDocsJsonArgs(invokeArgs.ToArray()); retCode = ToDocsJson(parsed.inputPath, parsed.outputPath, parsed.noImports, parsed.noWrapping); }
-
-                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = retCode };
-                        byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
-                        response.OutputStream.Write(buf, 0, buf.Length);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var res = new JsonObject { ["jsonrpc"] = "2.0", ["error"] = new JsonObject { ["code"] = -32603, ["message"] = ex.Message } };
-                    byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
-                    response.OutputStream.Write(buf, 0, buf.Length);
-                }
-                finally
-                {
-                    response.Close();
-                }
-            }
-            return 0;
+            return HttpSpecServer.ServeJsonRpc(args, cancellationToken);
         }
     }
 }

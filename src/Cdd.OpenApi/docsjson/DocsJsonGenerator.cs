@@ -123,7 +123,7 @@ namespace Cdd.OpenApi.DocsJson
                                 if (param == null) continue;
                                 if (string.IsNullOrEmpty(param.Name)) continue;
                                 var pName = param.Name;
-                                var pType = MapTypeToCSharp(param.Schema?.Type);
+                                var pType = Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(param.Schema?.Type, "object");
                                 var pValue = GetDefaultValueForType(pType);
                                 snippetLines.Add($"{indent}{pType} {pName} = {pValue};");
                                 parameters.Add(pName);
@@ -148,16 +148,6 @@ namespace Cdd.OpenApi.DocsJson
 
             var resultList = new List<DocsJsonOutput> { output };
             return JsonSerializer.Serialize(resultList, DocsJsonContext.Default.ListDocsJsonOutput);
-        }
-
-        /// <summary>
-        /// Maps an OpenAPI primitive type name to its corresponding C# type string.
-        /// </summary>
-        /// <param name="openApiType">The OpenAPI type string.</param>
-        /// <returns>The mapped C# type name.</returns>
-        private static string MapTypeToCSharp(string? openApiType)
-        {
-            return Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(openApiType, "object");
         }
 
         /// <summary>

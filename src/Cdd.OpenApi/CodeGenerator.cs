@@ -3,9 +3,11 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
@@ -131,6 +133,26 @@ namespace Cdd.OpenApi
                     }
 
                     var currentItem = result[tag][routePath];
+                    if (pathItem.Parameters != null && pathItem.Parameters.Count > 0)
+                    {
+                        var mergedParams = new List<OpenApiParameter>();
+                        var existingNames = new HashSet<string>(op.Parameters?.Select(p => $"{p.In}:{p.Name}") ?? Enumerable.Empty<string>());
+                        foreach (var pathParam in pathItem.Parameters)
+                        {
+                            if (!existingNames.Contains($"{pathParam.In}:{pathParam.Name}"))
+                            {
+                                mergedParams.Add(pathParam);
+                            }
+                        }
+
+                        if (op.Parameters != null)
+                        {
+                            mergedParams.AddRange(op.Parameters);
+                        }
+
+                        op.Parameters = mergedParams;
+                    }
+
                     if (op == pathItem.Get) currentItem.Get = op;
                     else if (op == pathItem.Put) currentItem.Put = op;
                     else if (op == pathItem.Post) currentItem.Post = op;
@@ -181,6 +203,8 @@ namespace Cdd.OpenApi
         {
             var results = new List<GeneratedCode>();
             if (doc == null) return results;
+
+            doc = IrService.FromOpenApi(doc).ToOpenApi();
 
             if (doc.Components?.Schemas != null)
             {

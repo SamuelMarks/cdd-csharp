@@ -4,11 +4,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Errors;
 using Cdd.OpenApi.Models.Arazzo;
 
@@ -111,7 +110,17 @@ namespace Cdd.OpenApi.Arazzo
                     "Arazzo 'info' object must specify non-empty 'title' and 'version'.");
             }
 
-            if (document.SourceDescriptions.Count == 0)
+            ValidateSourceDescriptions(document.SourceDescriptions);
+            ValidateWorkflows(document.Workflows);
+        }
+
+        /// <summary>
+        /// Validates the <c>sourceDescriptions</c> list of an <see cref="ArazzoDocument"/>.
+        /// </summary>
+        /// <param name="sourceDescriptions">The source descriptions collection to validate.</param>
+        private static void ValidateSourceDescriptions(IList<ArazzoSourceDescription> sourceDescriptions)
+        {
+            if (sourceDescriptions.Count == 0)
             {
                 throw new CddException(
                     CddErrorCode.InvalidSpecification,
@@ -119,7 +128,7 @@ namespace Cdd.OpenApi.Arazzo
             }
 
             var sourceNames = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var sd in document.SourceDescriptions)
+            foreach (var sd in sourceDescriptions)
             {
                 if (!SourceNameRegex.IsMatch(sd.Name))
                 {
@@ -152,8 +161,15 @@ namespace Cdd.OpenApi.Arazzo
                         $"Unsupported sourceDescription type '{sd.Type}'. Expected 'openapi', 'asyncapi', or 'arazzo'.");
                 }
             }
+        }
 
-            if (document.Workflows.Count == 0)
+        /// <summary>
+        /// Validates the <c>workflows</c> collection of an <see cref="ArazzoDocument"/>.
+        /// </summary>
+        /// <param name="workflows">The workflows list to validate.</param>
+        private static void ValidateWorkflows(IList<ArazzoWorkflow> workflows)
+        {
+            if (workflows.Count == 0)
             {
                 throw new CddException(
                     CddErrorCode.InvalidSpecification,
@@ -161,7 +177,7 @@ namespace Cdd.OpenApi.Arazzo
             }
 
             var workflowIds = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var wf in document.Workflows)
+            foreach (var wf in workflows)
             {
                 if (string.IsNullOrWhiteSpace(wf.WorkflowId))
                 {
@@ -187,45 +203,56 @@ namespace Cdd.OpenApi.Arazzo
                 var stepIds = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var step in wf.Steps)
                 {
-                    if (string.IsNullOrWhiteSpace(step.StepId))
-                    {
-                        throw new CddException(
-                            CddErrorCode.InvalidSpecification,
-                            $"Workflow '{wf.WorkflowId}' contains a step with an empty 'stepId'.");
-                    }
-
-                    if (!stepIds.Add(step.StepId))
-                    {
-                        throw new CddException(
-                            CddErrorCode.InvalidSpecification,
-                            $"Workflow '{wf.WorkflowId}' contains duplicate stepId '{step.StepId}'.");
-                    }
-
-                    int targetCount = 0;
-                    if (!string.IsNullOrWhiteSpace(step.OperationId)) targetCount++;
-                    if (!string.IsNullOrWhiteSpace(step.OperationPath)) targetCount++;
-                    if (!string.IsNullOrWhiteSpace(step.ChannelPath)) targetCount++;
-                    if (!string.IsNullOrWhiteSpace(step.WorkflowId)) targetCount++;
-
-                    if (targetCount != 1)
-                    {
-                        throw new CddException(
-                            CddErrorCode.InvalidSpecification,
-                            $"Step '{step.StepId}' in workflow '{wf.WorkflowId}' must specify exactly one of 'operationId', 'operationPath', 'channelPath', or 'workflowId' (found {targetCount}).");
-                    }
-
-                    if (step.Action != null && step.Action != "send" && step.Action != "receive")
-                    {
-                        throw new CddException(
-                            CddErrorCode.InvalidSpecification,
-                            $"Step '{step.StepId}' has invalid action '{step.Action}'. Expected 'send' or 'receive'.");
-                    }
+                    ValidateStep(wf.WorkflowId, step, stepIds);
                 }
 
                 ValidateStepDependencies(wf, stepIds);
             }
 
-            ValidateWorkflowDependencies(document.Workflows, workflowIds);
+            ValidateWorkflowDependencies(workflows, workflowIds);
+        }
+
+        /// <summary>
+        /// Validates a single <see cref="ArazzoStep"/> within a workflow.
+        /// </summary>
+        /// <param name="workflowId">The enclosing workflow identifier.</param>
+        /// <param name="step">The step to validate.</param>
+        /// <param name="stepIds">The set of seen step identifiers in the workflow.</param>
+        private static void ValidateStep(string workflowId, ArazzoStep step, HashSet<string> stepIds)
+        {
+            if (string.IsNullOrWhiteSpace(step.StepId))
+            {
+                throw new CddException(
+                    CddErrorCode.InvalidSpecification,
+                    $"Workflow '{workflowId}' contains a step with an empty 'stepId'.");
+            }
+
+            if (!stepIds.Add(step.StepId))
+            {
+                throw new CddException(
+                    CddErrorCode.InvalidSpecification,
+                    $"Workflow '{workflowId}' contains duplicate stepId '{step.StepId}'.");
+            }
+
+            int targetCount = 0;
+            if (!string.IsNullOrWhiteSpace(step.OperationId)) targetCount++;
+            if (!string.IsNullOrWhiteSpace(step.OperationPath)) targetCount++;
+            if (!string.IsNullOrWhiteSpace(step.ChannelPath)) targetCount++;
+            if (!string.IsNullOrWhiteSpace(step.WorkflowId)) targetCount++;
+
+            if (targetCount != 1)
+            {
+                throw new CddException(
+                    CddErrorCode.InvalidSpecification,
+                    $"Step '{step.StepId}' in workflow '{workflowId}' must specify exactly one of 'operationId', 'operationPath', 'channelPath', or 'workflowId' (found {targetCount}).");
+            }
+
+            if (step.Action != null && step.Action != "send" && step.Action != "receive")
+            {
+                throw new CddException(
+                    CddErrorCode.InvalidSpecification,
+                    $"Step '{step.StepId}' has invalid action '{step.Action}'. Expected 'send' or 'receive'.");
+            }
         }
 
         /// <summary>
@@ -351,245 +378,7 @@ namespace Cdd.OpenApi.Arazzo
         /// <returns>The root <see cref="JsonNode"/>.</returns>
         internal static JsonNode ConvertYamlToJsonNode(string yaml)
         {
-            var lf = ((char)10).ToString();
-            var crlf = ((char)13).ToString() + lf;
-            var rawLines = yaml.Replace(crlf, lf).Split((char)10);
-            var lines = new List<(int Indent, string Content)>();
-            foreach (var raw in rawLines)
-            {
-                var stripped = StripYamlComment(raw);
-                if (string.IsNullOrWhiteSpace(stripped) || stripped.Trim() == "---" || stripped.Trim() == "...")
-                {
-                    continue;
-                }
-
-                int indent = 0;
-                while (stripped[indent] == ' ')
-                {
-                    indent++;
-                }
-
-                lines.Add((indent, stripped.Substring(indent).TrimEnd()));
-            }
-
-            if (lines.Count == 0)
-            {
-                return new JsonObject();
-            }
-
-            int index = 0;
-            return ParseYamlBlock(lines, ref index, lines[0].Indent);
-        }
-
-        /// <summary>
-        /// Strips unquoted YAML comments (<c># ...</c>) from a single line.
-        /// </summary>
-        /// <param name="line">The raw YAML line.</param>
-        /// <returns>The line without trailing comment.</returns>
-        private static string StripYamlComment(string line)
-        {
-            int hashIdx = line.IndexOf(" #", StringComparison.Ordinal);
-            if (hashIdx >= 0)
-            {
-                return line.Substring(0, hashIdx);
-            }
-
-            if (line.TrimStart().StartsWith("#", StringComparison.Ordinal))
-            {
-                return string.Empty;
-            }
-
-            return line;
-        }
-
-        /// <summary>
-        /// Parses an indented YAML block (mapping or sequence) starting at <paramref name="index"/>.
-        /// </summary>
-        /// <param name="lines">The preprocessed list of indented YAML lines.</param>
-        /// <param name="index">The current line index (updated as lines are consumed).</param>
-        /// <param name="baseIndent">The indentation level of the current block.</param>
-        /// <returns>A <see cref="JsonNode"/> representing the block.</returns>
-        private static JsonNode ParseYamlBlock(List<(int Indent, string Content)> lines, ref int index, int baseIndent)
-        {
-            if (lines[index].Content.StartsWith("-", StringComparison.Ordinal))
-            {
-                var arr = new JsonArray();
-                while (index < lines.Count && lines[index].Indent == baseIndent &&
-                       lines[index].Content.StartsWith("-", StringComparison.Ordinal))
-                {
-                    var currentLine = lines[index];
-                    var afterDash = currentLine.Content.Substring(1).Trim();
-                    index++;
-
-                    if (string.IsNullOrEmpty(afterDash))
-                    {
-                        arr.Add(ParseYamlBlock(lines, ref index, lines[index].Indent));
-                    }
-                    else if (TrySplitYamlKeyValue(afterDash, out var k, out var v))
-                    {
-                        var itemObj = new JsonObject();
-                        itemObj[k] = ParseYamlScalar(v);
-
-                        var childIndent = lines[index].Indent;
-                        var restObj = ParseYamlObjectEntries(lines, ref index, childIndent);
-                        foreach (var kvp in restObj)
-                        {
-                            itemObj[kvp.Key] = kvp.Value!.DeepClone();
-                        }
-
-                        arr.Add(itemObj);
-                    }
-                    else
-                    {
-                        arr.Add(ParseYamlScalar(afterDash));
-                    }
-                }
-
-                return arr;
-            }
-
-            return ParseYamlObjectEntries(lines, ref index, baseIndent);
-        }
-
-        /// <summary>
-        /// Parses YAML mapping key-value entries at <paramref name="baseIndent"/> into a <see cref="JsonObject"/>.
-        /// </summary>
-        /// <param name="lines">The preprocessed list of indented YAML lines.</param>
-        /// <param name="index">The current line index.</param>
-        /// <param name="baseIndent">The indentation level of the mapping.</param>
-        /// <returns>The populated <see cref="JsonObject"/>.</returns>
-        private static JsonObject ParseYamlObjectEntries(List<(int Indent, string Content)> lines, ref int index, int baseIndent)
-        {
-            var obj = new JsonObject();
-            while (index < lines.Count && lines[index].Indent == baseIndent &&
-                   !lines[index].Content.StartsWith("- ", StringComparison.Ordinal))
-            {
-                var line = lines[index].Content;
-                index++;
-                TrySplitYamlKeyValue(line, out var key, out var val);
-                if (string.IsNullOrEmpty(val) || val == "|")
-                {
-                    if (val == "|")
-                    {
-                        var childIndent = lines[index].Indent;
-                        var sb = new List<string>();
-                        while (index < lines.Count && lines[index].Indent >= childIndent)
-                        {
-                            sb.Add(lines[index].Content);
-                            index++;
-                        }
-
-                        obj[key] = JsonValue.Create(string.Join(((char)10).ToString(), sb));
-                    }
-                    else
-                    {
-                        obj[key] = ParseYamlBlock(lines, ref index, lines[index].Indent);
-                    }
-                }
-                else
-                {
-                    obj[key] = ParseYamlScalar(val);
-                }
-            }
-
-            return obj;
-        }
-
-        /// <summary>
-        /// Attempts to split a YAML <c>key: value</c> line into unquoted key and raw value parts.
-        /// </summary>
-        /// <param name="text">The YAML line text.</param>
-        /// <param name="key">When successful, receives the unquoted property key.</param>
-        /// <param name="value">When successful, receives the trimmed value part.</param>
-        /// <returns><c>true</c> if the line represents a YAML key-value mapping; otherwise <c>false</c>.</returns>
-        private static bool TrySplitYamlKeyValue(string text, out string key, out string value)
-        {
-            bool inQuotes = false;
-            for (int i = 0; i < text.Length; i++)
-            {
-                char c = text[i];
-                if (c == '"') inQuotes = !inQuotes;
-                else if (c == ':' && !inQuotes && (i + 1 == text.Length || text[i + 1] == ' '))
-                {
-                    key = UnquoteYaml(text.Substring(0, i).Trim());
-                    value = text.Substring(i + 1).Trim();
-                    return true;
-                }
-            }
-
-            key = string.Empty;
-            value = string.Empty;
-            return false;
-        }
-
-        /// <summary>
-        /// Parses an inline YAML scalar or inline JSON array/object into a <see cref="JsonNode"/>.
-        /// </summary>
-        /// <param name="raw">The raw scalar value text.</param>
-        /// <returns>The parsed <see cref="JsonNode"/> or <c>null</c>.</returns>
-        private static JsonNode? ParseYamlScalar(string raw)
-        {
-            if (raw == "null" || raw == "~")
-            {
-                return null;
-            }
-
-            if (raw.StartsWith("[", StringComparison.Ordinal) || raw.StartsWith("{", StringComparison.Ordinal))
-            {
-                return JsonNode.Parse(raw);
-            }
-
-            if (raw.StartsWith(@"""", StringComparison.Ordinal) || raw.StartsWith("'", StringComparison.Ordinal))
-            {
-                return JsonValue.Create(UnquoteYaml(raw));
-            }
-
-            if (string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonValue.Create(true);
-            }
-
-            if (string.Equals(raw, "false", StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonValue.Create(false);
-            }
-
-            if (long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l))
-            {
-                return JsonValue.Create(l);
-            }
-
-            if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
-            {
-                return JsonValue.Create(d);
-            }
-
-            return JsonValue.Create(raw);
-        }
-
-        /// <summary>
-        /// Removes surrounding single or double quotes from a YAML scalar string.
-        /// </summary>
-        /// <param name="val">The potentially quoted YAML string.</param>
-        /// <returns>The unquoted string.</returns>
-        private static string UnquoteYaml(string val)
-        {
-            if (val.Length >= 2)
-            {
-                var dq = ((char)34).ToString();
-                var bs = ((char)92).ToString();
-                if (val[0] == (char)34 && val[val.Length - 1] == (char)34)
-                {
-                    return val.Substring(1, val.Length - 2).Replace(bs + dq, dq).Replace(bs + bs, bs);
-                }
-
-                if (val[0] == (char)39 && val[val.Length - 1] == (char)39)
-                {
-                    return val.Substring(1, val.Length - 2).Replace("''", "'");
-                }
-            }
-
-            return val;
+            return YamlConverter.ConvertYamlToJsonNode(yaml);
         }
     }
 }

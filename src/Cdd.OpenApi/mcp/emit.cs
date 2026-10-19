@@ -11,6 +11,39 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Mcp
 {
+    /// <summary>
+    /// Strongly-typed specification for a generated MCP protocol model property.
+    /// </summary>
+    public readonly struct McpPropertySpec
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="McpPropertySpec"/> struct.
+        /// </summary>
+        /// <param name="jsonName">The serialized JSON property name.</param>
+        /// <param name="csharpType">The C# property type name.</param>
+        /// <param name="propertyName">The PascalCase C# property identifier.</param>
+        /// <param name="initializer">The optional Roslyn default initializer expression.</param>
+        public McpPropertySpec(string jsonName, string csharpType, string propertyName, ExpressionSyntax? initializer)
+        {
+            JsonName = jsonName;
+            CSharpType = csharpType;
+            PropertyName = propertyName;
+            Initializer = initializer;
+        }
+
+        /// <summary>Gets the JSON property name.</summary>
+        public string JsonName { get; }
+
+        /// <summary>Gets the C# property type name.</summary>
+        public string CSharpType { get; }
+
+        /// <summary>Gets the PascalCase C# property name.</summary>
+        public string PropertyName { get; }
+
+        /// <summary>Gets the optional default value initializer expression.</summary>
+        public ExpressionSyntax? Initializer { get; }
+    }
+
     /// <summary>Generates MCP server and protocol model classes as Roslyn syntax nodes.</summary>
     public static class Emit
     {
@@ -112,9 +145,18 @@ namespace Cdd.OpenApi.Mcp
                 }
             }
 
-            string toolsJson = sbTools.ToString().TrimEnd(',');
-            string callsCode = string.Join(" ", toolCallStatements.Select(s => s.ToFullString()));
+            return BuildMcpServerClass(className, sbTools.ToString().TrimEnd(','), string.Join(" ", toolCallStatements.Select(s => s.ToFullString())));
+        }
 
+        /// <summary>
+        /// Constructs the MCP server <see cref="ClassDeclarationSyntax"/> from pre-rendered tool JSON and dispatch statements.
+        /// </summary>
+        /// <param name="className">The name of the generated MCP server class.</param>
+        /// <param name="toolsJson">The serialized JSON tools list metadata.</param>
+        /// <param name="callsCode">The generated C# tool execution dispatch statements.</param>
+        /// <returns>The constructed <see cref="ClassDeclarationSyntax"/>.</returns>
+        private static ClassDeclarationSyntax BuildMcpServerClass(string className, string toolsJson, string callsCode)
+        {
             var runMethodBody = SyntaxFactory.Block(
                 SyntaxFactory.ParseStatement(@"var stdout = Console.OpenStandardOutput();"),
                 SyntaxFactory.ParseStatement(@"using var writer = new StreamWriter(stdout, new System.Text.UTF8Encoding(false)) { AutoFlush = true };"),
@@ -209,6 +251,36 @@ namespace Cdd.OpenApi.Mcp
             string? baseType,
             params (string JsonName, string Type, string PropName, string? Initializer)[] properties)
         {
+            var specs = new McpPropertySpec[properties.Length];
+            for (int i = 0; i < properties.Length; i++)
+            {
+                var p = properties[i];
+                ExpressionSyntax? expr = null;
+                if (p.Initializer != null)
+                {
+                    expr = p.Initializer.StartsWith("@STR:")
+                        ? SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(p.Initializer.Substring(5)))
+                        : SyntaxFactory.ParseExpression(p.Initializer);
+                }
+
+                specs[i] = new McpPropertySpec(p.JsonName, p.Type, p.PropName, expr);
+            }
+
+            return CreateModelClassFromSpecs(name, baseType, specs);
+        }
+
+        /// <summary>
+        /// Constructs a Roslyn <see cref="ClassDeclarationSyntax"/> from strongly-typed <see cref="McpPropertySpec"/> specifications.
+        /// </summary>
+        /// <param name="name">The C# class name.</param>
+        /// <param name="baseType">The optional base class name.</param>
+        /// <param name="properties">The strongly-typed property specifications.</param>
+        /// <returns>The constructed <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax CreateModelClassFromSpecs(
+            string name,
+            string? baseType,
+            IReadOnlyList<McpPropertySpec> properties)
+        {
             var cls = SyntaxFactory.ClassDeclaration(name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
@@ -218,10 +290,10 @@ namespace Cdd.OpenApi.Mcp
                     SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(baseType)))));
             }
 
-            var members = new List<MemberDeclarationSyntax>(properties.Length);
+            var members = new List<MemberDeclarationSyntax>(properties.Count);
             foreach (var p in properties)
             {
-                var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(p.Type), p.PropName)
+                var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(p.CSharpType), p.PropertyName)
                     .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                     .AddAttributeLists(SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("JsonPropertyName"))
@@ -236,10 +308,7 @@ namespace Cdd.OpenApi.Mcp
 
                 if (p.Initializer != null)
                 {
-                    var expr = p.Initializer.StartsWith("@STR:")
-                        ? SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(p.Initializer.Substring(5)))
-                        : SyntaxFactory.ParseExpression(p.Initializer);
-                    prop = prop.WithInitializer(SyntaxFactory.EqualsValueClause(expr))
+                    prop = prop.WithInitializer(SyntaxFactory.EqualsValueClause(p.Initializer))
                         .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
                 }
 

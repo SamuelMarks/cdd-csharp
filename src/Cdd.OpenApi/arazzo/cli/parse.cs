@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Cdd.OpenApi.Arazzo.Clients;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models.Arazzo;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -75,7 +76,7 @@ namespace Cdd.OpenApi.Arazzo.Cli
         /// <param name="doc">The target <see cref="ArazzoDocument"/>.</param>
         private static void ParseSwitchSections(SwitchStatementSyntax switchStmt, ArazzoDocument doc)
         {
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
 
             foreach (var section in switchStmt.Sections)
             {

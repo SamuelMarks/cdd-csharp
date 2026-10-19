@@ -88,7 +88,7 @@ namespace Cdd.OpenApi.Models
         /// <param name="other">The <see cref="OpenApiAny"/> to compare to this instance.</param>
         /// <returns><c>true</c> if the values are equal; otherwise, <c>false</c>.</returns>
         public bool Equals(OpenApiAny? other) =>
-            other != null && Value == other.Value && Kind == other.Kind;
+            other != null && Value == other.Value && Kind == other.Kind && ReferenceEquals(Schema, other.Schema);
 
         /// <summary>
         /// Determines whether the specified object is equal to the current <see cref="OpenApiAny"/>.
@@ -102,7 +102,7 @@ namespace Cdd.OpenApi.Models
         /// Returns the hash code for this <see cref="OpenApiAny"/>.
         /// </summary>
         /// <returns>A 32-bit signed integer hash code.</returns>
-        public override int GetHashCode() => Value.GetHashCode(StringComparison.Ordinal);
+        public override int GetHashCode() => HashCode.Combine(Value, Kind, Schema);
     }
 
     /// <summary>

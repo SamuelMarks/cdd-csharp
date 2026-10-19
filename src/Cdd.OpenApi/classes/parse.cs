@@ -133,9 +133,12 @@ namespace Cdd.OpenApi.Classes
                     };
                 }
 
+                var (mappedType, mappedFormat) = Cdd.OpenApi.Common.TypeMapper.MapCSharpToOpenApiTypeAndFormat(baseType, "object");
+
                 var propSchema = new OpenApiSchema
                 {
-                    Type = MapType(baseType),
+                    Type = mappedType,
+                    Format = mappedFormat,
                     Description = Docstrings.Parse.GetSummary(prop),
                     Example = propExample,
                     Discriminator = propDiscriminator,
@@ -154,16 +157,6 @@ namespace Cdd.OpenApi.Classes
             if (!schema.Required.Any()) schema.Required = null;
 
             return schema;
-        }
-
-        /// <summary>
-        /// Maps a C# type name to its corresponding OpenAPI type string.
-        /// </summary>
-        /// <param name="csharpType">The C# type string.</param>
-        /// <returns>The mapped OpenAPI type name.</returns>
-        private static string MapType(string? csharpType)
-        {
-            return Cdd.OpenApi.Common.TypeMapper.MapCSharpToOpenApi(csharpType, "object");
         }
     }
 }

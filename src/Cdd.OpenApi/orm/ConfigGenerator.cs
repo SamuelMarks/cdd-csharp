@@ -36,6 +36,15 @@ public bool Seed { get; set; }")!,
                             SyntaxFactory.ParseStatement(@"var ephemeral = Environment.GetEnvironmentVariable(""EPHEMERAL_DB"");"),
                             SyntaxFactory.ParseStatement(@"if (ephemeral == ""true"" || ephemeral == ""1"") { config.UseEphemeral = true; }"),
                             SyntaxFactory.ParseStatement(@"return config;")
+                        )),
+                    SyntaxFactory.MethodDeclaration(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)), "ApplyArgs")
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddParameterListParameters(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("args"))
+                                .WithType(SyntaxFactory.ParseTypeName("string[]")))
+                        .WithBody(SyntaxFactory.Block(
+                            SyntaxFactory.ParseStatement(@"if (args != null && System.Linq.Enumerable.Contains(args, ""--ephemeral"")) { UseEphemeral = true; }"),
+                            SyntaxFactory.ParseStatement(@"if (args != null && System.Linq.Enumerable.Contains(args, ""--seed"")) { Seed = true; }")
                         ))
                 );
 

@@ -174,6 +174,53 @@ namespace Cdd.OpenApi.Tests.Ir
             Assert.Equal("API", nullVerIr.Title);
             Assert.Equal("1.0.0", nullVerIr.Version);
 
+            var manualIr = new IrService
+            {
+                Models = new List<IrModel>
+                {
+                    new IrModel
+                    {
+                        Name = "ManualModel",
+                        Description = "Manual",
+                        Schema = null,
+                        Fields = new List<IrField>
+                        {
+                            new IrField
+                            {
+                                Name = "id",
+                                IsRequired = true,
+                                Schema = null,
+                                Type = new IrTypeRef { TypeName = "integer", Format = "int64", CSharpType = "long" }
+                            }
+                        }
+                    }
+                },
+                Endpoints = new List<IrEndpoint>
+                {
+                    new IrEndpoint
+                    {
+                        Path = "/manual",
+                        HttpMethod = "Get",
+                        OperationId = "GetManual",
+                        Parameters = new List<IrParameter>
+                        {
+                            new IrParameter
+                            {
+                                Name = "q",
+                                Location = "query",
+                                Schema = new OpenApiSchema { Type = "string" },
+                                Type = new IrTypeRef { TypeName = "string" }
+                            }
+                        }
+                    }
+                }
+            };
+            var manualDoc = manualIr.ToOpenApi();
+            Assert.NotNull(manualDoc.Components?.Schemas?["ManualModel"]);
+            Assert.Equal("int64", manualDoc.Components!.Schemas!["ManualModel"].Properties!["id"].Format);
+            Assert.NotNull(manualDoc.Paths?["/manual"].Get);
+            Assert.Equal("string", manualDoc.Paths!["/manual"].Get!.Parameters![0].Schema!.Type);
+
             var pathItemWithEmptyAddOp = new OpenApiPathItem
             {
                 AdditionalOperations = new Dictionary<string, OpenApiOperation>
@@ -183,6 +230,127 @@ namespace Cdd.OpenApi.Tests.Ir
             };
             var opsDict = OperationHelpers.GetOperationsByPascalVerb(pathItemWithEmptyAddOp);
             Assert.False(opsDict.ContainsKey(""));
+        }
+
+        [Fact]
+        public void OperationHelpers_And_TypeMapper_FullCoverage()
+        {
+            Assert.Equal(HttpVerb.Get, OperationHelpers.ParseHttpVerb("GET"));
+            Assert.Equal(HttpVerb.Put, OperationHelpers.ParseHttpVerb("PUT"));
+            Assert.Equal(HttpVerb.Post, OperationHelpers.ParseHttpVerb("POST"));
+            Assert.Equal(HttpVerb.Delete, OperationHelpers.ParseHttpVerb("DELETE"));
+            Assert.Equal(HttpVerb.Options, OperationHelpers.ParseHttpVerb("OPTIONS"));
+            Assert.Equal(HttpVerb.Head, OperationHelpers.ParseHttpVerb("HEAD"));
+            Assert.Equal(HttpVerb.Patch, OperationHelpers.ParseHttpVerb("PATCH"));
+            Assert.Equal(HttpVerb.Trace, OperationHelpers.ParseHttpVerb("TRACE"));
+            Assert.Equal(HttpVerb.Query, OperationHelpers.ParseHttpVerb("QUERY"));
+            Assert.Equal(HttpVerb.Custom, OperationHelpers.ParseHttpVerb("PURGE"));
+            Assert.Equal(HttpVerb.Custom, OperationHelpers.ParseHttpVerb(null));
+
+            Assert.Equal("Get", OperationHelpers.ToPascalVerb(HttpVerb.Get));
+            Assert.Equal("Put", OperationHelpers.ToPascalVerb(HttpVerb.Put));
+            Assert.Equal("Post", OperationHelpers.ToPascalVerb(HttpVerb.Post));
+            Assert.Equal("Delete", OperationHelpers.ToPascalVerb(HttpVerb.Delete));
+            Assert.Equal("Options", OperationHelpers.ToPascalVerb(HttpVerb.Options));
+            Assert.Equal("Head", OperationHelpers.ToPascalVerb(HttpVerb.Head));
+            Assert.Equal("Patch", OperationHelpers.ToPascalVerb(HttpVerb.Patch));
+            Assert.Equal("Trace", OperationHelpers.ToPascalVerb(HttpVerb.Trace));
+            Assert.Equal("Query", OperationHelpers.ToPascalVerb(HttpVerb.Query));
+            Assert.Equal("Purge", OperationHelpers.ToPascalVerb(HttpVerb.Custom, "PURGE"));
+            Assert.Equal("Get", OperationHelpers.ToPascalVerb(HttpVerb.Custom, null));
+
+            Assert.Equal(ParameterLocation.Query, OperationHelpers.ParseParameterLocation("query"));
+            Assert.Equal(ParameterLocation.Header, OperationHelpers.ParseParameterLocation("header"));
+            Assert.Equal(ParameterLocation.Path, OperationHelpers.ParseParameterLocation("path"));
+            Assert.Equal(ParameterLocation.Cookie, OperationHelpers.ParseParameterLocation("cookie"));
+            Assert.Equal(ParameterLocation.Body, OperationHelpers.ParseParameterLocation("body"));
+            Assert.Equal(ParameterLocation.FormData, OperationHelpers.ParseParameterLocation("formData"));
+            Assert.Equal(ParameterLocation.Query, OperationHelpers.ParseParameterLocation(null));
+
+            Assert.Equal("query", OperationHelpers.ToLocationString(ParameterLocation.Query));
+            Assert.Equal("header", OperationHelpers.ToLocationString(ParameterLocation.Header));
+            Assert.Equal("path", OperationHelpers.ToLocationString(ParameterLocation.Path));
+            Assert.Equal("cookie", OperationHelpers.ToLocationString(ParameterLocation.Cookie));
+            Assert.Equal("body", OperationHelpers.ToLocationString(ParameterLocation.Body));
+            Assert.Equal("formData", OperationHelpers.ToLocationString(ParameterLocation.FormData));
+
+            var pathItem = new OpenApiPathItem();
+            var op = new OpenApiOperation { OperationId = "TestOp" };
+            OperationHelpers.SetOperation(pathItem, "GET", op);
+            OperationHelpers.SetOperation(pathItem, "PUT", op);
+            OperationHelpers.SetOperation(pathItem, "POST", op);
+            OperationHelpers.SetOperation(pathItem, "DELETE", op);
+            OperationHelpers.SetOperation(pathItem, "OPTIONS", op);
+            OperationHelpers.SetOperation(pathItem, "HEAD", op);
+            OperationHelpers.SetOperation(pathItem, "PATCH", op);
+            OperationHelpers.SetOperation(pathItem, "TRACE", op);
+            OperationHelpers.SetOperation(pathItem, "QUERY", op);
+            OperationHelpers.SetOperation(pathItem, "PURGE", op);
+            OperationHelpers.SetOperation(pathItem, "MKCOL", op);
+            Assert.NotNull(pathItem.Get);
+            Assert.NotNull(pathItem.Put);
+            Assert.NotNull(pathItem.Post);
+            Assert.NotNull(pathItem.Delete);
+            Assert.NotNull(pathItem.Options);
+            Assert.NotNull(pathItem.Head);
+            Assert.NotNull(pathItem.Patch);
+            Assert.NotNull(pathItem.Trace);
+            Assert.NotNull(pathItem.Query);
+            Assert.Equal(2, pathItem.AdditionalOperations?.Count);
+
+            // TypeMapper coverage
+            Assert.Equal("integer", TypeMapper.MapCSharpToOpenApi("Int32"));
+            Assert.Equal("integer", TypeMapper.MapCSharpToOpenApi("Int64"));
+            Assert.Equal("integer", TypeMapper.MapCSharpToOpenApi("Int16"));
+            Assert.Equal("number", TypeMapper.MapCSharpToOpenApi("Single"));
+            Assert.Equal("number", TypeMapper.MapCSharpToOpenApi("Double"));
+            Assert.Equal("number", TypeMapper.MapCSharpToOpenApi("Decimal"));
+            Assert.Equal("boolean", TypeMapper.MapCSharpToOpenApi("Boolean"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("String"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("Guid"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.Guid"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("DateTime"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.DateTime"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("DateTimeOffset"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.DateTimeOffset"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("DateOnly"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.DateOnly"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("TimeOnly"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.TimeOnly"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("Uri"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("System.Uri"));
+            Assert.Equal("string", TypeMapper.MapCSharpToOpenApi("byte[]"));
+
+            Assert.Equal(("integer", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("int"));
+            Assert.Equal(("integer", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Int32"));
+            Assert.Equal(("integer", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("short"));
+            Assert.Equal(("integer", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Int16"));
+            Assert.Equal(("integer", "int64"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("long"));
+            Assert.Equal(("integer", "int64"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Int64"));
+            Assert.Equal(("number", "float"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("float"));
+            Assert.Equal(("number", "float"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Single"));
+            Assert.Equal(("number", "decimal"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("decimal"));
+            Assert.Equal(("number", "decimal"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Decimal"));
+            Assert.Equal(("number", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("double"));
+            Assert.Equal(("number", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Double"));
+            Assert.Equal(("boolean", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("bool"));
+            Assert.Equal(("boolean", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Boolean"));
+            Assert.Equal(("string", "uuid"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Guid"));
+            Assert.Equal(("string", "uuid"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.Guid"));
+            Assert.Equal(("string", "date-time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("DateTime"));
+            Assert.Equal(("string", "date-time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.DateTime"));
+            Assert.Equal(("string", "date-time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("DateTimeOffset"));
+            Assert.Equal(("string", "date-time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.DateTimeOffset"));
+            Assert.Equal(("string", "date"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("DateOnly"));
+            Assert.Equal(("string", "date"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.DateOnly"));
+            Assert.Equal(("string", "time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("TimeOnly"));
+            Assert.Equal(("string", "time"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.TimeOnly"));
+            Assert.Equal(("string", "uri"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("Uri"));
+            Assert.Equal(("string", "uri"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("System.Uri"));
+            Assert.Equal(("string", "byte"), TypeMapper.MapCSharpToOpenApiTypeAndFormat("byte[]"));
+            Assert.Equal(("string", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("string"));
+            Assert.Equal(("string", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("String"));
+            Assert.Equal(("object", null), TypeMapper.MapCSharpToOpenApiTypeAndFormat("CustomType", "object"));
         }
     }
 }

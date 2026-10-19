@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models.Arazzo;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -71,12 +72,14 @@ namespace Cdd.OpenApi
 
             if (nonCliOrchestratorClasses.Count > 0)
             {
-                return Arazzo.Clients.Parse.ToArazzoDocument(allClasses.Where(c => !c.Identifier.Text.EndsWith("Cli", StringComparison.Ordinal)));
+                var doc = Arazzo.Clients.Parse.ToArazzoDocument(allClasses.Where(c => !c.Identifier.Text.EndsWith("Cli", StringComparison.Ordinal)));
+                return IrService.FromArazzo(doc).ToArazzo();
             }
 
             if (cliClasses.Count > 0)
             {
-                return Arazzo.Cli.Parse.ToArazzoDocument(cliClasses);
+                var doc = Arazzo.Cli.Parse.ToArazzoDocument(cliClasses);
+                return IrService.FromArazzo(doc).ToArazzo();
             }
 
             var fallbackDoc = Arazzo.Clients.Parse.ToArazzoDocument(allClasses);
@@ -94,7 +97,7 @@ namespace Cdd.OpenApi
                 }
             });
 
-            return fallbackDoc;
+            return IrService.FromArazzo(fallbackDoc).ToArazzo();
         }
     }
 }

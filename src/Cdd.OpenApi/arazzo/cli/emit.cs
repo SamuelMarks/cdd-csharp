@@ -36,7 +36,7 @@ namespace Cdd.OpenApi.Arazzo.Cli
                 throw new ArgumentNullException(nameof(doc));
             }
 
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             var sb = new StringBuilder();
 
             Clients.Emit.AppendDocMetadataHeader(sb, doc, "Arazzo CLI workflow runner.");

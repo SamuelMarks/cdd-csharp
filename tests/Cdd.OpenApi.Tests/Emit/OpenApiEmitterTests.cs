@@ -29,6 +29,11 @@ namespace Cdd.OpenApi.Tests.Emit
             Assert.Contains("\"openapi\":\"3.2.0\"", json);
             Assert.Contains("\"title\":\"Test API\"", json);
             Assert.Contains("\"paths\":{}", json);
+
+            var yaml = emitter.EmitYaml(doc);
+            Assert.Contains("openapi: 3.2.0", yaml);
+            Assert.Contains("title: Test API", yaml);
+            Assert.Throws<System.ArgumentNullException>(() => emitter.EmitYaml(null!));
         }
     }
 }

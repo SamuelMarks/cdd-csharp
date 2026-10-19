@@ -60,6 +60,13 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal((OpenApiAny)"def", item.Default);
             Assert.Equal((OpenApiAny)42, item.Example);
             Assert.Equal((OpenApiAny)true, item.Const);
+
+            OpenApiAny anyWithSchema1 = new OpenApiSchema { Type = "string" };
+            OpenApiAny anyWithSchema2 = new OpenApiSchema { Type = "integer" };
+            Assert.True(anyWithSchema1.Equals(anyWithSchema1));
+            Assert.False(anyWithSchema1.Equals(anyWithSchema2));
+            Assert.False(anyWithSchema1.Equals((object?)null));
+            Assert.NotEqual(anyWithSchema1.GetHashCode(), anyWithSchema2.GetHashCode());
         }
     }
 }

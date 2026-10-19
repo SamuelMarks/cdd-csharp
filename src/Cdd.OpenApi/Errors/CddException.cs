@@ -44,7 +44,52 @@ namespace Cdd.OpenApi.Errors
         /// <summary>
         /// An error occurred while fetching an OpenAPI document over HTTP.
         /// </summary>
-        HttpFetchError = 6
+        HttpFetchError = 6,
+
+        /// <summary>
+        /// The provided JSON syntax is malformed or invalid.
+        /// </summary>
+        InvalidJsonSyntax = 7,
+
+        /// <summary>
+        /// The provided YAML syntax is malformed or invalid.
+        /// </summary>
+        InvalidYamlSyntax = 8,
+
+        /// <summary>
+        /// An Arazzo runtime expression is malformed or references an invalid token.
+        /// </summary>
+        InvalidRuntimeExpression = 9,
+
+        /// <summary>
+        /// An Arazzo success criterion or guard condition is invalid.
+        /// </summary>
+        InvalidCriterion = 10,
+
+        /// <summary>
+        /// Command-line arguments provided to the CLI are invalid or incomplete.
+        /// </summary>
+        InvalidCliArguments = 11,
+
+        /// <summary>
+        /// An HTTP listener or network port could not be bound.
+        /// </summary>
+        PortBindingError = 12,
+
+        /// <summary>
+        /// A JSON-RPC 2.0 request could not be dispatched or executed.
+        /// </summary>
+        RpcDispatchError = 13,
+
+        /// <summary>
+        /// An error occurred while formatting C# syntax nodes.
+        /// </summary>
+        CodeFormattingError = 14,
+
+        /// <summary>
+        /// An error occurred while scaffolding a C# project or solution.
+        /// </summary>
+        ProjectScaffoldError = 15
     }
 
     /// <summary>

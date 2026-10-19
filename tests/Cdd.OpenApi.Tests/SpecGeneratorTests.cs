@@ -347,25 +347,28 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc);
         }
 
-        [Fact]
-        public void Generate_SecurityTags_ScopeNoColon3()
+        [Theory]
+        [InlineData("admin", "admin", "Access to admin")]
+        [InlineData("admin:admin", "admin", "admin")]
+        [InlineData("read:pets:Read pets", "read:pets", "Read pets")]
+        public void Generate_SecurityTags_OAuthScopesFormats(string scopesTag, string expectedKey, string expectedDescription)
         {
-            var code = @"
+            var code = $@"
             /// <security-name>OAuth2</security-name>
             /// <security-type>oauth2</security-type>
             /// <oauth-flow>clientCredentials</oauth-flow>
-            /// <oauth-scopes>admin:admin</oauth-scopes>
-            public class Program3
-            {
+            /// <oauth-scopes>{scopesTag}</oauth-scopes>
+            public class Program
+            {{
                 [Authorize]
                 [HttpGet]
-                public void Method() {}
-            }
+                public void Method() {{}}
+            }}
             ";
 
             var doc = SpecGenerator.Generate(new[] { code });
             var scheme = doc.Components!.SecuritySchemes!["OAuth2"];
-            Assert.Equal("admin", scheme.Flows!.ClientCredentials!.Scopes!["admin"]);
+            Assert.Equal(expectedDescription, scheme.Flows!.ClientCredentials!.Scopes![expectedKey]);
         }
 
 
@@ -392,27 +395,6 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc);
             Assert.Null(doc.Paths);
             Assert.Null(doc.Components);
-        }
-
-        [Fact]
-        public void Generate_SecurityTags_ScopeNoColon()
-        {
-            var code = @"
-            /// <security-name>OAuth2</security-name>
-            /// <security-type>oauth2</security-type>
-            /// <oauth-flow>clientCredentials</oauth-flow>
-            /// <oauth-scopes>admin</oauth-scopes>
-            public class Program
-            {
-                [Authorize]
-                [HttpGet]
-                public void Method() {}
-            }
-            ";
-
-            var doc = SpecGenerator.Generate(new[] { code });
-            var scheme = doc.Components!.SecuritySchemes!["OAuth2"];
-            Assert.Equal("Access to admin", scheme.Flows!.ClientCredentials!.Scopes!["admin"]);
         }
     }
 }

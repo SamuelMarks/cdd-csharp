@@ -90,27 +90,29 @@ namespace Cdd.OpenApi.Arazzo.Clients
                 foreach (var variable in field.Declaration.Variables)
                 {
                     if (variable.Initializer == null) continue;
-                    var valLit = variable.Initializer.Value as LiteralExpressionSyntax;
-                    var valText = valLit!.Token.ValueText;
-                    if (variable.Identifier.Text == "DocumentSpec")
+                    if (variable.Initializer.Value is LiteralExpressionSyntax valLit)
                     {
-                        var metaBytes = Convert.FromBase64String(valText);
-                        var metaDoc = JsonSerializer.Deserialize(Encoding.UTF8.GetString(metaBytes), ArazzoJsonContext.Default.ArazzoDocument)!;
-                        doc.Arazzo = metaDoc.Arazzo;
-                        doc.Self = metaDoc.Self;
-                        doc.Info = metaDoc.Info;
-                        doc.SourceDescriptions = metaDoc.SourceDescriptions;
-                        doc.Components = metaDoc.Components;
-                        doc.Extensions = metaDoc.Extensions;
-                        return;
-                    }
-                    else if (variable.Identifier.Text == "ArazzoVersion")
-                    {
-                        doc.Arazzo = valText;
-                    }
-                    else if (variable.Identifier.Text == "SelfUri")
-                    {
-                        doc.Self = valText;
+                        var valText = valLit.Token.ValueText;
+                        if (variable.Identifier.Text == "DocumentSpec")
+                        {
+                            var metaBytes = Convert.FromBase64String(valText);
+                            var metaDoc = JsonSerializer.Deserialize(Encoding.UTF8.GetString(metaBytes), ArazzoJsonContext.Default.ArazzoDocument)!;
+                            doc.Arazzo = metaDoc.Arazzo;
+                            doc.Self = metaDoc.Self;
+                            doc.Info = metaDoc.Info;
+                            doc.SourceDescriptions = metaDoc.SourceDescriptions;
+                            doc.Components = metaDoc.Components;
+                            doc.Extensions = metaDoc.Extensions;
+                            return;
+                        }
+                        else if (variable.Identifier.Text == "ArazzoVersion")
+                        {
+                            doc.Arazzo = valText;
+                        }
+                        else if (variable.Identifier.Text == "SelfUri")
+                        {
+                            doc.Self = valText;
+                        }
                     }
                 }
             }
@@ -245,8 +247,8 @@ namespace Cdd.OpenApi.Arazzo.Clients
             int varIdx = text.IndexOf("workflowSpec", StringComparison.Ordinal);
             if (varIdx < 0) return null;
             int eqIdx = text.IndexOf('=', varIdx + "workflowSpec".Length);
-            int firstQuote = text.IndexOf((char)34, eqIdx + 1);
-            int secondQuote = text.IndexOf((char)34, firstQuote + 1);
+            int firstQuote = text.IndexOf(StringEscaper.DoubleQuoteChar, eqIdx + 1);
+            int secondQuote = text.IndexOf(StringEscaper.DoubleQuoteChar, firstQuote + 1);
             return text.Substring(firstQuote + 1, secondQuote - firstQuote - 1).Trim();
         }
 

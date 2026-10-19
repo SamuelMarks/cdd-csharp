@@ -7,6 +7,8 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cdd.OpenApi.Common;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
@@ -35,24 +37,10 @@ namespace Cdd.OpenApi
 
                 foreach (var classNode in classNodes)
                 {
-                    var hasRoutes = classNode.GetDescendantNodesSafe().OfType<MethodDeclarationSyntax>()
-                        .Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().StartsWith("Http")));
-
-                    var hasClientMethods = classNode.GetDescendantNodesSafe().OfType<InvocationExpressionSyntax>()
-                        .Any(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
-                                    memberAccess.Name.Identifier.Text.EndsWith("Async") &&
-                                    (memberAccess.Name.Identifier.Text.StartsWith("Get") ||
-                                     memberAccess.Name.Identifier.Text.StartsWith("Post") ||
-                                     memberAccess.Name.Identifier.Text.StartsWith("Put") ||
-                                     memberAccess.Name.Identifier.Text.StartsWith("Delete")));
-
-                    var isMock = classNode.Identifier.Text.EndsWith("Mock");
-                    var isCli = classNode.Identifier.Text.EndsWith("Cli");
-                    var isTest = classNode.Identifier.Text.EndsWith("Tests");
-                    var isDbContext = classNode.BaseList?.Types.Any(t => t.Type.ToString() == "DbContext" || t.Type.ToString().EndsWith("DbContext")) == true;
+                    var role = CSharpRoleClassifier.Classify(classNode);
 
                     // Extract Info tags if they exist on a main entry point or prominent class
-                    if (classNode.Identifier.Text == "Program" || classNode.Identifier.Text == "Startup" || classNode.Identifier.Text.EndsWith("Api"))
+                    if (CSharpRoleClassifier.IsDocumentMetadataHost(classNode))
                     {
                         var selfStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "self");
                         if (!string.IsNullOrEmpty(selfStr)) doc.Self = selfStr;
@@ -113,7 +101,7 @@ namespace Cdd.OpenApi
                         }
                     }
 
-                    if (hasRoutes)
+                    if (role == CSharpClassRole.RouteController)
                     {
                         var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
                         foreach (var p in paths)
@@ -166,7 +154,6 @@ namespace Cdd.OpenApi
                                 var flows = new OpenApiOAuthFlows();
                                 var flow = new OpenApiOAuthFlow { AuthorizationUrl = authUrl, TokenUrl = tokenUrl, RefreshUrl = refreshUrl, DeviceAuthorizationUrl = deviceUrl, Scopes = new Dictionary<string, string>() };
 
-                                // Simple mock scope addition if scopes tag exists
                                 var scopesStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-scopes");
                                 if (!string.IsNullOrEmpty(scopesStr))
                                 {
@@ -175,19 +162,9 @@ namespace Cdd.OpenApi
                                         var idx = s.IndexOf(':');
                                         if (idx > 0)
                                         {
-                                            var key = s.Substring(0, idx).Trim();
-                                            var val = s.Substring(idx + 1).Trim();
-                                            // Handle case where scope might be like `read:pets:Read pets` meaning key="read:pets" and val="Read pets"
-                                            // We will assume the last colon is the separator if there are multiple.
                                             var lastIdx = s.LastIndexOf(':');
-                                            if (lastIdx > 0)
-                                            {
-                                                if (lastIdx != idx)
-                                                {
-                                                    key = s.Substring(0, lastIdx).Trim();
-                                                    val = s.Substring(lastIdx + 1).Trim();
-                                                }
-                                            }
+                                            var key = s.Substring(0, lastIdx).Trim();
+                                            var val = s.Substring(lastIdx + 1).Trim();
                                             flow.Scopes[key] = val;
                                         }
                                         else
@@ -204,7 +181,7 @@ namespace Cdd.OpenApi
                                 else if (oauthFlowType == "deviceAuthorization") flows.DeviceAuthorization = flow;
 
                                 schemeObj.Flows = flows;
-                                schemeObj.Type = "oauth2"; // Force oauth2 type
+                                schemeObj.Type = "oauth2";
                                 schemeObj.Scheme = null;
                                 schemeObj.BearerFormat = null;
                             }
@@ -218,7 +195,7 @@ namespace Cdd.OpenApi
                             doc.Security.Add(new Dictionary<string, IList<string>> { { authName, new List<string>() } });
                         }
                     }
-                    else if (hasClientMethods)
+                    else if (role == CSharpClassRole.HttpClient)
                     {
                         var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
                         foreach (var p in paths)
@@ -226,7 +203,7 @@ namespace Cdd.OpenApi
                             doc.Paths![p.Key] = p.Value;
                         }
                     }
-                    else if (isMock)
+                    else if (role == CSharpClassRole.MockService)
                     {
                         var paths = Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
                         foreach (var p in paths)
@@ -234,7 +211,7 @@ namespace Cdd.OpenApi
                             doc.Paths![p.Key] = p.Value;
                         }
                     }
-                    else if (isCli)
+                    else if (role == CSharpClassRole.CliEntrypoint)
                     {
                         var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
                         foreach (var p in paths)
@@ -242,7 +219,7 @@ namespace Cdd.OpenApi
                             doc.Paths![p.Key] = p.Value;
                         }
                     }
-                    else if (isTest)
+                    else if (role == CSharpClassRole.TestSuite)
                     {
                         var paths = Cdd.OpenApi.TestsModule.Parse.ToPaths(classNode);
                         foreach (var p in paths)
@@ -250,7 +227,7 @@ namespace Cdd.OpenApi
                             doc.Paths![p.Key] = p.Value;
                         }
                     }
-                    else if (isDbContext)
+                    else if (role == CSharpClassRole.DbContext)
                     {
                         var schemas = Cdd.OpenApi.Orm.Parse.ToSchemas(classNode);
                         foreach (var s in schemas)
@@ -282,7 +259,7 @@ namespace Cdd.OpenApi
                 }
             }
 
-            return doc;
+            return IrService.FromOpenApi(doc).ToOpenApi();
         }
     }
 }

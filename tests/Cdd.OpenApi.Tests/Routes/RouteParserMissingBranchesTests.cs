@@ -79,8 +79,13 @@ namespace Cdd.OpenApi.Tests.Routes
                 [HttpPost(""/enc"")]
                 public void Post(
                     [FromBody]
+                    [Encoding]
+                    [Encoding(""onlyOne"")]
                     [Encoding(""prop1"", ""app/json"", Style=""form"", Explode=true, AllowReserved=true)]
                     [Encoding(""prop2"", ""app/json"", Style=""form"", Explode=false, AllowReserved=false)]
+                    [Encoding(""prop3"", 456)]
+                    [Encoding(123, ""app/json"")]
+                    [Encoding(123, 456)]
                     object body
                 ) {}
             }";
@@ -89,6 +94,12 @@ namespace Cdd.OpenApi.Tests.Routes
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             Assert.NotNull(paths);
+            var postOp = paths["/enc"].Post!;
+            var enc = postOp.RequestBody!.Content["application/x-www-form-urlencoded"].Encoding!;
+            Assert.Equal("app/json", enc["prop1"].ContentType);
+            Assert.Equal("form", enc["prop1"].Style);
+            Assert.True(enc["prop1"].Explode);
+            Assert.True(enc["prop1"].AllowReserved);
         }
 
         [Fact]
@@ -98,10 +109,7 @@ namespace Cdd.OpenApi.Tests.Routes
             using Microsoft.AspNetCore.Mvc;
             public class LnkApi
             {
-                /// <response code=""200"">OK
-                ///   <link link=""MyLink"" link-operationId=""opId"" link-operationRef=""opRef"" link-description=""desc"" link-requestBody=""req"" link-parameters=""p1:v1,p2:v2"" link-serverUrl=""http://url""></link>
-                ///   <link link=""MyLink2""></link>
-                /// </response>
+                /// <response code=""200"" header=""X-NullSchema"" link=""MyLink"" link-operationRef=""opRef"" link-description=""desc"" link-requestBody=""req"" link-parameters=""p1:v1,p2:v2"" link-serverUrl=""http://url"">OK</response>
                 [HttpGet(""/lnk"")]
                 public void Get() {}
             }";
@@ -110,6 +118,12 @@ namespace Cdd.OpenApi.Tests.Routes
             var classNode = tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().First();
             var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
             Assert.NotNull(paths);
+            var resp = paths["/lnk"].Get!.Responses!["200"];
+            Assert.Equal("OK", resp.Description);
+            Assert.Equal("opRef", resp.Links!["MyLink"].OperationRef);
+            Assert.Equal("desc", resp.Links["MyLink"].Description);
+            Assert.Equal("req", resp.Links["MyLink"].RequestBody?.Value);
+            Assert.Equal("http://url", resp.Links["MyLink"].Server?.Url);
         }
     }
 }

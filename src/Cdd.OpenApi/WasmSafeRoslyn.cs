@@ -49,6 +49,14 @@ namespace Cdd.OpenApi
         public static string FormatSafe(this BaseNamespaceDeclarationSyntax ns)
         {
             var sb = new System.Text.StringBuilder();
+            if (ns.HasLeadingTrivia)
+            {
+                foreach (var trivia in ns.GetLeadingTrivia())
+                {
+                    var str = trivia.ToFullString().Trim();
+                    if (!string.IsNullOrEmpty(str)) sb.AppendLine(str);
+                }
+            }
             foreach (var usingDir in ns.Usings)
             {
                 sb.AppendLine(WasmSafeFormatter.Format(usingDir));

@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using Cdd.OpenApi.Arazzo.Clients;
 using Cdd.OpenApi.Arazzo.Expressions;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models.Arazzo;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -35,7 +36,7 @@ namespace Cdd.OpenApi.Arazzo.Servers
                 throw new ArgumentNullException(nameof(doc));
             }
 
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             var sb = new StringBuilder();
 
             Clients.Emit.AppendDocMetadataHeader(sb, doc, "Arazzo E2E server workflow test suite.");
@@ -103,7 +104,7 @@ namespace Cdd.OpenApi.Arazzo.Servers
                 throw new ArgumentNullException(nameof(doc));
             }
 
-            var dq = ((char)34).ToString();
+            var dq = StringEscaper.DoubleQuote;
             var sb = new StringBuilder();
 
             Clients.Emit.AppendDocMetadataHeader(sb, doc, "Stateful server workflow mock and step simulator.");

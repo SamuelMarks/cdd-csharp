@@ -25,8 +25,7 @@ namespace Cdd.OpenApi.Orm
                 SyntaxFactory.ParseStatement(@"var builder = WebApplication.CreateBuilder(args);"),
                 SyntaxFactory.ParseStatement(@"builder.Services.AddCors(options => { options.AddPolicy(""AllowAll"", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); });"),
                 SyntaxFactory.ParseStatement(@"var config = ServerConfiguration.FromEnvironment();"),
-                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
-                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                SyntaxFactory.ParseStatement(@"config.ApplyArgs(args);"),
                 SyntaxFactory.ParseStatement(@"bool strictValidation = args.Contains(""--strict-validation"") || Environment.GetEnvironmentVariable(""TEST_STRICT_VALIDATION"") == ""true"";"),
                 SyntaxFactory.ParseStatement(@"bool enforceAuth = args.Contains(""--enforce-auth"") || Environment.GetEnvironmentVariable(""TEST_ENFORCE_AUTH"") == ""true"";"),
                 SyntaxFactory.ParseStatement(@"bool startAuthServer = args.Contains(""--start-auth-server"") || Environment.GetEnvironmentVariable(""TEST_START_AUTH_SERVER"") == ""true"";"),
@@ -34,12 +33,12 @@ namespace Cdd.OpenApi.Orm
                 SyntaxFactory.ParseStatement(@"if (config.Seed) { builder.Services.AddScoped<FakeDataSeeder>(); }"),
                 SyntaxFactory.ParseStatement(@"var app = builder.Build();"),
                 SyntaxFactory.ParseStatement(@"app.UseCors(""AllowAll"");"),
-                SyntaxFactory.ParseStatement(@"if (strictValidation) { app.Use(async (context, next) => { if (context.Request.Headers.ContainsKey(""X-Trigger-Validation-Error"")) { context.Response.StatusCode = 400; await context.Response.WriteAsync(@""{ """"error"""": """"Field 'email' must match format 'email'"""" }""); return; } await next(); }); }"),
-                SyntaxFactory.ParseStatement(@"if (enforceAuth || config.UseEphemeral) { app.Use(async (context, next) => { if (!context.Request.Path.StartsWithSegments(""/auth"") && !context.Request.Headers.Authorization.ToString().Contains(""mock-token-123"")) { context.Response.StatusCode = 401; await context.Response.WriteAsync(@""{ """"error"""": """"Unauthorized"""" }""); return; } await next(); }); }"),
+                EmitStrictValidationMiddlewareStatement(),
+                EmitMockAuthMiddlewareStatement(),
                 SyntaxFactory.ParseStatement(@"if (config.UseEphemeral || !string.IsNullOrEmpty(config.DatabaseUrl)) { await AppInitializer.InitializeAsync(app.Services); if (config.Seed) { using var scope = app.Services.CreateScope(); var seeder = scope.ServiceProvider.GetRequiredService<FakeDataSeeder>(); await seeder.SeedDatabaseAsync(); } }"),
                 SyntaxFactory.ParseStatement(@"app.MapGet(""/"", () => ""CDD Server is running"");"),
-                SyntaxFactory.ParseStatement(@"if (startAuthServer) { app.MapPost(""/auth/login"", () => Results.Ok(new { Token = ""Bearer mock-token-123"" })); app.MapPost(""/auth/register"", () => Results.Ok(new { Message = ""User registered"" })); }"),
-                SyntaxFactory.ParseStatement(@"app.MapPost(""/_mock/trigger-webhook/{webhook_name}"", (string webhook_name) => Results.Ok(new { Message = $""Webhook {webhook_name} triggered"" }));")
+                EmitMockIdpEndpointsStatement(),
+                EmitWebhookTriggerEndpointStatement()
             };
 
             foreach (var tag in tags)
@@ -98,8 +97,7 @@ namespace Cdd.OpenApi.Orm
                             .WithBody(SyntaxFactory.Block(
                                 SyntaxFactory.ParseStatement(@"var args = new[] { ""--ephemeral"" };"),
                                 SyntaxFactory.ParseStatement(@"var config = new ServerConfiguration();"),
-                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
-                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                                SyntaxFactory.ParseStatement(@"config.ApplyArgs(args);"),
                                 SyntaxFactory.ParseStatement(@"Assert.True(config.UseEphemeral);"),
                                 SyntaxFactory.ParseStatement(@"Assert.False(config.Seed);")
                             )),
@@ -109,8 +107,7 @@ namespace Cdd.OpenApi.Orm
                             .WithBody(SyntaxFactory.Block(
                                 SyntaxFactory.ParseStatement(@"var args = new[] { ""--seed"" };"),
                                 SyntaxFactory.ParseStatement(@"var config = new ServerConfiguration();"),
-                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--ephemeral"")) config.UseEphemeral = true;"),
-                                SyntaxFactory.ParseStatement(@"if (args.Contains(""--seed"")) config.Seed = true;"),
+                                SyntaxFactory.ParseStatement(@"config.ApplyArgs(args);"),
                                 SyntaxFactory.ParseStatement(@"Assert.False(config.UseEphemeral);"),
                                 SyntaxFactory.ParseStatement(@"Assert.True(config.Seed);")
                             ))
@@ -216,6 +213,46 @@ namespace Cdd.OpenApi.Orm
             }
 
             return results;
+        }
+
+        /// <summary>
+        /// Emits the strict request validation middleware registration statement.
+        /// </summary>
+        /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>
+        private static StatementSyntax EmitStrictValidationMiddlewareStatement()
+        {
+            return SyntaxFactory.ParseStatement(
+                @"if (strictValidation) { app.Use(async (context, next) => { if (context.Request.Headers.ContainsKey(""X-Trigger-Validation-Error"")) { context.Response.StatusCode = 400; await context.Response.WriteAsync(@""{ """"error"""": """"Field 'email' must match format 'email'"""" }""); return; } await next(); }); }");
+        }
+
+        /// <summary>
+        /// Emits the mock authentication enforcement middleware registration statement.
+        /// </summary>
+        /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>
+        private static StatementSyntax EmitMockAuthMiddlewareStatement()
+        {
+            return SyntaxFactory.ParseStatement(
+                @"if (enforceAuth || config.UseEphemeral) { app.Use(async (context, next) => { if (!context.Request.Path.StartsWithSegments(""/auth"") && !context.Request.Headers.Authorization.ToString().Contains(""mock-token-123"")) { context.Response.StatusCode = 401; await context.Response.WriteAsync(@""{ """"error"""": """"Unauthorized"""" }""); return; } await next(); }); }");
+        }
+
+        /// <summary>
+        /// Emits the mock identity provider (<c>/auth/login</c> and <c>/auth/register</c>) minimal API endpoint statements.
+        /// </summary>
+        /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>
+        private static StatementSyntax EmitMockIdpEndpointsStatement()
+        {
+            return SyntaxFactory.ParseStatement(
+                @"if (startAuthServer) { app.MapPost(""/auth/login"", () => Results.Ok(new { Token = ""Bearer mock-token-123"" })); app.MapPost(""/auth/register"", () => Results.Ok(new { Message = ""User registered"" })); }");
+        }
+
+        /// <summary>
+        /// Emits the mock webhook trigger (<c>/_mock/trigger-webhook/{webhook_name}</c>) minimal API endpoint statement.
+        /// </summary>
+        /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>
+        private static StatementSyntax EmitWebhookTriggerEndpointStatement()
+        {
+            return SyntaxFactory.ParseStatement(
+                @"app.MapPost(""/_mock/trigger-webhook/{webhook_name}"", (string webhook_name) => Results.Ok(new { Message = $""Webhook {webhook_name} triggered"" }));");
         }
     }
 }
