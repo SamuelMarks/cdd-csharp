@@ -278,6 +278,14 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal(0, exitCode7);
             Assert.Contains("Usage:\n  cdd-csharp from_openapi", output7);
 
+            var (exitCode8, output8) = RunMain(new[] { "parse", "--help" });
+            Assert.Equal(0, exitCode8);
+            Assert.Contains("Usage:\n  cdd-csharp parse", output8);
+
+            var (exitCode9, output9) = RunMain(new[] { "emit", "--help" });
+            Assert.Equal(0, exitCode9);
+            Assert.Contains("Usage:\n  cdd-csharp emit", output9);
+
             var (_, parsedMcpShort) = Cdd.OpenApi.Cli.CddCli.ParseFromOpenApiArgs(new[] { "from_openapi", "-m" });
             Assert.True(parsedMcpShort.Mcp);
             var (_, parsedMcpLong) = Cdd.OpenApi.Cli.CddCli.ParseFromOpenApiArgs(new[] { "from_openapi", "--mcp" });

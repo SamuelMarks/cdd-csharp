@@ -1,7 +1,7 @@
 # Developing cdd-csharp
 
 ## Prerequisites
-- .NET SDK (9.0+)
+- .NET SDK (8.0+ / 10.0+)
 - Make
 
 ## Building the project

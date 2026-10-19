@@ -37,6 +37,10 @@ namespace Cdd.OpenApi.Cli
         public const string ServeJsonRpcHelp = "Usage:\n  cdd-csharp serve_json_rpc [-p <port>] [-l <listen>]\n\nOptions:\n  -p, --port     Port to listen on (default: 8080).\n  -l, --listen   Address to listen on (default: 127.0.0.1).";
         /// <summary>Help text for the <c>mcp</c> command.</summary>
         public const string McpHelp = "Usage:\n  cdd-csharp mcp\n\nOptions:\n  Run the generator as an MCP server over stdio.";
+        /// <summary>Help text for the <c>parse</c> command.</summary>
+        public const string ParseHelp = "Usage:\n  cdd-csharp parse <input>\n\nOptions:\n  <input>    Path to the OpenAPI specification to parse and inspect.";
+        /// <summary>Help text for the <c>emit</c> command.</summary>
+        public const string EmitHelp = "Usage:\n  cdd-csharp emit <input> <output>\n\nOptions:\n  <input>    Path to the input OpenAPI specification.\n  <output>   Path to write the re-emitted OpenAPI JSON.";
 
 
 

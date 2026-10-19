@@ -4,8 +4,9 @@ End-to-end Arazzo 1.1.0 conformance test script.
 Verifies JSON and YAML round-tripping across Client SDK, Client SDK CLI (reusing SDK),
 and Server E2E workflow tests & mocks, including a comprehensive Petstore Arazzo 1.1.0
 workflow (login -> createPet -> getPetById -> placeOrder -> deletePet with retries,
-gotos, criteria, selectors, and payload replacements) and ../ml-framework-snapshots grounding.
+gotos, criteria, selectors, and payload replacements).
 """
+
 import json
 import os
 import subprocess
@@ -20,37 +21,26 @@ PETSTORE_ARAZZO = {
         "title": "PetstoreWorkflows",
         "summary": "Petstore end-to-end Arazzo 1.1.0 workflows",
         "description": "Multi-step Petstore workflow with login, pet creation, retrieval, order placement, and deletion.",
-        "version": "1.1.0"
+        "version": "1.1.0",
     },
     "sourceDescriptions": [
-        {
-            "name": "petstore",
-            "url": "./petstore.yaml",
-            "type": "openapi"
-        }
+        {"name": "petstore", "url": "./petstore.yaml", "type": "openapi"}
     ],
     "components": {
         "inputs": {
             "petCredentials": {
                 "type": "object",
-                "properties": {
-                    "apiKey": {"type": "string"}
-                }
+                "properties": {"apiKey": {"type": "string"}},
             }
         },
         "parameters": {
             "apiKeyHeader": {
                 "name": "api_key",
                 "in": "header",
-                "value": "$inputs.apiKey"
+                "value": "$inputs.apiKey",
             }
         },
-        "successActions": {
-            "endSuccess": {
-                "name": "endSuccess",
-                "type": "end"
-            }
-        },
+        "successActions": {"endSuccess": {"name": "endSuccess", "type": "end"}},
         "failureActions": {
             "retryTransient": {
                 "name": "retryTransient",
@@ -58,10 +48,14 @@ PETSTORE_ARAZZO = {
                 "retryAfter": 1.0,
                 "retryLimit": 3,
                 "criteria": [
-                    {"context": "$statusCode", "condition": "$statusCode == 503", "type": "simple"}
-                ]
+                    {
+                        "context": "$statusCode",
+                        "condition": "$statusCode == 503",
+                        "type": "simple",
+                    }
+                ],
             }
-        }
+        },
     },
     "workflows": [
         {
@@ -74,8 +68,8 @@ PETSTORE_ARAZZO = {
                     "username": {"type": "string"},
                     "password": {"type": "string"},
                     "petName": {"type": "string"},
-                    "quantity": {"type": "integer"}
-                }
+                    "quantity": {"type": "integer"},
+                },
             },
             "steps": [
                 {
@@ -83,15 +77,25 @@ PETSTORE_ARAZZO = {
                     "description": "Authenticate user session",
                     "operationId": "loginUser",
                     "parameters": [
-                        {"name": "username", "in": "query", "value": "$inputs.username"},
-                        {"name": "password", "in": "query", "value": "$inputs.password"}
+                        {
+                            "name": "username",
+                            "in": "query",
+                            "value": "$inputs.username",
+                        },
+                        {
+                            "name": "password",
+                            "in": "query",
+                            "value": "$inputs.password",
+                        },
                     ],
                     "successCriteria": [
-                        {"context": "$statusCode", "condition": "$statusCode == 200", "type": "simple"}
+                        {
+                            "context": "$statusCode",
+                            "condition": "$statusCode == 200",
+                            "type": "simple",
+                        }
                     ],
-                    "outputs": {
-                        "sessionToken": "$response.header.X-Expires-After"
-                    }
+                    "outputs": {"sessionToken": "$response.header.X-Expires-After"},
                 },
                 {
                     "stepId": "createPet",
@@ -102,28 +106,36 @@ PETSTORE_ARAZZO = {
                         "contentType": "application/json",
                         "payload": {"name": "doggie", "status": "available"},
                         "replacements": [
-                            {"target": "/name", "targetSelectorType": "jsonpointer", "value": "$inputs.petName"}
-                        ]
+                            {
+                                "target": "/name",
+                                "targetSelectorType": "jsonpointer",
+                                "value": "$inputs.petName",
+                            }
+                        ],
                     },
                     "successCriteria": [
-                        {"context": "$statusCode", "condition": "^20[01]$", "type": "regex"}
+                        {
+                            "context": "$statusCode",
+                            "condition": "^20[01]$",
+                            "type": "regex",
+                        }
                     ],
                     "onFailure": [
                         {
                             "name": "retryCreate",
                             "type": "retry",
                             "retryAfter": 0.5,
-                            "retryLimit": 2
+                            "retryLimit": 2,
                         }
                     ],
                     "outputs": {
                         "petId": {
                             "context": "$response.body",
                             "selector": "$.id",
-                            "type": {"type": "jsonpath", "version": "rfc9535"}
+                            "type": {"type": "jsonpath", "version": "rfc9535"},
                         }
                     },
-                    "timeout": 5000
+                    "timeout": 5000,
                 },
                 {
                     "stepId": "getPet",
@@ -131,18 +143,31 @@ PETSTORE_ARAZZO = {
                     "operationPath": "{$sourceDescriptions.petstore.url}#/paths/~1pet~1{petId}/get",
                     "dependsOn": ["createPet"],
                     "parameters": [
-                        {"name": "petId", "in": "path", "value": "$steps.createPet.outputs.petId"},
-                        {"reference": "$components.parameters.apiKeyHeader", "value": "$steps.loginUser.outputs.sessionToken"}
+                        {
+                            "name": "petId",
+                            "in": "path",
+                            "value": "$steps.createPet.outputs.petId",
+                        },
+                        {
+                            "reference": "$components.parameters.apiKeyHeader",
+                            "value": "$steps.loginUser.outputs.sessionToken",
+                        },
                     ],
                     "successCriteria": [
-                        {"context": "$statusCode", "condition": "$statusCode == 200", "type": "simple"}
+                        {
+                            "context": "$statusCode",
+                            "condition": "$statusCode == 200",
+                            "type": "simple",
+                        }
                     ],
                     "onSuccess": [
-                        {"name": "proceedToOrder", "type": "goto", "stepId": "placeOrder"}
+                        {
+                            "name": "proceedToOrder",
+                            "type": "goto",
+                            "stepId": "placeOrder",
+                        }
                     ],
-                    "outputs": {
-                        "verifiedPetId": "$response.body#/id"
-                    }
+                    "outputs": {"verifiedPetId": "$response.body#/id"},
                 },
                 {
                     "stepId": "placeOrder",
@@ -153,16 +178,21 @@ PETSTORE_ARAZZO = {
                         "contentType": "application/json",
                         "payload": {"petId": 0, "quantity": 1, "status": "placed"},
                         "replacements": [
-                            {"target": "/petId", "value": "$steps.getPet.outputs.verifiedPetId"},
-                            {"target": "/quantity", "value": "$inputs.quantity"}
-                        ]
+                            {
+                                "target": "/petId",
+                                "value": "$steps.getPet.outputs.verifiedPetId",
+                            },
+                            {"target": "/quantity", "value": "$inputs.quantity"},
+                        ],
                     },
                     "successCriteria": [
-                        {"context": "$statusCode", "condition": "$statusCode == 200", "type": "simple"}
+                        {
+                            "context": "$statusCode",
+                            "condition": "$statusCode == 200",
+                            "type": "simple",
+                        }
                     ],
-                    "outputs": {
-                        "orderId": "$response.body#/id"
-                    }
+                    "outputs": {"orderId": "$response.body#/id"},
                 },
                 {
                     "stepId": "deletePet",
@@ -170,28 +200,31 @@ PETSTORE_ARAZZO = {
                     "operationId": "deletePet",
                     "dependsOn": ["placeOrder"],
                     "parameters": [
-                        {"name": "petId", "in": "path", "value": "$steps.createPet.outputs.petId"}
+                        {
+                            "name": "petId",
+                            "in": "path",
+                            "value": "$steps.createPet.outputs.petId",
+                        }
                     ],
                     "successCriteria": [
-                        {"context": "$statusCode", "condition": "$statusCode == 200", "type": "simple"}
-                    ]
-                }
+                        {
+                            "context": "$statusCode",
+                            "condition": "$statusCode == 200",
+                            "type": "simple",
+                        }
+                    ],
+                },
             ],
             "outputs": {
                 "purchasedPetId": "$steps.createPet.outputs.petId",
-                "finalOrderId": "$steps.placeOrder.outputs.orderId"
-            }
+                "finalOrderId": "$steps.placeOrder.outputs.orderId",
+            },
         }
-    ]
+    ],
 }
 
 
 def main():
-    subprocess.run(
-        ["python3", "scripts/ground_ml_framework_snapshots.py", "--snapshots-dir", "../ml-framework-snapshots"],
-        check=True
-    )
-
     cli_dll = "src/Cdd.OpenApi.Cli/bin/Debug/net10.0/cdd-csharp.dll"
     with tempfile.TemporaryDirectory() as tmp:
         arazzo_json_path = os.path.join(tmp, "petstore.arazzo.json")
@@ -204,16 +237,28 @@ def main():
             rt_yaml = os.path.join(tmp, f"petstore_rt_{target}.yaml")
 
             subprocess.run(
-                ["dotnet", cli_dll, "from_arazzo", target, "-i", arazzo_json_path, "-o", out_dir, "--tests", "--no-github-actions", "--no-installable-package"],
-                check=True
+                [
+                    "dotnet",
+                    cli_dll,
+                    "from_arazzo",
+                    target,
+                    "-i",
+                    arazzo_json_path,
+                    "-o",
+                    out_dir,
+                    "--tests",
+                    "--no-github-actions",
+                    "--no-installable-package",
+                ],
+                check=True,
             )
             subprocess.run(
                 ["dotnet", cli_dll, "to_arazzo", "-i", out_dir, "-o", rt_json],
-                check=True
+                check=True,
             )
             subprocess.run(
                 ["dotnet", cli_dll, "to_arazzo", "-i", out_dir, "-o", rt_yaml],
-                check=True
+                check=True,
             )
 
             with open(rt_json, "r", encoding="utf-8") as fp:

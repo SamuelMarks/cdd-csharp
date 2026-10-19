@@ -87,6 +87,10 @@ namespace Cdd.OpenApi.Cli
                         Console.WriteLine(CddCli.ServeJsonRpcHelp);
                     else if (command == "mcp")
                         Console.WriteLine(CddCli.McpHelp);
+                    else if (command == "parse")
+                        Console.WriteLine(CddCli.ParseHelp);
+                    else if (command == "emit")
+                        Console.WriteLine(CddCli.EmitHelp);
                     else
                         PrintUsage();
                     return 0;
@@ -171,16 +175,22 @@ namespace Cdd.OpenApi.Cli
             Console.WriteLine("\nSubcommands:");
             Console.WriteLine("  from_openapi    Generate code from an OpenAPI specification.");
             Console.WriteLine("  to_openapi      Generate an OpenAPI specification from source code.");
+            Console.WriteLine("  from_arazzo     Generate code from an Arazzo 1.1.0 specification.");
+            Console.WriteLine("  to_arazzo       Generate an Arazzo 1.1.0 specification from source code.");
             Console.WriteLine("  to_docs_json    Generate JSON documentation with code snippets for an OpenAPI specification.");
             Console.WriteLine("  sync            Synchronize an OpenAPI specification with source code.");
             Console.WriteLine("  serve_json_rpc  Expose CLI interface as a JSON-RPC server.");
             Console.WriteLine("  mcp             Run the generator as an MCP server over stdio.");
+            Console.WriteLine("  parse           Parse and validate an OpenAPI specification.");
+            Console.WriteLine("  emit            Parse and re-emit an OpenAPI specification.");
             Console.WriteLine("\nOptions:");
             Console.WriteLine("  --help, -h      Show this message");
             Console.WriteLine("  --version, -v   Show version information");
             Console.WriteLine("\nExamples:");
             Console.WriteLine("  cdd-csharp from_openapi [to_sdk|to_sdk_cli|to_server] -i|--input <spec.json> | -d|--input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests] [-m|--mcp]");
             Console.WriteLine("  cdd-csharp to_openapi -i|--input <csharp-dir-or-file> [-o|--output <output.json>]");
+            Console.WriteLine("  cdd-csharp from_arazzo [to_sdk|to_sdk_cli|to_server] -i|--input <spec.arazzo.json> | -d|--input-dir <dir> [-o|--output <output-dir>] [--no-github-actions] [--no-installable-package] [--tests]");
+            Console.WriteLine("  cdd-csharp to_arazzo -i|--input <csharp-dir-or-file> [-o|--output <output.arazzo.json>]");
             Console.WriteLine("  cdd-csharp to_docs_json --no-imports --no-wrapping -i|--input <spec.json> [-o|--output docs.json]");
             Console.WriteLine("  cdd-csharp serve_json_rpc [-p|--port <port>] [-l|--listen <address>]");
         }
