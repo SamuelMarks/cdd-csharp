@@ -1,3 +1,7 @@
+// <copyright file="CoverageTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.IO;
 using System.Threading;
@@ -9,9 +13,12 @@ using Cdd.OpenApi.Cli;
 
 namespace Cdd.OpenApi.Tests.Cli
 {
+    /// <summary>Verifies or exercises coverage tests.</summary>
     [Collection("Cli")]
     public class CoverageTests
     {
+        /// <summary>Verifies or exercises fetch http content works.</summary>
+        /// <returns>The resulting task.</returns>
         [Fact]
         public async Task FetchHttpContent_Works()
         {
@@ -47,6 +54,7 @@ namespace Cdd.OpenApi.Tests.Cli
             }
         }
 
+        /// <summary>Verifies or exercises serve mcp works.</summary>
         [Fact]
         public void ServeMcp_Works()
         {
@@ -134,6 +142,7 @@ namespace Cdd.OpenApi.Tests.Cli
             }
         }
 
+        /// <summary>Verifies or exercises serve json rpc arg parsing.</summary>
         [Fact]
         public void ServeJsonRpc_ArgParsing()
         {
@@ -146,6 +155,8 @@ namespace Cdd.OpenApi.Tests.Cli
             Assert.Equal(0, CddCli.ServeJsonRpc(new[] { "serve_json_rpc", "-l" }, cts.Token));
         }
 
+        /// <summary>Verifies or exercises serve json rpc works.</summary>
+        /// <returns>The resulting task.</returns>
         [Fact]
         public async Task ServeJsonRpc_Works()
         {

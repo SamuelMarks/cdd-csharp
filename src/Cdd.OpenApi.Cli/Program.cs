@@ -65,7 +65,7 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (command == "--version" || command == "-v" || command == "version")
                 {
-                    Console.WriteLine("0.0.4");
+                    Console.WriteLine(CliArgumentParser.Version);
                     return 0;
                 }
 

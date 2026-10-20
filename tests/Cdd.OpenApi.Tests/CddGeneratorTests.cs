@@ -1,3 +1,7 @@
+// <copyright file="CddGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -5,8 +9,10 @@ using Cdd.OpenApi;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises cdd generator tests.</summary>
     public class CddGeneratorTests
     {
+        /// <summary>Verifies or exercises test cdd generator generates correctly.</summary>
         [Fact]
         public void Test_CddGenerator_GeneratesCorrectly()
         {
@@ -337,6 +343,7 @@ namespace Cdd.OpenApi.Tests
             }
         }
 
+        /// <summary>Verifies or exercises test cdd generator no input paths throws.</summary>
         [Fact]
         public void Test_CddGenerator_NoInputPaths_Throws()
         {
@@ -344,6 +351,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config));
         }
 
+        /// <summary>Verifies or exercises test cdd generator invalid input path throws.</summary>
         [Fact]
         public void Test_CddGenerator_InvalidInputPath_Throws()
         {
@@ -351,6 +359,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Throws<FileNotFoundException>(() => CddGenerator.GenerateAll(config));
         }
 
+        /// <summary>Verifies or exercises test cdd generator input paths works.</summary>
         [Fact]
         public void Test_CddGenerator_InputPaths_Works()
         {
@@ -376,6 +385,7 @@ namespace Cdd.OpenApi.Tests
             }
         }
 
+        /// <summary>Verifies or exercises test cdd generator catch blocks.</summary>
         [Fact]
         public void Test_CddGenerator_CatchBlocks()
         {
@@ -404,6 +414,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises generate code generator branches.</summary>
         [Fact]
         public void Generate_CodeGenerator_Branches()
         {
@@ -436,6 +447,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises test cdd generator generate all no info.</summary>
         [Fact]
         public void Test_CddGenerator_GenerateAll_NoInfo()
         {
@@ -460,6 +472,7 @@ namespace Cdd.OpenApi.Tests
 
 
 
+        /// <summary>Verifies or exercises test cdd generator safe create directory empty path.</summary>
         [Fact]
         public void Test_CddGenerator_SafeCreateDirectory_EmptyPath()
         {
@@ -468,6 +481,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises test cdd generator empty input paths.</summary>
         [Fact]
         public void Test_CddGenerator_EmptyInputPaths()
         {
@@ -475,6 +489,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config));
         }
 
+        /// <summary>Verifies or exercises test cdd generator generate all empty input paths.</summary>
         [Fact]
         public void Test_CddGenerator_GenerateAll_EmptyInputPaths()
         {
@@ -482,6 +497,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Throws<System.ArgumentException>(() => CddGenerator.GenerateAll(config));
         }
 
+        /// <summary>Verifies or exercises test cdd generator generate server branch.</summary>
         [Fact]
         public void Test_CddGenerator_GenerateServer_Branch()
         {
@@ -489,6 +505,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Throws<System.IO.FileNotFoundException>(() => CddGenerator.GenerateServer(config));
         }
 
+        /// <summary>Verifies or exercises test cdd generator null doc info.</summary>
         [Fact]
         public void Test_CddGenerator_NullDocInfo()
         {
@@ -550,6 +567,7 @@ namespace Cdd.OpenApi.Tests
                 System.IO.Directory.Delete(tempDir, true);
             }
         }
+        /// <summary>Verifies or exercises safe create directory with backslash.</summary>
         [Fact]
         public void SafeCreateDirectory_WithBackslash()
         {

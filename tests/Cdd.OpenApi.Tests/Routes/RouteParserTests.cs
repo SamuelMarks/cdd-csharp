@@ -1,3 +1,7 @@
+// <copyright file="RouteParserTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -8,8 +12,10 @@ using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Routes
 {
+    /// <summary>Verifies or exercises route parser tests.</summary>
     public class RouteParserTests
     {
+        /// <summary>Verifies or exercises to paths parses controller methods to open api paths.</summary>
         [Fact]
         public void ToPaths_ParsesControllerMethods_ToOpenApiPaths()
         {
@@ -63,6 +69,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Equal("path", petIdPath.Get.Parameters?[0].In);
         }
 
+        /// <summary>Verifies or exercises to paths method with no attribute is ignored.</summary>
         [Fact]
         public void ToPaths_MethodWithNoAttribute_IsIgnored()
         {
@@ -80,6 +87,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Empty(paths);
         }
 
+        /// <summary>Verifies or exercises set operation sets all verbs.</summary>
         [Fact]
         public void SetOperation_SetsAllVerbs()
         {
@@ -107,6 +115,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.NotNull(rootPath.Patch);
             Assert.NotNull(rootPath.Trace);
         }
+        /// <summary>Verifies or exercises to paths with from body sets request body.</summary>
         [Fact]
         public void ToPaths_WithFromBody_SetsRequestBody()
         {
@@ -131,6 +140,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(postOp.RequestBody.Content.ContainsKey("application/json"));
             Assert.Equal("string", postOp.RequestBody.Content["application/json"].Schema?.Type); // "User" falls back to string in current stub MapType
         }
+        /// <summary>Verifies or exercises to paths with docstring responses parses headers and links.</summary>
         [Fact]
         public void ToPaths_WithDocstringResponses_ParsesHeadersAndLinks()
         {
@@ -160,6 +170,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(op.Responses["204"].Links!.ContainsKey("GetUsers"));
             Assert.True(op.Responses.ContainsKey("404"));
         }
+        /// <summary>Verifies or exercises to paths with parameter attributes parses them.</summary>
         [Fact]
         public void ToPaths_WithParameterAttributes_ParsesThem()
         {
@@ -190,6 +201,7 @@ namespace Cdd.OpenApi.Tests.Routes
             var limit = op.Parameters[2];
             Assert.Equal("10", limit.Example);
         }
+        /// <summary>Verifies or exercises to interface with parameter attributes generates them.</summary>
         [Fact]
         public void ToInterface_WithParameterAttributes_GeneratesThem()
         {
@@ -215,6 +227,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("[System.Obsolete] int oldId = 42", code);
             AssertHelper.ContainsNoWhitespace("[AllowEmptyValue] string q = \"\"", code);
         }
+        /// <summary>Verifies or exercises to paths with complex parameter attributes parses them.</summary>
         [Fact]
         public void ToPaths_WithComplexParameterAttributes_ParsesThem()
         {
@@ -240,6 +253,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(ids.Explode);
             Assert.True(ids.AllowReserved);
         }
+        /// <summary>Verifies or exercises to paths with content parameter parses it.</summary>
         [Fact]
         public void ToPaths_WithContentParameter_ParsesIt()
         {
@@ -265,6 +279,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(p.Content.ContainsKey("application/json"));
             Assert.Equal("object", p.Content["application/json"].Schema?.Type);
         }
+        /// <summary>Verifies or exercises to interface with complex parameter attributes generates them.</summary>
         [Fact]
         public void ToInterface_WithComplexParameterAttributes_GeneratesThem()
         {
@@ -306,6 +321,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("[AllowReserved]", code);
             AssertHelper.ContainsNoWhitespace("[Content(\"application/json\", \"object\")] string payload", code);
         }
+        /// <summary>Verifies or exercises to paths with server docstrings parses them.</summary>
         [Fact]
         public void ToPaths_WithServerDocstrings_ParsesThem()
         {
@@ -350,6 +366,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Equal("us-east", v.Enum[0]);
             Assert.Equal("eu-west", v.Enum[1]);
         }
+        /// <summary>Verifies or exercises to paths with callback parses them.</summary>
         [Fact]
         public void ToPaths_WithCallback_ParsesThem()
         {
@@ -377,6 +394,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(cb.ContainsKey("{$request.query.url}"));
             Assert.Equal("Callback info", cb["{$request.query.url}"].Post?.Description);
         }
+        /// <summary>Verifies or exercises to paths with complex links parses them.</summary>
         [Fact]
         public void ToPaths_WithComplexLinks_ParsesThem()
         {
@@ -412,6 +430,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.NotNull(link.Parameters);
             Assert.Equal("$response.body#/id", link.Parameters["userId"]);
         }
+        /// <summary>Verifies or exercises to paths with operation metadata parses them.</summary>
         [Fact]
         public void ToPaths_WithOperationMetadata_ParsesThem()
         {
@@ -459,6 +478,7 @@ namespace Cdd.OpenApi.Tests.Routes
 
             Assert.Equal(9, op.Parameters!.Count);
         }
+        /// <summary>Verifies or exercises to paths with parameter examples parses them.</summary>
         [Fact]
         public void ToPaths_WithParameterExamples_ParsesThem()
         {
@@ -484,6 +504,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Equal("one", p.Examples["ex1"].Value);
             Assert.Equal("two", p.Examples["ex2"].Value);
         }
+        /// <summary>Verifies or exercises to paths with encoding attributes parses them.</summary>
         [Fact]
         public void ToPaths_WithEncodingAttributes_ParsesThem()
         {
@@ -518,6 +539,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.False(e.AllowReserved);
         }
 
+        /// <summary>Verifies or exercises map type missing branches coverage.</summary>
         [Fact]
         public void MapType_MissingBranches_Coverage()
         {
@@ -543,6 +565,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Equal("string", op.Parameters!.First(p => p.Name == "p7").Schema!.Type);
         }
 
+        /// <summary>Verifies or exercises to paths with query and additional operations parses them.</summary>
         [Fact]
         public void ToPaths_WithQueryAndAdditionalOperations_ParsesThem()
         {

@@ -12,9 +12,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Clients
 {
-    /// <summary>Emits strongly-typed C# HTTP client classes from <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Emits strongly-typed C# HTTP client classes from <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an asynchronous HTTP API client from IR endpoints.
+        /// </summary>
+        /// <param name="className">The name of the generated client class.</param>
+        /// <param name="endpoints">The IR endpoints to generate client methods for.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToClient(string className, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints)
+        {
+            return ToClient(className, OperationHelpers.ConvertEndpointsToPaths(endpoints));
+        }
+
         /// <summary>
         /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an asynchronous HTTP API client.
         /// </summary>

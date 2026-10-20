@@ -1,11 +1,17 @@
+// <copyright file="OpenApiEmitterTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Emit;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests.Emit
 {
+    /// <summary>Verifies or exercises open api emitter tests.</summary>
     public class OpenApiEmitterTests
     {
+        /// <summary>Verifies or exercises emit json valid document returns formatted json.</summary>
         [Fact]
         public void EmitJson_ValidDocument_ReturnsFormattedJson()
         {

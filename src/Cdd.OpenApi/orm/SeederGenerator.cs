@@ -15,6 +15,22 @@ namespace Cdd.OpenApi.Orm
     /// <summary>Generates fake data seeders using Bogus, managing referential integrity.</summary>
     public static class SeederGenerator
     {
+        /// <summary>Generates the FakeDataSeeder class from IR models.</summary>
+        /// <param name="models">The IR models to seed.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <param name="tests">Whether to generate unit tests for the seeders.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> GenerateSeeder(IReadOnlyList<Cdd.OpenApi.Ir.IrModel> models, string baseNamespace, bool tests)
+        {
+            var dict = new Dictionary<string, OpenApiSchema>();
+            foreach (var m in models)
+            {
+                dict[m.Name] = m.ToOpenApiSchema();
+            }
+
+            return GenerateSeeder(dict, baseNamespace, tests);
+        }
+
         /// <summary>Generates the FakeDataSeeder class.</summary>
         /// <param name="schemas">The OpenAPI schemas to seed.</param>
         /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>

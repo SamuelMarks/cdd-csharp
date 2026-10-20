@@ -1,3 +1,7 @@
+// <copyright file="RouteParserMissingBranchesTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,8 +11,10 @@ using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Routes
 {
+    /// <summary>Verifies or exercises route parser missing branches tests.</summary>
     public partial class RouteParserMissingBranchesTests
     {
+        /// <summary>Verifies or exercises parse response headers missing branches.</summary>
         [Fact]
         public void Parse_ResponseHeaders_MissingBranches()
         {
@@ -38,8 +44,10 @@ namespace Cdd.OpenApi.Tests.Routes
 }
 namespace Cdd.OpenApi.Tests.Routes
 {
+    /// <summary>Verifies or exercises route parser missing branches tests.</summary>
     public partial class RouteParserMissingBranchesTests
     {
+        /// <summary>Verifies or exercises parse map type empty return types missing branches.</summary>
         [Fact]
         public void Parse_MapType_EmptyReturnTypes_MissingBranches()
         {
@@ -69,6 +77,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Null(paths["/t6"].Get!.Responses!["200"].Content);
         }
 
+        /// <summary>Verifies or exercises parse encoding missing branches.</summary>
         [Fact]
         public void Parse_Encoding_MissingBranches()
         {
@@ -102,6 +111,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.True(enc["prop1"].AllowReserved);
         }
 
+        /// <summary>Verifies or exercises parse links missing branches.</summary>
         [Fact]
         public void Parse_Links_MissingBranches()
         {

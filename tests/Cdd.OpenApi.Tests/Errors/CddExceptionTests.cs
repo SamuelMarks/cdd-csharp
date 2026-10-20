@@ -1,11 +1,17 @@
+// <copyright file="CddExceptionTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using Cdd.OpenApi.Errors;
 using Xunit;
 
 namespace Cdd.OpenApi.Tests.Errors
 {
+    /// <summary>Verifies or exercises cdd exception tests.</summary>
     public class CddExceptionTests
     {
+        /// <summary>Verifies or exercises cdd exception constructors set error code and message.</summary>
         [Fact]
         public void CddException_Constructors_SetErrorCodeAndMessage()
         {

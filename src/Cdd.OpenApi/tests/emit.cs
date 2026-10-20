@@ -9,9 +9,33 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.TestsModule
 {
-    /// <summary>Emits xUnit API and client test classes from <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Emits xUnit API and client test classes from <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> containing server API test methods for the specified IR endpoints.
+        /// </summary>
+        /// <param name="name">The name of the generated test class.</param>
+        /// <param name="endpoints">The IR endpoints to generate test methods for.</param>
+        /// <param name="tests">Whether to emit composable xUnit <c>[Fact]</c> test harnesses.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToTests(string name, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints, bool tests = false)
+        {
+            return ToTests(name, Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(endpoints), tests);
+        }
+
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> containing HTTP client test methods for the specified IR endpoints.
+        /// </summary>
+        /// <param name="name">The name of the generated client test class.</param>
+        /// <param name="endpoints">The IR endpoints to generate client test methods for.</param>
+        /// <param name="tests">Whether to emit composable xUnit <c>[Fact]</c> test harnesses.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToClientTests(string name, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints, bool tests = false)
+        {
+            return ToClientTests(name, Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(endpoints), tests);
+        }
+
         /// <summary>
         /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> containing server API test methods for the specified paths.
         /// </summary>
@@ -54,10 +78,13 @@ namespace Cdd.OpenApi.TestsModule
             {
                 var route = pathKvp.Key;
                 var pathItem = pathKvp.Value;
-                if (pathItem.Get != null) members.Add(CreateTestMethod("Get", route, pathItem.Get, tests));
-                if (pathItem.Post != null) members.Add(CreateTestMethod("Post", route, pathItem.Post, tests));
-                if (pathItem.Put != null) members.Add(CreateTestMethod("Put", route, pathItem.Put, tests));
-                if (pathItem.Delete != null) members.Add(CreateTestMethod("Delete", route, pathItem.Delete, tests));
+                foreach (var opKvp in Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem))
+                {
+                    if (opKvp.Value != null)
+                    {
+                        members.Add(CreateTestMethod(opKvp.Key, route, opKvp.Value, tests));
+                    }
+                }
             }
 
             return classDecl.AddMembers(members.ToArray());
@@ -105,10 +132,13 @@ namespace Cdd.OpenApi.TestsModule
             {
                 var route = pathKvp.Key;
                 var pathItem = pathKvp.Value;
-                if (pathItem.Get != null) members.Add(CreateClientTestMethod("Get", route, pathItem.Get, tests));
-                if (pathItem.Post != null) members.Add(CreateClientTestMethod("Post", route, pathItem.Post, tests));
-                if (pathItem.Put != null) members.Add(CreateClientTestMethod("Put", route, pathItem.Put, tests));
-                if (pathItem.Delete != null) members.Add(CreateClientTestMethod("Delete", route, pathItem.Delete, tests));
+                foreach (var opKvp in Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem))
+                {
+                    if (opKvp.Value != null)
+                    {
+                        members.Add(CreateClientTestMethod(opKvp.Key, route, opKvp.Value, tests));
+                    }
+                }
             }
 
             return classDecl.AddMembers(members.ToArray());

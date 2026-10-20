@@ -1,3 +1,7 @@
+// <copyright file="BrowserInteropTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json;
 using Xunit;
 using Cdd.OpenApi.Cli;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Cli;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises browser interop tests.</summary>
     public class BrowserInteropTests
     {
+        /// <summary>Verifies or exercises from open api valid spec returns json dictionary.</summary>
         [Fact]
         public void FromOpenApi_ValidSpec_ReturnsJsonDictionary()
         {
@@ -16,6 +22,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Client.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api all target returns json dictionary.</summary>
         [Fact]
         public void FromOpenApi_AllTarget_ReturnsJsonDictionary()
         {
@@ -24,6 +31,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Attributes.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api sdk cli target returns json dictionary.</summary>
         [Fact]
         public void FromOpenApi_SdkCliTarget_ReturnsJsonDictionary()
         {
@@ -32,6 +40,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Attributes.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api server target returns json dictionary.</summary>
         [Fact]
         public void FromOpenApi_ServerTarget_ReturnsJsonDictionary()
         {
@@ -40,6 +49,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Attributes.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api invalid spec returns error json.</summary>
         [Fact]
         public void FromOpenApi_InvalidSpec_ReturnsErrorJson()
         {
@@ -48,6 +58,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("error", result);
         }
 
+        /// <summary>Verifies or exercises from open api with tests returns integration tests.</summary>
         [Fact]
         public void FromOpenApi_WithTests_ReturnsIntegrationTests()
         {
@@ -56,6 +67,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("tests/IntegrationTests.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api with generate tests true returns integration tests.</summary>
         [Fact]
         public void FromOpenApi_WithGenerateTestsTrue_ReturnsIntegrationTests()
         {
@@ -64,6 +76,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("tests/IntegrationTests.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api null command no tests.</summary>
         [Fact]
         public void FromOpenApi_NullCommand_NoTests()
         {
@@ -72,6 +85,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Client.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api with tests target server no integration tests.</summary>
         [Fact]
         public void FromOpenApi_WithTests_TargetServer_NoIntegrationTests()
         {
@@ -80,6 +94,7 @@ namespace Cdd.OpenApi.Tests
             Assert.DoesNotContain("tests/IntegrationTests.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api with tests target all returns integration tests.</summary>
         [Fact]
         public void FromOpenApi_WithTests_TargetAll_ReturnsIntegrationTests()
         {

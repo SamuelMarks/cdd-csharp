@@ -1,3 +1,7 @@
+// <copyright file="CliTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Models;
 using Microsoft.CodeAnalysis;
@@ -7,9 +11,14 @@ using Xunit;
 
 namespace Cdd.OpenApi.Cli.Tests
 {
+    /// <summary>Verifies or exercises cli tests.</summary>
+    /// <param name=""Cli"">The "Cli" parameter.</param>
+    /// <returns>The resulting value or task.</returns>
     [Collection("Cli")]
     public class CliTests : IDisposable
     {
+        /// <summary>Verifies or exercises cli tests.</summary>
+        /// <returns>The resulting value or task.</returns>
         public CliTests()
         {
             Environment.SetEnvironmentVariable("CDD_COMMAND", null);
@@ -21,6 +30,7 @@ namespace Cdd.OpenApi.Cli.Tests
             Environment.SetEnvironmentVariable("OUTPUT_FILE", null);
         }
 
+        /// <summary>Verifies or exercises dispose.</summary>
         public void Dispose()
         {
             Environment.SetEnvironmentVariable("CDD_COMMAND", null);
@@ -32,6 +42,7 @@ namespace Cdd.OpenApi.Cli.Tests
             Environment.SetEnvironmentVariable("OUTPUT_FILE", null);
         }
 
+        /// <summary>Verifies or exercises help command returns0.</summary>
         [Fact]
         public void HelpCommand_Returns0()
         {
@@ -40,6 +51,7 @@ namespace Cdd.OpenApi.Cli.Tests
             Assert.Equal(0, Program.Main(new[] { "help" }));
         }
 
+        /// <summary>Verifies or exercises version command returns0.</summary>
         [Fact]
         public void VersionCommand_Returns0()
         {
@@ -48,6 +60,7 @@ namespace Cdd.OpenApi.Cli.Tests
             Assert.Equal(0, Program.Main(new[] { "version" }));
         }
 
+        /// <summary>Verifies or exercises no args uses cdd args file.</summary>
         [Fact]
         public void NoArgs_UsesCddArgsFile()
         {
@@ -62,6 +75,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises no args uses env vars.</summary>
         [Fact]
         public void NoArgs_UsesEnvVars()
         {
@@ -81,6 +95,7 @@ namespace Cdd.OpenApi.Cli.Tests
             Assert.Equal(1, Program.Main(new string[0]));
         }
 
+        /// <summary>Verifies or exercises no args and no env vars returns1.</summary>
         [Fact]
         public void NoArgs_AndNoEnvVars_Returns1()
         {
@@ -89,12 +104,14 @@ namespace Cdd.OpenApi.Cli.Tests
             Assert.Equal(1, Program.Main(new string[0]));
         }
 
+        /// <summary>Verifies or exercises unknown command returns1.</summary>
         [Fact]
         public void UnknownCommand_Returns1()
         {
             Assert.Equal(1, Program.Main(new[] { "unknown_command" }));
         }
 
+        /// <summary>Verifies or exercises parse command.</summary>
         [Fact]
         public void ParseCommand()
         {
@@ -111,6 +128,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises emit command.</summary>
         [Fact]
         public void EmitCommand()
         {
@@ -130,6 +148,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises from open api generates sdk.</summary>
         [Fact]
         public void FromOpenApi_GeneratesSdk()
         {
@@ -156,6 +175,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises to open api works.</summary>
         [Fact]
         public void ToOpenApi_Works()
         {
@@ -212,6 +232,7 @@ namespace Cdd.OpenApi.Cli.Tests
         }
 
 
+        /// <summary>Verifies or exercises mcp command starts.</summary>
         [Fact]
         public void McpCommand_Starts()
         {
@@ -227,6 +248,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises env vars are respected.</summary>
         [Fact]
         public void EnvVars_Are_Respected()
         {
@@ -291,6 +313,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises server json rpc starts.</summary>
         [Fact]
         public void ServerJsonRpc_Starts()
         {
@@ -298,12 +321,14 @@ namespace Cdd.OpenApi.Cli.Tests
             Assert.Equal(1, Program.Main(new[] { "serve_json_rpc", "--port", "abc" }));
         }
 
+        /// <summary>Verifies or exercises missing output to docs json.</summary>
         [Fact]
         public void MissingOutput_ToDocsJson()
         {
             Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-o" }));
         }
 
+        /// <summary>Verifies or exercises from open api missing output returns1.</summary>
         [Fact]
         public void FromOpenApi_MissingOutput_Returns1()
         {
@@ -311,6 +336,7 @@ namespace Cdd.OpenApi.Cli.Tests
         }
 
 
+        /// <summary>Verifies or exercises to open api missing output returns1.</summary>
         [Fact]
         public void ToOpenApi_MissingOutput_Returns1()
 
@@ -319,6 +345,7 @@ namespace Cdd.OpenApi.Cli.Tests
         }
 
 
+        /// <summary>Verifies or exercises parse missing doc info prints null.</summary>
         [Fact]
         public void Parse_MissingDocInfo_PrintsNull()
 
@@ -336,6 +363,7 @@ namespace Cdd.OpenApi.Cli.Tests
         }
 
 
+        /// <summary>Verifies or exercises parse doc info missing title prints empty.</summary>
         [Fact]
         public void Parse_DocInfoMissingTitle_PrintsEmpty()
         {
@@ -344,6 +372,7 @@ namespace Cdd.OpenApi.Cli.Tests
             try { Program.Main(new string[] { "parse", tempFile }); } finally { File.Delete(tempFile); }
         }
 
+        /// <summary>Verifies or exercises parse doc info nulls.</summary>
         [Fact]
         public void Parse_DocInfo_Nulls()
         {
@@ -353,6 +382,7 @@ namespace Cdd.OpenApi.Cli.Tests
         }
 
 
+        /// <summary>Verifies or exercises parse has doc info prints values.</summary>
         [Fact]
         public void Parse_HasDocInfo_PrintsValues()
         {
@@ -368,12 +398,14 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises parse missing output.</summary>
         [Fact]
         public void Parse_MissingOutput()
         {
             Assert.Equal(1, Program.Main(new string[] { "parse", "-i", "input", "--output" }));
         }
 
+        /// <summary>Verifies or exercises exception returns error.</summary>
         [Fact]
         public void Exception_ReturnsError()
         {
@@ -389,6 +421,7 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises to docs json works.</summary>
         [Fact]
         public void ToDocsJson_Works()
         {
@@ -416,12 +449,14 @@ namespace Cdd.OpenApi.Cli.Tests
             }
         }
 
+        /// <summary>Verifies or exercises to docs json http throws.</summary>
         [Fact]
         public void ToDocsJson_HttpThrows()
         {
             // Http request to a non-existent port should surface CddException and return exit code 1.
             Assert.Equal(1, Program.Main(new[] { "to_docs_json", "-i", "http://localhost:12345/doesnotexist.json" }));
         }
+        /// <summary>Verifies or exercises to cli full param types coverage.</summary>
         [Fact]
         public void ToCli_FullParamTypes_Coverage()
         {

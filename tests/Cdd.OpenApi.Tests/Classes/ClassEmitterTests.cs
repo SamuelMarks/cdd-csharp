@@ -1,3 +1,7 @@
+// <copyright file="ClassEmitterTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Models;
 using Cdd.OpenApi.Classes;
@@ -5,8 +9,10 @@ using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Classes
 {
+    /// <summary>Verifies or exercises class emitter tests.</summary>
     public class ClassEmitterTests
     {
+        /// <summary>Verifies or exercises to class valid schema generates correct class.</summary>
         [Fact]
         public void ToClass_ValidSchema_GeneratesCorrectClass()
         {
@@ -107,6 +113,7 @@ namespace Cdd.OpenApi.Tests.Classes
             AssertHelper.ContainsNoWhitespace("public object Data { get; set; }", code);
         }
 
+        /// <summary>Verifies or exercises map type to csharp maps number to double.</summary>
         [Fact]
         public void MapTypeToCSharp_MapsNumberToDouble()
         {
@@ -125,6 +132,7 @@ namespace Cdd.OpenApi.Tests.Classes
             AssertHelper.ContainsNoWhitespace("public double? Weight { get; set; }", code);
         }
 
+        /// <summary>Verifies or exercises to schema full coverage.</summary>
         [Fact]
         public void ToSchema_FullCoverage()
         {
@@ -194,6 +202,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.True(idProp.Discriminator?.Mapping?.ContainsKey("str"));
             Assert.Equal("123", idProp.Example);
         }
+        /// <summary>Verifies or exercises to class empty discriminator mapping does not emit mapping.</summary>
         [Fact]
         public void ToClass_EmptyDiscriminatorMapping_DoesNotEmitMapping()
         {
@@ -224,6 +233,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.Contains("petType", code);
             Assert.DoesNotContain("discriminator-mapping", code);
         }
+        /// <summary>Verifies or exercises to class null discriminator mapping does not emit mapping.</summary>
         [Fact]
         public void ToClass_NullDiscriminatorMapping_DoesNotEmitMapping()
         {

@@ -1,3 +1,7 @@
+// <copyright file="SeederGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
@@ -5,8 +9,10 @@ using Cdd.OpenApi.Orm;
 
 namespace Cdd.OpenApi.Tests.Orm
 {
+    /// <summary>Verifies or exercises seeder generator tests.</summary>
     public class SeederGeneratorTests
     {
+        /// <summary>Verifies or exercises generate seeder coverage.</summary>
         [Fact]
         public void GenerateSeeder_Coverage()
         {

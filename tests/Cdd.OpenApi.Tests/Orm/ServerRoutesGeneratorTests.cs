@@ -1,3 +1,7 @@
+// <copyright file="ServerRoutesGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Orm;
 
 namespace Cdd.OpenApi.Tests.Orm
 {
+    /// <summary>Verifies or exercises server routes generator tests.</summary>
     public class ServerRoutesGeneratorTests
     {
+        /// <summary>Verifies or exercises generate routes coverage.</summary>
         [Fact]
         public void GenerateRoutes_Coverage()
         {

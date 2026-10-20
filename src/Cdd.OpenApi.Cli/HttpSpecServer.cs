@@ -65,6 +65,7 @@ namespace Cdd.OpenApi.Cli
 
                 var request = context.Request;
                 var response = context.Response;
+                response.ContentType = "application/json; charset=utf-8";
 
                 try
                 {
@@ -79,7 +80,7 @@ namespace Cdd.OpenApi.Cli
 
                     if (method == "version")
                     {
-                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = "0.0.4" };
+                        var res = new JsonObject { ["jsonrpc"] = "2.0", ["id"] = idNode?.DeepClone(), ["result"] = CliArgumentParser.Version };
                         byte[] buf = System.Text.Encoding.UTF8.GetBytes(res.ToJsonString());
                         response.OutputStream.Write(buf, 0, buf.Length);
                     }

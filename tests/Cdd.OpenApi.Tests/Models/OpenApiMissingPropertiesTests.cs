@@ -1,3 +1,7 @@
+// <copyright file="OpenApiMissingPropertiesTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Emit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>Verifies or exercises open api missing properties tests.</summary>
     public class OpenApiMissingPropertiesTests
     {
+        /// <summary>Verifies or exercises response headers and links round trip.</summary>
         [Fact]
         public void Response_HeadersAndLinks_RoundTrip()
         {
@@ -56,6 +62,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("http://test", link.Server?.Url);
         }
 
+        /// <summary>Verifies or exercises security scheme flows and open id round trip.</summary>
         [Fact]
         public void SecurityScheme_FlowsAndOpenId_RoundTrip()
         {

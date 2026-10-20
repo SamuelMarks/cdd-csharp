@@ -1,12 +1,20 @@
+// <copyright file="CliArgsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using System.IO;
 using Xunit;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises cli args tests.</summary>
     [Collection("Cli")]
     public class CliArgsTests
     {
+        /// <summary>Verifies or exercises run main.</summary>
+        /// <param name="args">The command-line arguments.</param>
+        /// <returns>The resulting value or task.</returns>
         private (int ExitCode, string Output) RunMain(string[] args)
         {
             var sw = new StringWriter();
@@ -23,6 +31,7 @@ namespace Cdd.OpenApi.Tests
             }
         }
 
+        /// <summary>Verifies or exercises from open api valid args generates code.</summary>
         [Fact]
         public void FromOpenApi_ValidArgs_GeneratesCode()
         {
@@ -40,6 +49,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises from open api create composable tests and mocks generates composable code.</summary>
         [Fact]
         public void FromOpenApi_CreateComposableTestsAndMocks_GeneratesComposableCode()
         {
@@ -66,6 +76,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises from open api to sdk valid args generates code.</summary>
         [Fact]
         public void FromOpenApi_ToSdk_ValidArgs_GeneratesCode()
         {
@@ -84,6 +95,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises from open api to sdk cli valid args generates code.</summary>
         [Fact]
         public void FromOpenApi_ToSdkCli_ValidArgs_GeneratesCode()
         {
@@ -101,6 +113,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises from open api to server valid args generates code.</summary>
         [Fact]
         public void FromOpenApi_ToServer_ValidArgs_GeneratesCode()
         {
@@ -118,6 +131,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises from open api env vars valid args generates code.</summary>
         [Fact]
         public void FromOpenApi_EnvVars_ValidArgs_GeneratesCode()
         {
@@ -151,6 +165,7 @@ namespace Cdd.OpenApi.Tests
             }
         }
 
+        /// <summary>Verifies or exercises from open api tags and additional ops generates code.</summary>
         [Fact]
         public void FromOpenApi_TagsAndAdditionalOps_GeneratesCode()
         {
@@ -168,6 +183,7 @@ namespace Cdd.OpenApi.Tests
             Directory.Delete(tmpDir, true);
         }
 
+        /// <summary>Verifies or exercises to open api valid args generates spec.</summary>
         [Fact]
         public void ToOpenApi_ValidArgs_GeneratesSpec()
         {
@@ -187,6 +203,7 @@ namespace Cdd.OpenApi.Tests
 
             Directory.Delete(tmpDir, true);
         }
+        /// <summary>Verifies or exercises sync command missing truth returns1.</summary>
         [Fact]
         public void SyncCommand_MissingTruth_Returns1()
         {
@@ -196,6 +213,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal(1, exitCode);
         }
 
+        /// <summary>Verifies or exercises sync command unsupported truth returns1.</summary>
         [Fact]
         public void SyncCommand_UnsupportedTruth_Returns1()
         {
@@ -203,6 +221,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal(1, exitCode);
         }
 
+        /// <summary>Verifies or exercises sync command incomplete args ignored.</summary>
         [Fact]
         public void SyncCommand_IncompleteArgs_Ignored()
         {
@@ -213,6 +232,7 @@ namespace Cdd.OpenApi.Tests
             var (exitCode3, output3) = RunMain(new[] { "sync", "--truth", "class", "-i", "in", "-o" });
         }
 
+        /// <summary>Verifies or exercises sync command valid args calls to open api.</summary>
         [Fact]
         public void SyncCommand_ValidArgs_CallsToOpenApi()
         {
@@ -247,6 +267,7 @@ namespace Cdd.OpenApi.Tests
             try { Directory.Delete(tmpDir, true); } catch { }
         }
 
+        /// <summary>Verifies or exercises help flag on specific command prints specific help.</summary>
         [Fact]
         public void HelpFlag_OnSpecificCommand_PrintsSpecificHelp()
         {

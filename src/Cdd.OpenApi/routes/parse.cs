@@ -11,9 +11,33 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Routes
 {
-    /// <summary>Parses ASP.NET Core route attributes and controller methods into <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Parses ASP.NET Core route attributes and controller methods into <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Parse
     {
+        /// <summary>
+        /// Extracts a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances and path metadata from a C# controller class declaration.
+        /// </summary>
+        /// <param name="classNode">The C# controller class syntax node to analyze.</param>
+        /// <returns>A tuple of extracted <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances and path-level metadata.</returns>
+        public static (List<Cdd.OpenApi.Ir.IrEndpoint> Endpoints, Dictionary<string, Cdd.OpenApi.Ir.IrPathMetadata> PathMetadata) ToEndpoints(ClassDeclarationSyntax classNode)
+        {
+            var paths = ToPaths(classNode);
+            var metadata = new Dictionary<string, Cdd.OpenApi.Ir.IrPathMetadata>();
+            foreach (var kvp in paths)
+            {
+                metadata[kvp.Key] = new Cdd.OpenApi.Ir.IrPathMetadata
+                {
+                    Summary = kvp.Value.Summary,
+                    Description = kvp.Value.Description,
+                    Ref = kvp.Value.Ref,
+                    Parameters = kvp.Value.Parameters,
+                    Servers = kvp.Value.Servers
+                };
+            }
+
+            return (OperationHelpers.ExtractEndpointsFromPaths(paths), metadata);
+        }
+
         /// <summary>
         /// Extracts an <see cref="OpenApiPaths"/> object from a C# controller class declaration.
         /// </summary>

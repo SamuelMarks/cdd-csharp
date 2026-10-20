@@ -12,8 +12,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Arazzo
 {
+    /// <summary>Verifies or exercises runtime expression and evaluator tests.</summary>
     public class RuntimeExpressionAndEvaluatorTests
     {
+        /// <summary>Verifies or exercises runtime expression all15 roots and pointers parse and evaluate correctly.</summary>
         [Fact]
         public void RuntimeExpression_All15RootsAndPointers_ParseAndEvaluateCorrectly()
         {
@@ -128,6 +130,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             Assert.Throws<CddException>(() => RuntimeExpression.Parse("$unknownRoot"));
         }
 
+        /// <summary>Verifies or exercises criterion evaluator simple regex json path json pointer and xpath evaluate correctly.</summary>
         [Fact]
         public void CriterionEvaluator_SimpleRegexJsonPathJsonPointerAndXPath_EvaluateCorrectly()
         {
@@ -194,6 +197,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             Assert.Equal("available", CriterionEvaluator.EvaluateSelector(new ArazzoSelector { Selector = "$.status", Type = null }, ctx));
         }
 
+        /// <summary>Verifies or exercises payload replacer json pointer json path and xpath modify payload correctly.</summary>
         [Fact]
         public void PayloadReplacer_JsonPointerJsonPathAndXPath_ModifyPayloadCorrectly()
         {

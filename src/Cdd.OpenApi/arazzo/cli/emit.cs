@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using Cdd.OpenApi.Arazzo.Clients;
 using Cdd.OpenApi.Arazzo.Expressions;
 using Cdd.OpenApi.Common;
@@ -22,6 +21,23 @@ namespace Cdd.OpenApi.Arazzo.Cli
     /// </summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a C# CLI runner class (<c>{className}WorkflowCli</c>) from an <see cref="Cdd.OpenApi.Ir.IrService"/>.
+        /// </summary>
+        /// <param name="className">The name of the generated CLI class (e.g., <c>"PetstoreWorkflowCli"</c>).</param>
+        /// <param name="orchestratorClassName">The name of the SDK workflow orchestrator class to reuse (e.g., <c>"PetstoreWorkflows"</c>).</param>
+        /// <param name="service">The source <see cref="Cdd.OpenApi.Ir.IrService"/>.</param>
+        /// <returns>A Roslyn <see cref="ClassDeclarationSyntax"/> representing the CLI workflow runner.</returns>
+        public static ClassDeclarationSyntax ToWorkflowCliFromIr(string className, string orchestratorClassName, Cdd.OpenApi.Ir.IrService service)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+
+            return ToWorkflowCli(className, orchestratorClassName, service.ToArazzo());
+        }
+
         /// <summary>
         /// Generates a C# CLI runner class (<c>{className}WorkflowCli</c>) that parses command-line flags and invokes the SDK <c>{orchestratorClassName}</c> workflow methods.
         /// </summary>
@@ -42,20 +58,12 @@ namespace Cdd.OpenApi.Arazzo.Cli
             Clients.Emit.AppendDocMetadataHeader(sb, doc, "Arazzo CLI workflow runner.");
             sb.AppendLine($"public class {className}");
             sb.AppendLine("{");
-            var docMeta = new ArazzoDocument
-            {
-                Arazzo = doc.Arazzo,
-                Self = doc.Self,
-                Info = doc.Info,
-                SourceDescriptions = doc.SourceDescriptions,
-                Components = doc.Components,
-                Extensions = doc.Extensions,
-                Workflows = new List<ArazzoWorkflow>()
-            };
-            var docMetaB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(docMeta, ArazzoJsonContext.Default.ArazzoDocument)));
-            sb.AppendLine("    /// <summary>Base64-encoded Arazzo document header metadata.</summary>");
-            sb.AppendLine($"    public const string DocumentSpec = {dq}{docMetaB64}{dq};");
             sb.AppendLine("    /// <summary>Executes the CLI workflow runner entry point reusing the generated SDK workflow orchestrator.</summary>");
+            foreach (var wf in doc.Workflows)
+            {
+                Clients.Emit.AppendWorkflowXmlMetadata(sb, wf, "    ");
+            }
+
             sb.AppendLine("    public static async System.Threading.Tasks.Task<int> Main(string[] args)");
             sb.AppendLine("    {");
             sb.AppendLine($"        if (args.Length == 0 || args[0] == {dq}--help{dq} || args[0] == {dq}-h{dq})");
@@ -76,12 +84,9 @@ namespace Cdd.OpenApi.Arazzo.Cli
             foreach (var wf in doc.Workflows)
             {
                 var wfPascal = RuntimeExpression.ToPascalIdentifier(wf.WorkflowId);
-                var wfJson = JsonSerializer.Serialize(wf, ArazzoJsonContext.Default.ArazzoWorkflow);
-                var wfB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(wfJson));
 
                 sb.AppendLine($"            case {dq}{Clients.Emit.EscapeCSharp(wf.WorkflowId)}{dq}:");
                 sb.AppendLine("            {");
-                sb.AppendLine($"                string workflowSpec = {dq}{wfB64}{dq};");
                 sb.AppendLine($"                var wfInput = new {wfPascal}Input();");
                 if (wf.Inputs?.Properties != null)
                 {
@@ -89,7 +94,7 @@ namespace Cdd.OpenApi.Arazzo.Cli
                     {
                         var propPascal = RuntimeExpression.ToPascalIdentifier(prop.Key);
                         var csType = TypeMapper.MapOpenApiToCSharp(prop.Value.Type, "string");
-                        sb.AppendLine($"                for (int i = 1; i < args.Length - 1; i++)");
+                        sb.AppendLine("                for (int i = 1; i < args.Length - 1; i++)");
                         sb.AppendLine("                {");
                         sb.AppendLine($"                    if (args[i] == {dq}--{Clients.Emit.EscapeCSharp(prop.Key)}{dq})");
                         sb.AppendLine("                    {");

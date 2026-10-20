@@ -8,10 +8,73 @@ using System.IO;
 namespace Cdd.OpenApi.Cli
 {
     /// <summary>
+    /// Enumeration of supported single-source-of-truth targets for the <c>sync</c> CLI command.
+    /// </summary>
+    public enum SyncTruthSource
+    {
+        /// <summary>Unknown or unsupported truth source.</summary>
+        Unknown = 0,
+
+        /// <summary>C# model classes (<c>class</c>).</summary>
+        Class = 1,
+
+        /// <summary>C# static functions (<c>function</c>).</summary>
+        Function = 2,
+
+        /// <summary>OpenAPI 3.2.0 specification (<c>openapi</c>).</summary>
+        OpenApi = 3,
+
+        /// <summary>Arazzo 1.1.0 workflow specification (<c>arazzo</c>).</summary>
+        Arazzo = 4,
+
+        /// <summary>C# workflow orchestrator code (<c>workflow</c>).</summary>
+        Workflow = 5
+    }
+
+    /// <summary>
     /// Parses command-line arguments and environment variables into strongly-typed CLI command configurations.
     /// </summary>
     public static class CliArgumentParser
     {
+        /// <summary>
+        /// Canonical version string of the CDD OpenAPI CLI and library.
+        /// </summary>
+        public const string Version = "0.0.4";
+
+        /// <summary>
+        /// Parses a target sub-command string (<c>to_sdk</c>, <c>to_sdk_cli</c>, <c>to_server</c>, or <c>all</c>) into a <see cref="GenerateType"/> enum value.
+        /// </summary>
+        /// <param name="target">The target sub-command string.</param>
+        /// <returns>The resolved <see cref="GenerateType"/> value.</returns>
+        public static GenerateType ParseGenerateType(string target)
+        {
+            return target.Trim().ToLowerInvariant() switch
+            {
+                "to_sdk" => GenerateType.Sdk,
+                "to_sdk_cli" => GenerateType.SdkCli,
+                "to_server" => GenerateType.Server,
+                _ => GenerateType.All
+            };
+        }
+
+        /// <summary>
+        /// Parses a truth source string into a strongly-typed <see cref="SyncTruthSource"/> enum value.
+        /// </summary>
+        /// <param name="truth">The truth source string (<c>class</c>, <c>function</c>, <c>openapi</c>, <c>arazzo</c>, or <c>workflow</c>).</param>
+        /// <returns>The resolved <see cref="SyncTruthSource"/> value.</returns>
+        public static SyncTruthSource ParseSyncTruthSource(string truth)
+        {
+            return truth.Trim().ToLowerInvariant() switch
+            {
+                "class" => SyncTruthSource.Class,
+                "function" => SyncTruthSource.Function,
+                "openapi" => SyncTruthSource.OpenApi,
+                "arazzo" => SyncTruthSource.Arazzo,
+                "workflow" => SyncTruthSource.Workflow,
+                _ => SyncTruthSource.Unknown
+            };
+        }
+
         /// <summary>
         /// Parses arguments for generating an OpenAPI or Arazzo specification from C# source code.
         /// </summary>
@@ -86,12 +149,8 @@ namespace Cdd.OpenApi.Cli
         public static (GenerateType type, CddConfig config) ParseFromOpenApiArgs(string[] args)
         {
             var subCommand = args.Length > 1 ? args[1].ToLowerInvariant() : string.Empty;
-            GenerateType type = GenerateType.All;
-            int startIndex = 1;
-
-            if (subCommand == "to_sdk") { type = GenerateType.Sdk; startIndex = 2; }
-            else if (subCommand == "to_sdk_cli") { type = GenerateType.SdkCli; startIndex = 2; }
-            else if (subCommand == "to_server") { type = GenerateType.Server; startIndex = 2; }
+            GenerateType type = ParseGenerateType(subCommand);
+            int startIndex = (subCommand == "to_sdk" || subCommand == "to_sdk_cli" || subCommand == "to_server") ? 2 : 1;
 
             var config = new CddConfig
             {

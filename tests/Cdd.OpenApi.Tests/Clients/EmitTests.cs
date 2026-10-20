@@ -1,3 +1,7 @@
+// <copyright file="EmitTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests.Clients
 {
+    /// <summary>Verifies or exercises emit tests.</summary>
     public class EmitTests
     {
+        /// <summary>Verifies or exercises to client should generate valid client.</summary>
         [Fact]
         public void ToClient_ShouldGenerateValidClient()
         {
@@ -81,6 +87,7 @@ namespace Cdd.OpenApi.Tests.Clients
             AssertHelper.ContainsNoWhitespace("string e", typesCode);
         }
 
+        /// <summary>Verifies or exercises to interface full coverage.</summary>
         [Fact]
         public void ToInterface_FullCoverage()
         {
@@ -248,6 +255,7 @@ namespace Cdd.OpenApi.Tests.Clients
             AssertHelper.ContainsNoWhitespace("QueryFullAsync", code);
             AssertHelper.ContainsNoWhitespace("PurgeFullAsync", code);
         }
+        /// <summary>Verifies or exercises to client explode array parameters omitted.</summary>
         [Fact]
         public void ToClient_ExplodeArrayParameters_Omitted()
         {
@@ -287,6 +295,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.DoesNotContain("[Explode] System.Collections.Generic.List<string> arrayParam", code);
             AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<string> arrayParam", code);
         }
+        /// <summary>Verifies or exercises to client array returns and headers.</summary>
         [Fact]
         public void ToClient_ArrayReturnsAndHeaders()
         {
@@ -343,6 +352,7 @@ namespace Cdd.OpenApi.Tests.Clients
             AssertHelper.ContainsNoWhitespace("System.Collections.Generic.List<int>", code);
             AssertHelper.ContainsNoWhitespace("request.Headers.Add(\"myHeader\", myHeader.ToString());", code);
         }
+        /// <summary>Verifies or exercises to client nullable and empty coverage.</summary>
         [Fact]
         public void ToClient_NullableAndEmpty_Coverage()
         {
@@ -430,6 +440,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("GetEmpty", code);
             Assert.Contains("PostEmpty", code);
         }
+        /// <summary>Verifies or exercises to client full types coverage.</summary>
         [Fact]
         public void ToClient_FullTypes_Coverage()
         {
@@ -474,6 +485,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("intp4", noSpaceCode);
             Assert.Contains("List<MyObj4>p5", noSpaceCode);
         }
+        /// <summary>Verifies or exercises to client params coverage.</summary>
         [Fact]
         public void ToClient_Params_Coverage()
         {
@@ -497,6 +509,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("GetParams", code);
             Assert.Contains("[Explode]", code); // p1 should have explode
         }
+        /// <summary>Verifies or exercises to client params edge coverage.</summary>
         [Fact]
         public void ToClient_Params_Edge_Coverage()
         {
@@ -520,6 +533,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var code = interfaceNode.ToFormattedString();
             Assert.Contains("GetParamsEdge", code);
         }
+        /// <summary>Verifies or exercises to client full types array ref coverage.</summary>
         [Fact]
         public void ToClient_FullTypes_ArrayRef_Coverage()
         {
@@ -550,6 +564,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var code = interfaceNode.ToFormattedString();
             Assert.Contains("List<MyObj5>", code);
         }
+        /// <summary>Verifies or exercises to client full types req body coverage.</summary>
         [Fact]
         public void ToClient_FullTypes_ReqBody_Coverage()
         {
@@ -577,6 +592,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var code = interfaceNode.ToFormattedString();
             Assert.Contains("MyObj6 body", code);
         }
+        /// <summary>Verifies or exercises to client params examples content coverage.</summary>
         [Fact]
         public void ToClient_Params_Examples_Content_Coverage()
         {
@@ -631,6 +647,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("p4=10.5", code.Replace(" ", ""));
             Assert.Contains("p5=null", code.Replace(" ", ""));
         }
+        /// <summary>Verifies or exercises to client params ref types coverage.</summary>
         [Fact]
         public void ToClient_Params_RefTypes_Coverage()
         {
@@ -662,6 +679,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Contains("List<MyObjRefItem>p5", noSpaceCode);
         }
 
+        /// <summary>Verifies or exercises to client emit missing branches coverage.</summary>
         [Fact]
         public void ToClient_Emit_MissingBranches_Coverage()
         {

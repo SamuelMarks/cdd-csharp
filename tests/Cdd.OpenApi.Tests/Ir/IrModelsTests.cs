@@ -1,3 +1,7 @@
+// <copyright file="IrModelsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Ir;
@@ -6,8 +10,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Ir
 {
+    /// <summary>Verifies or exercises ir models tests.</summary>
     public class IrModelsTests
     {
+        /// <summary>Verifies or exercises from open api maps models and endpoints.</summary>
         [Fact]
         public void FromOpenApi_MapsModelsAndEndpoints()
         {
@@ -232,6 +238,7 @@ namespace Cdd.OpenApi.Tests.Ir
             Assert.False(opsDict.ContainsKey(""));
         }
 
+        /// <summary>Verifies or exercises operation helpers and type mapper full coverage.</summary>
         [Fact]
         public void OperationHelpers_And_TypeMapper_FullCoverage()
         {

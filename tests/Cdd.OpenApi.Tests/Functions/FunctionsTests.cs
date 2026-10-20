@@ -1,3 +1,7 @@
+// <copyright file="FunctionsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Cdd.OpenApi.Models;
@@ -7,8 +11,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Functions
 {
+    /// <summary>Verifies or exercises functions tests.</summary>
     public class FunctionsTests
     {
+        /// <summary>Verifies or exercises parse and emit function round trip and branches.</summary>
         [Fact]
         public void ParseAndEmitFunction_RoundTripAndBranches()
         {
@@ -32,6 +38,11 @@ namespace Cdd.OpenApi.Tests.Functions
             Assert.Equal("Does a task", op.Summary);
             Assert.Null(op.Parameters);
             Assert.Null(op.Responses);
+
+            var ep = global::Cdd.OpenApi.Functions.Parse.ParseEndpoint(methods[0]);
+            Assert.Equal("DoTask", ep.OperationId);
+            var emittedFromEp = global::Cdd.OpenApi.Functions.Emit.EmitFunction(ep);
+            AssertHelper.ContainsNoWhitespace("public static void DoTask()", emittedFromEp.ToFormattedString());
 
             var emitted = global::Cdd.OpenApi.Functions.Emit.EmitFunction(op);
             var formatted = emitted.ToFormattedString();

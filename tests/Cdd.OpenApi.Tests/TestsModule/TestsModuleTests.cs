@@ -1,3 +1,7 @@
+// <copyright file="TestsModuleTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Cdd.OpenApi.Models;
 using Microsoft.CodeAnalysis.CSharp;
@@ -6,8 +10,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.TestsModule
 {
+    /// <summary>Verifies or exercises tests module tests.</summary>
     public class TestsModuleTests
     {
+        /// <summary>Verifies or exercises parse and emit tests covers all modes and verbs.</summary>
         [Fact]
         public void ParseAndEmitTests_CoversAllModesAndVerbs()
         {

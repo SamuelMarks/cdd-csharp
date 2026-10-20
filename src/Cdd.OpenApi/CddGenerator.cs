@@ -80,11 +80,11 @@ namespace Cdd.OpenApi
         public static void GenerateAll(CddConfig config) => Generate(config, GenerateType.All);
 
         /// <summary>
-        /// Generates C# workflow artifacts (SDK orchestrators, CLI runners, Server E2E workflow tests, and stateful mocks) from Arazzo 1.1.0 specification files.
+        /// Collects all input specification file paths from <paramref name="config"/>, searching <c>*.json</c>, <c>*.yaml</c>, and <c>*.yml</c> in <see cref="CddConfig.InputDir"/>.
         /// </summary>
         /// <param name="config">The generation configuration.</param>
-        /// <param name="type">The target generation mode.</param>
-        public static void GenerateFromArazzo(CddConfig config, GenerateType type = GenerateType.All)
+        /// <returns>A list of discovered input file paths.</returns>
+        private static List<string> CollectInputPaths(CddConfig config)
         {
             var inputPaths = new List<string>();
             if (!string.IsNullOrEmpty(config.InputPath))
@@ -99,9 +99,12 @@ namespace Cdd.OpenApi
 
             if (!string.IsNullOrEmpty(config.InputDir) && Directory.Exists(config.InputDir))
             {
-                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.json", SearchOption.AllDirectories));
-                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yaml", SearchOption.AllDirectories));
-                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yml", SearchOption.AllDirectories));
+                bool IsNotGithubWorkflow(string p) =>
+                    !p.Replace('\\', '/').Contains("/.github/", StringComparison.OrdinalIgnoreCase);
+
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.json", SearchOption.AllDirectories).Where(IsNotGithubWorkflow));
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yaml", SearchOption.AllDirectories).Where(IsNotGithubWorkflow));
+                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yml", SearchOption.AllDirectories).Where(IsNotGithubWorkflow));
             }
 
             if (!inputPaths.Any())
@@ -109,6 +112,17 @@ namespace Cdd.OpenApi
                 throw new ArgumentException("No input paths provided in config.");
             }
 
+            return inputPaths;
+        }
+
+        /// <summary>
+        /// Generates C# workflow artifacts (SDK orchestrators, CLI runners, Server E2E workflow tests, and stateful mocks) from Arazzo 1.1.0 specification files.
+        /// </summary>
+        /// <param name="config">The generation configuration.</param>
+        /// <param name="type">The target generation mode.</param>
+        public static void GenerateFromArazzo(CddConfig config, GenerateType type = GenerateType.All)
+        {
+            var inputPaths = CollectInputPaths(config);
             var outputDir = string.IsNullOrEmpty(config.OutputDir) ? Directory.GetCurrentDirectory() : config.OutputDir;
             var sourceDir = config.NoInstallablePackage ? outputDir : Path.Combine(outputDir, "src", "GeneratedProject");
 
@@ -142,30 +156,7 @@ namespace Cdd.OpenApi
         /// <param name="type">The target generation mode.</param>
         private static void Generate(CddConfig config, GenerateType type)
         {
-            var inputPaths = new List<string>();
-            if (!string.IsNullOrEmpty(config.InputPath))
-            {
-                inputPaths.Add(config.InputPath);
-            }
-            if (config.InputPaths != null)
-            {
-                if (config.InputPaths.Any())
-                {
-                    inputPaths.AddRange(config.InputPaths);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(config.InputDir) && Directory.Exists(config.InputDir))
-            {
-                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.json", SearchOption.AllDirectories));
-                inputPaths.AddRange(Directory.GetFiles(config.InputDir, "*.yaml", SearchOption.AllDirectories));
-            }
-
-            if (!inputPaths.Any())
-            {
-                throw new ArgumentException("No input paths provided in config.");
-            }
-
+            var inputPaths = CollectInputPaths(config);
             var outputDir = string.IsNullOrEmpty(config.OutputDir) ? Directory.GetCurrentDirectory() : config.OutputDir;
 
             var parser = new OpenApiParser();
@@ -175,6 +166,7 @@ namespace Cdd.OpenApi
                 if (!File.Exists(inputPath)) throw new FileNotFoundException($"Input '{inputPath}' not found.");
 
                 var doc = parser.ParseJson(File.ReadAllText(inputPath));
+
                 mergedDoc.Info = doc.Info;
                 mergedDoc.Servers = doc.Servers ?? mergedDoc.Servers;
                 mergedDoc.BasePath = doc.BasePath ?? mergedDoc.BasePath;
@@ -246,10 +238,10 @@ namespace Cdd.OpenApi
                     if (!string.IsNullOrWhiteSpace(info.Description)) description = info.Description;
                 }
 
-                title = System.Security.SecurityElement.Escape(title)!;
-                version = System.Security.SecurityElement.Escape(version)!;
-                authors = System.Security.SecurityElement.Escape(authors)!;
-                description = System.Security.SecurityElement.Escape(description)!;
+                title = StringEscaper.EscapeXmlComment(title);
+                version = StringEscaper.EscapeXmlComment(version);
+                authors = StringEscaper.EscapeXmlComment(authors);
+                description = StringEscaper.EscapeXmlComment(description);
 
                 var readmeContent = ProjectTemplates.BuildReadme(title, description, type);
                 File.WriteAllBytes(Path.Combine(outputDir, "README.md"), System.Text.Encoding.UTF8.GetBytes(readmeContent));

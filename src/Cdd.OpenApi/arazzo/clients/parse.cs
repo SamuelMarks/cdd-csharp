@@ -5,7 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Docstrings;
@@ -18,10 +17,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Arazzo.Clients
 {
     /// <summary>
-    /// Parses C# Client SDK workflow orchestrator classes and DTOs back into an <see cref="ArazzoDocument"/>.
+    /// Parses C# Client SDK workflow orchestrator classes and DTOs back into an <see cref="Cdd.OpenApi.Ir.IrService"/> or <see cref="ArazzoDocument"/>.
     /// </summary>
     public static class Parse
     {
+        /// <summary>
+        /// Parses one or more C# workflow orchestrator and DTO class declarations into an <see cref="Cdd.OpenApi.Ir.IrService"/>.
+        /// </summary>
+        /// <param name="classes">The collection of Roslyn <see cref="ClassDeclarationSyntax"/> nodes to inspect.</param>
+        /// <returns>The reconstructed <see cref="Cdd.OpenApi.Ir.IrService"/>.</returns>
+        public static Cdd.OpenApi.Ir.IrService ToIrService(IEnumerable<ClassDeclarationSyntax> classes)
+        {
+            return Cdd.OpenApi.Ir.IrService.FromArazzo(ToArazzoDocument(classes));
+        }
+
         /// <summary>
         /// Parses one or more C# workflow orchestrator and DTO class declarations into an <see cref="ArazzoDocument"/>.
         /// </summary>
@@ -89,23 +98,10 @@ namespace Cdd.OpenApi.Arazzo.Clients
             {
                 foreach (var variable in field.Declaration.Variables)
                 {
-                    if (variable.Initializer == null) continue;
-                    if (variable.Initializer.Value is LiteralExpressionSyntax valLit)
+                    if (variable.Initializer?.Value is LiteralExpressionSyntax valLit)
                     {
                         var valText = valLit.Token.ValueText;
-                        if (variable.Identifier.Text == "DocumentSpec")
-                        {
-                            var metaBytes = Convert.FromBase64String(valText);
-                            var metaDoc = JsonSerializer.Deserialize(Encoding.UTF8.GetString(metaBytes), ArazzoJsonContext.Default.ArazzoDocument)!;
-                            doc.Arazzo = metaDoc.Arazzo;
-                            doc.Self = metaDoc.Self;
-                            doc.Info = metaDoc.Info;
-                            doc.SourceDescriptions = metaDoc.SourceDescriptions;
-                            doc.Components = metaDoc.Components;
-                            doc.Extensions = metaDoc.Extensions;
-                            return;
-                        }
-                        else if (variable.Identifier.Text == "ArazzoVersion")
+                        if (variable.Identifier.Text == "ArazzoVersion")
                         {
                             doc.Arazzo = valText;
                         }
@@ -117,12 +113,183 @@ namespace Cdd.OpenApi.Arazzo.Clients
                 }
             }
 
-            doc.Info.Title = cls.Identifier.Text;
+            var arazzoVersionTag = Docstrings.Parse.GetTag(cls, "arazzo-version");
+            if (!string.IsNullOrWhiteSpace(arazzoVersionTag))
+            {
+                doc.Arazzo = arazzoVersionTag!;
+            }
+
+            var selfTag = Docstrings.Parse.GetTag(cls, "arazzo-self");
+            if (!string.IsNullOrWhiteSpace(selfTag))
+            {
+                doc.Self = selfTag!;
+            }
+
+            var titleTag = Docstrings.Parse.GetTag(cls, "arazzo-title");
+            doc.Info.Title = !string.IsNullOrWhiteSpace(titleTag) ? titleTag! : cls.Identifier.Text;
+
+            var infoVerTag = Docstrings.Parse.GetTag(cls, "arazzo-info-version");
+            if (!string.IsNullOrWhiteSpace(infoVerTag))
+            {
+                doc.Info.Version = infoVerTag!;
+            }
+
             var summaryTag = Docstrings.Parse.GetSummary(cls);
             if (!string.IsNullOrWhiteSpace(summaryTag))
             {
                 doc.Info.Summary = summaryTag;
             }
+
+            var descTag = Docstrings.Parse.GetTag(cls, "arazzo-description");
+            if (!string.IsNullOrWhiteSpace(descTag))
+            {
+                doc.Info.Description = descTag;
+            }
+
+            var infoExts = Docstrings.Parse.GetTagsWithAttributes(cls, "arazzo-info-ext").ToList();
+            if (infoExts.Count > 0)
+            {
+                doc.Info.Extensions = new Dictionary<string, JsonElement>();
+                foreach (var ext in infoExts)
+                {
+                    var k = ext.Attributes["key"];
+                    using var jDoc = JsonDocument.Parse(ext.Text);
+                    doc.Info.Extensions[k] = jDoc.RootElement.Clone();
+                }
+            }
+
+            var sources = Docstrings.Parse.GetTagsWithAttributes(cls, "arazzo-source").ToList();
+            if (sources.Count > 0)
+            {
+                doc.SourceDescriptions = new List<ArazzoSourceDescription>();
+                foreach (var src in sources)
+                {
+                    var sd = JsonSerializer.Deserialize(src.Text, ArazzoJsonContext.Default.ArazzoSourceDescription)!;
+                    doc.SourceDescriptions.Add(sd);
+                }
+            }
+
+            var compTag = Docstrings.Parse.GetTag(cls, "arazzo-components");
+            if (!string.IsNullOrWhiteSpace(compTag))
+            {
+                doc.Components = JsonSerializer.Deserialize(compTag!, ArazzoJsonContext.Default.ArazzoComponents);
+            }
+
+            var docExts = Docstrings.Parse.GetTagsWithAttributes(cls, "arazzo-ext").ToList();
+            if (docExts.Count > 0)
+            {
+                doc.Extensions = new Dictionary<string, JsonElement>();
+                foreach (var ext in docExts)
+                {
+                    var k = ext.Attributes["key"];
+                    using var jDoc = JsonDocument.Parse(ext.Text);
+                    doc.Extensions[k] = jDoc.RootElement.Clone();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts <see cref="ArazzoWorkflow"/> definitions from structured XML documentation tags attached to a syntax node.
+        /// </summary>
+        /// <param name="node">The syntax node carrying <c>&lt;arazzo-workflow&gt;</c> and <c>&lt;arazzo-step&gt;</c> tags.</param>
+        /// <returns>A list of reconstructed <see cref="ArazzoWorkflow"/> instances, or an empty list if no structured tags are present.</returns>
+        internal static List<ArazzoWorkflow> ExtractWorkflowsFromXmlTags(SyntaxNode node)
+        {
+            var workflows = new List<ArazzoWorkflow>();
+            var trivia = node.GetLeadingTrivia()
+                .Select(i => i.GetStructure())
+                .OfType<DocumentationCommentTriviaSyntax>()
+                .FirstOrDefault();
+
+            if (trivia == null) return workflows;
+
+            ArazzoWorkflow? currentWf = null;
+            var methodSummary = Docstrings.Parse.GetSummary(node);
+
+            foreach (var xmlNode in trivia.ChildNodes())
+            {
+                if (xmlNode is XmlEmptyElementSyntax emptyElem && emptyElem.Name.ToString() == "arazzo-workflow")
+                {
+                    var wfId = GetXmlAttribute(emptyElem.Attributes, "id");
+                    currentWf = new ArazzoWorkflow
+                    {
+                        WorkflowId = wfId,
+                        Summary = methodSummary,
+                        Steps = new List<ArazzoStep>()
+                    };
+                    workflows.Add(currentWf);
+                }
+                else if (xmlNode is XmlElementSyntax elem && currentWf != null)
+                {
+                    var tagName = elem.StartTag.Name.ToString();
+                    var innerText = string.Join(" ", elem.Content
+                        .OfType<XmlTextSyntax>()
+                        .SelectMany(t => t.TextTokens)
+                        .Select(t => t.ValueText.Trim())
+                        .Where(t => !string.IsNullOrEmpty(t)));
+
+                    if (tagName == "arazzo-workflow-description")
+                    {
+                        currentWf.Description = innerText;
+                    }
+                    else if (tagName == "arazzo-workflow-inputs")
+                    {
+                        currentWf.Inputs = JsonSerializer.Deserialize(innerText, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.OpenApiSchema);
+                    }
+                    else if (tagName == "arazzo-depends-on")
+                    {
+                        currentWf.DependsOn ??= new List<string>();
+                        currentWf.DependsOn.Add(innerText);
+                    }
+                    else if (tagName == "arazzo-workflow-param")
+                    {
+                        currentWf.Parameters ??= new List<ArazzoParameter>();
+                        currentWf.Parameters.Add(JsonSerializer.Deserialize(innerText, ArazzoJsonContext.Default.ArazzoParameter)!);
+                    }
+                    else if (tagName == "arazzo-workflow-success-action")
+                    {
+                        currentWf.SuccessActions ??= new List<ArazzoSuccessAction>();
+                        currentWf.SuccessActions.Add(JsonSerializer.Deserialize(innerText, ArazzoJsonContext.Default.ArazzoSuccessAction)!);
+                    }
+                    else if (tagName == "arazzo-workflow-failure-action")
+                    {
+                        currentWf.FailureActions ??= new List<ArazzoFailureAction>();
+                        currentWf.FailureActions.Add(JsonSerializer.Deserialize(innerText, ArazzoJsonContext.Default.ArazzoFailureAction)!);
+                    }
+                    else if (tagName == "arazzo-workflow-output")
+                    {
+                        var key = GetXmlAttribute(elem.StartTag.Attributes, "key");
+                        currentWf.Outputs ??= new Dictionary<string, string>();
+                        currentWf.Outputs[key] = innerText;
+                    }
+                    else if (tagName == "arazzo-workflow-ext")
+                    {
+                        var key = GetXmlAttribute(elem.StartTag.Attributes, "key");
+                        using var jDoc = JsonDocument.Parse(innerText);
+                        currentWf.Extensions ??= new Dictionary<string, JsonElement>();
+                        currentWf.Extensions[key] = jDoc.RootElement.Clone();
+                    }
+                    else if (tagName == "arazzo-step")
+                    {
+                        var step = JsonSerializer.Deserialize(innerText, ArazzoJsonContext.Default.ArazzoStep)!;
+                        currentWf.Steps.Add(step);
+                    }
+                }
+            }
+
+            return workflows;
+        }
+
+        /// <summary>
+        /// Reads the value of a named XML attribute from a syntax list of XML attributes.
+        /// </summary>
+        /// <param name="attributes">The XML attribute syntax list.</param>
+        /// <param name="name">The attribute name to look up.</param>
+        /// <returns>The attribute value string.</returns>
+        private static string GetXmlAttribute(SyntaxList<XmlAttributeSyntax> attributes, string name)
+        {
+            var attr = attributes.OfType<XmlTextAttributeSyntax>().First(a => a.Name.ToString() == name);
+            return string.Join(string.Empty, attr.TextTokens.Select(t => t.ValueText));
         }
 
         /// <summary>
@@ -135,14 +302,15 @@ namespace Cdd.OpenApi.Arazzo.Clients
         {
             foreach (var method in cls.Members.OfType<MethodDeclarationSyntax>())
             {
-                var specB64 = ExtractWorkflowSpecFromText(method.Body!.ToFullString());
-                if (!string.IsNullOrWhiteSpace(specB64))
+                var taggedWorkflows = ExtractWorkflowsFromXmlTags(method);
+                if (taggedWorkflows.Count > 0)
                 {
-                    var specBytes = Convert.FromBase64String(specB64!);
-                    var wfFromSpec = JsonSerializer.Deserialize(Encoding.UTF8.GetString(specBytes), ArazzoJsonContext.Default.ArazzoWorkflow)!;
-                    if (!doc.Workflows.Any(w => w.WorkflowId == wfFromSpec.WorkflowId))
+                    foreach (var taggedWf in taggedWorkflows)
                     {
-                        doc.Workflows.Add(wfFromSpec);
+                        if (!doc.Workflows.Any(w => w.WorkflowId == taggedWf.WorkflowId))
+                        {
+                            doc.Workflows.Add(taggedWf);
+                        }
                     }
 
                     continue;
@@ -235,21 +403,6 @@ namespace Cdd.OpenApi.Arazzo.Clients
             }
 
             return char.ToLowerInvariant(s[0]) + s.Substring(1);
-        }
-
-        /// <summary>
-        /// Extracts the base64-encoded <c>workflowSpec</c> string literal from a C# statement or block text.
-        /// </summary>
-        /// <param name="text">The C# source text containing a <c>workflowSpec</c> assignment.</param>
-        /// <returns>The base64 string if found; otherwise <c>null</c>.</returns>
-        internal static string? ExtractWorkflowSpecFromText(string text)
-        {
-            int varIdx = text.IndexOf("workflowSpec", StringComparison.Ordinal);
-            if (varIdx < 0) return null;
-            int eqIdx = text.IndexOf('=', varIdx + "workflowSpec".Length);
-            int firstQuote = text.IndexOf(StringEscaper.DoubleQuoteChar, eqIdx + 1);
-            int secondQuote = text.IndexOf(StringEscaper.DoubleQuoteChar, firstQuote + 1);
-            return text.Substring(firstQuote + 1, secondQuote - firstQuote - 1).Trim();
         }
 
         /// <summary>

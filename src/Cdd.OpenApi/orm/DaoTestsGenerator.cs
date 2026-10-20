@@ -12,6 +12,21 @@ namespace Cdd.OpenApi.Orm
     /// <summary>Generates unit tests for DAOs.</summary>
     public static class DaoTestsGenerator
     {
+        /// <summary>Generates DAO tests from IR models.</summary>
+        /// <param name="models">The IR models to generate DAO tests for.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated test classes.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> GenerateDaoTests(IReadOnlyList<Cdd.OpenApi.Ir.IrModel> models, string baseNamespace)
+        {
+            var dict = new Dictionary<string, OpenApiSchema>();
+            foreach (var m in models)
+            {
+                dict[m.Name] = m.ToOpenApiSchema();
+            }
+
+            return GenerateDaoTests(dict, baseNamespace);
+        }
+
         /// <summary>Generates DAO tests.</summary>
         /// <param name="schemas">The OpenAPI schemas to generate DAO tests for.</param>
         /// <param name="baseNamespace">The base C# namespace for the generated test classes.</param>

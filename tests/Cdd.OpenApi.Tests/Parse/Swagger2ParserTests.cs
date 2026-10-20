@@ -1,11 +1,17 @@
+// <copyright file="Swagger2ParserTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Xunit;
 using Cdd.OpenApi.Parse;
 
 namespace Cdd.OpenApi.Tests.Parse
 {
+    /// <summary>Verifies or exercises swagger2 parser tests.</summary>
     public class Swagger2ParserTests
     {
+        /// <summary>Verifies or exercises parse json converts swagger2 to open api3.</summary>
         [Fact]
         public void ParseJson_ConvertsSwagger2ToOpenApi3()
         {

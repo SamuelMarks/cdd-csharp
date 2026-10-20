@@ -60,6 +60,15 @@ namespace Cdd.OpenApi.Mcp
             return Cdd.OpenApi.Common.OperationHelpers.ToSnakeCase(text);
         }
 
+        /// <summary>Generates a Roslyn ClassDeclarationSyntax for an MCP server wrapping the specified IR endpoints.</summary>
+        /// <param name="className">The name of the generated MCP server class.</param>
+        /// <param name="endpoints">The IR endpoints to expose as MCP tools.</param>
+        /// <returns>A ClassDeclarationSyntax representing the MCP server.</returns>
+        public static ClassDeclarationSyntax ToMcpServerFromIr(string className, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints)
+        {
+            return ToMcpServer(className, Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(endpoints));
+        }
+
         /// <summary>Generates a Roslyn ClassDeclarationSyntax for an MCP server wrapping the specified OpenAPI paths.</summary>
         /// <param name="className">The name of the generated MCP server class.</param>
         /// <param name="paths">The OpenAPI paths to expose as MCP tools.</param>

@@ -9,9 +9,24 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
 {
-    /// <summary>Generates Data Access Objects (DAOs) for the OpenAPI models.</summary>
+    /// <summary>Generates Data Access Objects (DAOs) for the OpenAPI and IR models.</summary>
     public static class DaoGenerator
     {
+        /// <summary>Generates DAOs and their dependency injection extensions from IR models.</summary>
+        /// <param name="models">The IR models to generate DAOs for.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> GenerateDaos(IReadOnlyList<Cdd.OpenApi.Ir.IrModel> models, string baseNamespace)
+        {
+            var dict = new Dictionary<string, OpenApiSchema>();
+            foreach (var m in models)
+            {
+                dict[m.Name] = m.ToOpenApiSchema();
+            }
+
+            return GenerateDaos(dict, baseNamespace);
+        }
+
         /// <summary>Generates DAOs and their dependency injection extensions.</summary>
         /// <param name="schemas">The OpenAPI schemas to generate DAOs for.</param>
         /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>

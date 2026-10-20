@@ -1,3 +1,7 @@
+// <copyright file="ParseTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Microsoft.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,8 +12,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests.Clients
 {
+    /// <summary>Verifies or exercises parse tests.</summary>
     public class ParseTests
     {
+        /// <summary>Verifies or exercises parse to paths extracts correctly.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsCorrectly()
         {
@@ -132,6 +138,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(paths["/users/patch"].Patch);
             Assert.NotNull(paths["/users/trace"].Trace);
         }
+        /// <summary>Verifies or exercises parse to paths extracts responses.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsResponses()
         {
@@ -170,6 +177,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Single(op.Servers);
             Assert.Equal("http://s1", op.Servers[0].Url);
         }
+        /// <summary>Verifies or exercises parse to paths extracts parameter attributes.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsParameterAttributes()
         {
@@ -208,6 +216,7 @@ namespace Cdd.OpenApi.Tests.Clients
             var xParam = op.Parameters.First(p => p.Name == "x");
             Assert.Equal("5", xParam.Example);
         }
+        /// <summary>Verifies or exercises parse to paths extracts callbacks.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsCallbacks()
         {
@@ -239,6 +248,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(cb.ContainsKey("{$request.query.url}"));
             Assert.Equal("Webhook details", cb["{$request.query.url}"].Post?.Description);
         }
+        /// <summary>Verifies or exercises parse to paths extracts complex links.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsComplexLinks()
         {
@@ -278,6 +288,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(link.Parameters);
             Assert.Equal("$response.body#/id", link.Parameters["id"]);
         }
+        /// <summary>Verifies or exercises parse to paths extracts operation metadata.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsOperationMetadata()
         {
@@ -315,6 +326,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(op.Security[0].ContainsKey("OAuth2"));
             Assert.Contains("read", op.Security[0]["OAuth2"]);
         }
+        /// <summary>Verifies or exercises parse to paths extracts parameter examples.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsParameterExamples()
         {
@@ -357,6 +369,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("The id", p.Description);
         }
 
+        /// <summary>Verifies or exercises to paths with query and additional operations parses them.</summary>
         [Fact]
         public void ToPaths_WithQueryAndAdditionalOperations_ParsesThem()
         {
@@ -380,6 +393,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.True(paths["/purge"].AdditionalOperations!.ContainsKey("PURGE"));
             Assert.Equal("PurgeMethod", paths["/purge"].AdditionalOperations!["PURGE"].OperationId);
         }
+        /// <summary>Verifies or exercises parse to paths extracts complex headers coverage.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsComplexHeaders_Coverage()
         {
@@ -409,6 +423,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("simple", h.Style);
             Assert.Equal("integer", h.Schema!.Type);
         }
+        /// <summary>Verifies or exercises parse to paths map type coverage.</summary>
         [Fact]
         public void Parse_ToPaths_MapType_Coverage()
         {
@@ -445,6 +460,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("string", paths["/5"].Get!.Parameters![0].Schema!.Type); // fallback
             Assert.Equal("string", paths["/5"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
+        /// <summary>Verifies or exercises parse to paths extracts complex headers task coverage.</summary>
         [Fact]
         public void Parse_ToPaths_ExtractsComplexHeaders_TaskCoverage()
         {
@@ -469,6 +485,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.NotNull(op);
             Assert.Null(op.Responses!["200"].Content); // string does not create content by default in this implementation
         }
+        /// <summary>Verifies or exercises parse to paths map type task system coverage.</summary>
         [Fact]
         public void Parse_ToPaths_MapType_TaskSystemCoverage()
         {
@@ -486,6 +503,7 @@ namespace Cdd.OpenApi.Tests.Clients
 
             Assert.Equal("integer", paths["/1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
+        /// <summary>Verifies or exercises parse to paths map type task system coverage2.</summary>
         [Fact]
         public void Parse_ToPaths_MapType_TaskSystemCoverage2()
         {
@@ -504,6 +522,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Equal("integer", paths["/1"].Get!.Responses!["200"].Content!["application/json"].Schema!.Type);
         }
 
+        /// <summary>Verifies or exercises parse to paths coverage missing branches.</summary>
         [Fact]
         public void Parse_ToPaths_CoverageMissingBranches()
         {
@@ -571,6 +590,7 @@ namespace Cdd.OpenApi.Tests.Clients
             Assert.Empty(op.Security[0]["default"]);
         }
 
+        /// <summary>Verifies or exercises parse to paths malformed return types.</summary>
         [Fact]
         public void Parse_ToPaths_MalformedReturnTypes()
         {

@@ -1,11 +1,17 @@
+// <copyright file="OpenApiParserCoverageTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using Xunit;
 using Cdd.OpenApi.Parse;
 
 namespace Cdd.OpenApi.Tests.Parse
 {
+    /// <summary>Verifies or exercises open api parser coverage tests.</summary>
     public class OpenApiParserCoverageTests
     {
+        /// <summary>Verifies or exercises parse json body param without schema does not create request body.</summary>
         [Fact]
         public void ParseJson_BodyParamWithoutSchema_DoesNotCreateRequestBody()
         {
@@ -33,6 +39,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Single(op.Parameters); // Since it was not body-with-schema and not formData, it goes to the 'else' block
         }
 
+        /// <summary>Verifies or exercises parse json non body param with schema null and type not null creates schema.</summary>
         [Fact]
         public void ParseJson_NonBodyParamWithSchemaNullAndTypeNotNull_CreatesSchema()
         {
@@ -64,6 +71,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Equal("string", p.Schema.Type);
             Assert.Equal("uuid", p.Schema.Format);
         }
+        /// <summary>Verifies or exercises parse json body param with schema creates request body.</summary>
         [Fact]
         public void ParseJson_BodyParamWithSchema_CreatesRequestBody()
         {
@@ -89,6 +97,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.NotNull(op.RequestBody);
         }
 
+        /// <summary>Verifies or exercises parse json non body param with schema null and type null does not create schema.</summary>
         [Fact]
         public void ParseJson_NonBodyParamWithSchemaNullAndTypeNull_DoesNotCreateSchema()
         {
@@ -113,6 +122,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Null(p.Schema);
         }
 
+        /// <summary>Verifies or exercises parse json form data with existing null schema does not crash.</summary>
         [Fact]
         public void ParseJson_FormDataWithExistingNullSchema_DoesNotCrash()
         {
@@ -144,6 +154,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Null(formSchema); // No exception, skipped setting
         }
 
+        /// <summary>Verifies or exercises parse json form data with existing schema null properties does not crash.</summary>
         [Fact]
         public void ParseJson_FormDataWithExistingSchemaNullProperties_DoesNotCrash()
         {

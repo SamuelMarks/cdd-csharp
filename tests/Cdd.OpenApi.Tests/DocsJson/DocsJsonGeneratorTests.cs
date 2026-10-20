@@ -1,3 +1,7 @@
+// <copyright file="DocsJsonGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;
@@ -6,8 +10,11 @@ using Cdd.OpenApi.DocsJson;
 
 namespace Cdd.OpenApi.Tests.DocsJson
 {
+    /// <summary>Verifies or exercises docs json generator tests.</summary>
     public class DocsJsonGeneratorTests
     {
+        /// <summary>Verifies or exercises create sample document.</summary>
+        /// <returns>The resulting value or task.</returns>
         private OpenApiDocument CreateSampleDocument()
         {
             return new OpenApiDocument
@@ -37,6 +44,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             };
         }
 
+        /// <summary>Verifies or exercises generate with default flags includes all fields.</summary>
         [Fact]
         public void Generate_WithDefaultFlags_IncludesAllFields()
         {
@@ -60,6 +68,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Contains("int limit = 0;", op.Code.Snippet);
         }
 
+        /// <summary>Verifies or exercises generate with no imports omits imports field.</summary>
         [Fact]
         public void Generate_WithNoImports_OmitsImportsField()
         {
@@ -73,6 +82,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(op.Code.WrapperStart);
         }
 
+        /// <summary>Verifies or exercises generate with no wrapping omits wrapper fields.</summary>
         [Fact]
         public void Generate_WithNoWrapping_OmitsWrapperFields()
         {
@@ -87,6 +97,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Null(op.Code.WrapperEnd);
         }
 
+        /// <summary>Verifies or exercises generate with request body adds dummy initialization.</summary>
         [Fact]
         public void Generate_WithRequestBody_AddsDummyInitialization()
         {
@@ -117,6 +128,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Contains("createPetAsync(requestBody)", op.Code.Snippet);
         }
 
+        /// <summary>Verifies or exercises generate without operation id uses fallback name.</summary>
         [Fact]
         public void Generate_WithoutOperationId_UsesFallbackName()
         {
@@ -143,6 +155,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Contains("GETsomerouteidAsync", op.Code.Snippet);
         }
 
+        /// <summary>Verifies or exercises map type to csharp handles all types.</summary>
         [Fact]
         public void MapTypeToCSharp_HandlesAllTypes()
         {
@@ -185,6 +198,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.Contains("object p6 = null;", snippet);
         }
 
+        /// <summary>Verifies or exercises generate empty paths returns empty operations.</summary>
         [Fact]
         public void Generate_EmptyPaths_ReturnsEmptyOperations()
         {
@@ -195,6 +209,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(parsed);
             Assert.Empty(parsed[0].Operations);
         }
+        /// <summary>Verifies or exercises generate parameters with null or empty name are ignored.</summary>
         [Fact]
         public void Generate_ParametersWithNullOrEmptyName_AreIgnored()
         {

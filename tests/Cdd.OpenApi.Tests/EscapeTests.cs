@@ -1,11 +1,17 @@
+// <copyright file="EscapeTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.IO;
 using Xunit;
 using Cdd.OpenApi;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises escape tests.</summary>
     public class EscapeTests
     {
+        /// <summary>Verifies or exercises generate all no escape required.</summary>
         [Fact]
         public void GenerateAll_NoEscapeRequired()
         {

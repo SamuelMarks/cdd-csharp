@@ -1,10 +1,16 @@
+// <copyright file="MapTypeTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Classes;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises map type tests.</summary>
     public class MapTypeTests
     {
+        /// <summary>Verifies or exercises route parse map type handles short.</summary>
         [Fact]
         public void RouteParseMapType_HandlesShort()
         {
@@ -24,6 +30,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("integer", paths["/"].Get?.Parameters?[0].Schema?.Type);
         }
 
+        /// <summary>Verifies or exercises route emit map type handles other types.</summary>
         [Fact]
         public void RouteEmitMapType_HandlesOtherTypes()
         {
@@ -50,6 +57,7 @@ namespace Cdd.OpenApi.Tests
             AssertHelper.ContainsNoWhitespace("string p4", code);
         }
 
+        /// <summary>Verifies or exercises class emit map type handles all types.</summary>
         [Fact]
         public void ClassEmitMapType_HandlesAllTypes()
         {
@@ -70,6 +78,7 @@ namespace Cdd.OpenApi.Tests
             AssertHelper.ContainsNoWhitespace("object p4", code);
         }
 
+        /// <summary>Verifies or exercises type mapper map schema to csharp covers all formats and constructs.</summary>
         [Fact]
         public void TypeMapper_MapSchemaToCSharp_CoversAllFormatsAndConstructs()
         {
@@ -104,6 +113,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(sdkWithMcp, f => f.FileName == "src/Cli/McpServer.cs");
         }
 
+        /// <summary>Verifies or exercises route parse map type handles decimal double float bool.</summary>
         [Fact]
         public void RouteParseMapType_HandlesDecimal_Double_Float_Bool()
         {
@@ -124,6 +134,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("string", p?[4].Schema?.Type);
         }
 
+        /// <summary>Verifies or exercises class parse map type handles decimal double float bool.</summary>
         [Fact]
         public void ClassParseMapType_HandlesDecimal_Double_Float_Bool()
         {

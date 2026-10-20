@@ -1,3 +1,7 @@
+// <copyright file="CodeGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Cdd.OpenApi.Models;
@@ -5,8 +9,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises code generator tests.</summary>
     public class CodeGeneratorTests
     {
+        /// <summary>Verifies or exercises add doc tags all filled.</summary>
         [Fact]
         public void AddDocTags_AllFilled()
         {
@@ -50,6 +56,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("MIT", apiFile.Code);
         }
 
+        /// <summary>Verifies or exercises add doc tags doc null.</summary>
         [Fact]
         public void AddDocTags_DocNull()
         {
@@ -57,6 +64,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Empty(results);
         }
 
+        /// <summary>Verifies or exercises add doc tags empty doc.</summary>
         [Fact]
         public void AddDocTags_EmptyDoc()
         {
@@ -66,6 +74,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(results, r => r.FileName == "src/Api/IDefaultApi.cs");
         }
 
+        /// <summary>Verifies or exercises add doc tags terms and license.</summary>
         [Fact]
         public void AddDocTags_TermsAndLicense()
         {
@@ -96,6 +105,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Empty(results2);
         }
 
+        /// <summary>Verifies or exercises group paths by tag all operations creates correct groups.</summary>
         [Fact]
         public void GroupPathsByTag_AllOperations_CreatesCorrectGroups()
         {
@@ -137,6 +147,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(codes, c => c.FileName == "src/Api/IAdditionalApi.cs");
         }
 
+        /// <summary>Verifies or exercises group paths by tag inherits path level parameters and preserves overrides.</summary>
         [Fact]
         public void GroupPathsByTag_InheritsPathLevelParametersAndPreservesOverrides()
         {

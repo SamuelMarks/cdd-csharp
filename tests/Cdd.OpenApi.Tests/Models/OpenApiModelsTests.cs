@@ -1,11 +1,24 @@
+// <copyright file="OpenApiModelsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using Xunit;
+using Cdd.OpenApi.Emit;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Parse;
+using Xunit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>
+    /// Verifies OpenAPI 3.2.0 core model properties, JSON/YAML serialization round-trips, and IR preservation.
+    /// </summary>
     public class OpenApiModelsTests
     {
+        /// <summary>
+        /// Verifies that <see cref="OpenApiServer"/>, <see cref="OpenApiInfo"/>, <see cref="OpenApiExternalDocs"/>, and <see cref="OpenApiTag"/> round-trip through JSON, YAML, and <see cref="IrService"/>.
+        /// </summary>
         [Fact]
         public void ModelProperties_CanBeSetAndGot()
         {
@@ -75,8 +88,34 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("Pets operations", tag.Description);
             Assert.NotNull(tag.ExternalDocs);
             Assert.Equal("https://example.com", tag.ExternalDocs.Url);
+
+            var doc = new OpenApiDocument
+            {
+                Info = info,
+                Servers = new List<OpenApiServer> { server },
+                Tags = new List<OpenApiTag> { tag },
+                ExternalDocs = externalDocs
+            };
+
+            var emitter = new OpenApiEmitter();
+            var parser = new OpenApiParser();
+            var json = emitter.EmitJson(doc);
+            var parsedDoc = parser.ParseJson(json);
+            var irRoundTrip = IrService.FromOpenApi(parsedDoc).ToOpenApi();
+
+            Assert.Equal("Test API", irRoundTrip.Info.Title);
+            Assert.Equal("API Support", irRoundTrip.Info.Contact?.Name);
+            Assert.Equal("MIT", irRoundTrip.Info.License?.Identifier);
+            Assert.Single(irRoundTrip.Servers!);
+            Assert.Equal("Test", irRoundTrip.Servers![0].Name);
+            Assert.Single(irRoundTrip.Tags!);
+            Assert.Equal("pet", irRoundTrip.Tags![0].Name);
+            Assert.Equal("https://example.com", irRoundTrip.ExternalDocs?.Url);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="OpenApiPathItem"/> and all nine HTTP verbs round-trip through JSON serialization and <see cref="IrService"/>.
+        /// </summary>
         [Fact]
         public void PathItem_Properties_CanBeSetAndGot()
         {
@@ -115,8 +154,22 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Single(pathItem.Parameters!);
             Assert.Equal("id", pathItem.Parameters![0].Name);
             Assert.Equal("path", pathItem.Parameters[0].In);
+
+            var doc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths { ["/items/{id}"] = pathItem }
+            };
+
+            var ir = IrService.FromOpenApi(doc);
+            Assert.Equal(9, ir.Endpoints.Count);
+            var rtPath = ir.ToOpenApi().Paths!["/items/{id}"];
+            Assert.Equal("queryOp", rtPath.Query?.OperationId);
+            Assert.Equal("Path Summary", rtPath.Summary);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="OpenApiOperation"/> properties round-trip through <see cref="IrEndpoint"/> and JSON serialization.
+        /// </summary>
         [Fact]
         public void Operation_Properties_CanBeSetAndGot()
         {
@@ -149,8 +202,17 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.True(operation.Deprecated);
             Assert.Empty(operation.Security!);
             Assert.Empty(operation.Servers!);
+
+            var ep = IrEndpoint.FromOpenApiOperation("/test", "Post", operation);
+            var rtOp = ep.ToOpenApiOperation();
+            Assert.Equal("myOpId", rtOp.OperationId);
+            Assert.Equal("Req Body", rtOp.RequestBody?.Description);
+            Assert.True(rtOp.Deprecated);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="OpenApiParameter"/> properties round-trip through <see cref="IrParameter"/> and JSON serialization.
+        /// </summary>
         [Fact]
         public void Parameter_Properties_CanBeSetAndGot()
         {
@@ -184,6 +246,13 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.True(param.Content?.ContainsKey("application/json"));
             Assert.Equal(10, param.Example);
             Assert.Equal(20, param.Examples?["ex1"].Value);
+
+            var irParam = IrParameter.FromOpenApiParameter(param);
+            Assert.Equal("int", irParam.Type.CSharpType);
+            var rtParam = irParam.ToOpenApiParameter();
+            Assert.Equal("limit", rtParam.Name);
+            Assert.Equal("form", rtParam.Style);
+            Assert.Equal(10, rtParam.Example);
         }
     }
 }

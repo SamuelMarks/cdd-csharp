@@ -1,11 +1,24 @@
+// <copyright file="OpenApiModelsTests2.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
-using Xunit;
+using Cdd.OpenApi.Emit;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Parse;
+using Xunit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>
+    /// Verifies OpenAPI 3.2.0 request bodies, responses, schemas, media types, encodings, security schemes, and components round-tripping.
+    /// </summary>
     public class OpenApiModelsTests2
     {
+        /// <summary>
+        /// Verifies that <see cref="OpenApiRequestBody"/> properties round-trip through <see cref="IrRequestBody"/>.
+        /// </summary>
         [Fact]
         public void RequestBody_Properties_CanBeSetAndGot()
         {
@@ -22,8 +35,17 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("A body", reqBody.Description);
             Assert.True(reqBody.Required);
             Assert.Single(reqBody.Content);
+
+            var irBody = IrRequestBody.FromOpenApiRequestBody(reqBody);
+            var rtBody = irBody.ToOpenApiRequestBody();
+            Assert.Equal("A body", rtBody.Description);
+            Assert.True(rtBody.Required);
+            Assert.Single(rtBody.Content);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="OpenApiResponses"/> and <see cref="OpenApiResponse"/> round-trip through <see cref="IrResponse"/>.
+        /// </summary>
         [Fact]
         public void Responses_Properties_CanBeSetAndGot()
         {
@@ -31,12 +53,27 @@ namespace Cdd.OpenApi.Tests.Models
             {
                 Default = new OpenApiResponse { Description = "Default response" }
             };
-            responses.Add("200", new OpenApiResponse { Description = "OK" });
+            responses.Add("200", new OpenApiResponse
+            {
+                Description = "OK",
+                Content = new Dictionary<string, OpenApiMediaType>
+                {
+                    ["application/json"] = new OpenApiMediaType { Schema = new OpenApiSchema { Type = "string", Format = "uuid" } }
+                }
+            });
 
             Assert.Equal("Default response", responses.Default?.Description);
             Assert.Equal("OK", responses["200"].Description);
+
+            var irResp = IrResponse.FromOpenApiResponse("200", responses["200"]);
+            Assert.Equal("Guid", irResp.ContentType?.CSharpType);
+            var rtResp = irResp.ToOpenApiResponse();
+            Assert.Equal("OK", rtResp.Description);
         }
 
+        /// <summary>
+        /// Verifies that <see cref="OpenApiSchema"/> constraints and metadata round-trip through <see cref="IrModel"/> and <see cref="IrField"/>.
+        /// </summary>
         [Fact]
         public void Schema_Properties_CanBeSetAndGot()
         {
@@ -46,7 +83,18 @@ namespace Cdd.OpenApi.Tests.Models
                 Type = "object",
                 Format = "custom",
                 Items = new OpenApiSchema { Type = "string" },
-                Properties = new Dictionary<string, OpenApiSchema> { ["id"] = new OpenApiSchema { Type = "integer" } },
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    ["id"] = new OpenApiSchema
+                    {
+                        Type = "integer",
+                        Minimum = 1,
+                        Maximum = 100,
+                        MinLength = 1,
+                        MaxLength = 50,
+                        Pattern = "^[0-9]+$"
+                    }
+                },
                 Required = new List<string> { "id" },
                 Description = "A pet",
                 Minimum = 1,
@@ -62,8 +110,19 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("A pet", schema.Description);
             Assert.Equal(1, schema.Minimum);
             Assert.Equal(100, schema.Maximum);
+
+            var irModel = IrModel.FromOpenApiSchema("Pet", schema);
+            Assert.Single(irModel.Fields);
+            Assert.Equal(1, irModel.Fields[0].Minimum);
+            Assert.Equal(100, irModel.Fields[0].Maximum);
+            var rtSchema = irModel.ToOpenApiSchema();
+            Assert.Equal("A pet", rtSchema.Description);
+            Assert.Equal(1, rtSchema.Properties!["id"].Minimum);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiReference"/> properties.
+        /// </summary>
         [Fact]
         public void Reference_Properties_CanBeSetAndGot()
         {
@@ -79,21 +138,27 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("Skip description", reference.Description);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiServerVariable"/> properties and JSON serialization.
+        /// </summary>
         [Fact]
         public void ServerVariable_Properties_CanBeSetAndGot()
         {
-            var var = new OpenApiServerVariable
+            var serverVar = new OpenApiServerVariable
             {
                 Enum = new List<string> { "a", "b" },
                 Default = "a",
                 Description = "A desc"
             };
 
-            Assert.Equal(2, var.Enum?.Count);
-            Assert.Equal("a", var.Default);
-            Assert.Equal("A desc", var.Description);
+            Assert.Equal(2, serverVar.Enum?.Count);
+            Assert.Equal("a", serverVar.Default);
+            Assert.Equal("A desc", serverVar.Description);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiMediaType"/> properties and JSON serialization round-trip.
+        /// </summary>
         [Fact]
         public void MediaType_Properties_CanBeSetAndGot()
         {
@@ -117,6 +182,9 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("application/json", mediaType.ItemEncoding?.ContentType);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiEncoding"/> properties.
+        /// </summary>
         [Fact]
         public void Encoding_Properties_CanBeSetAndGot()
         {
@@ -142,6 +210,9 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.NotNull(encoding.ItemEncoding);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiLink"/> properties.
+        /// </summary>
         [Fact]
         public void Link_Properties_CanBeSetAndGot()
         {
@@ -157,6 +228,9 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("Get the pets", link.Description);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiSecurityScheme"/> properties and <see cref="IrSecurityScheme"/> conversion.
+        /// </summary>
         [Fact]
         public void SecurityScheme_Properties_CanBeSetAndGot()
         {
@@ -180,8 +254,17 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("JWT", scheme.BearerFormat);
             Assert.Equal("https://example.com/oauth2/metadata", scheme.Oauth2MetadataUrl);
             Assert.True(scheme.Deprecated);
+
+            var irScheme = IrSecurityScheme.FromOpenApiSecurityScheme("BasicAuth", scheme);
+            Assert.Equal("BasicAuth", irScheme.SchemeName);
+            var rtScheme = irScheme.ToOpenApiSecurityScheme();
+            Assert.Equal("basic", rtScheme.Scheme);
+            Assert.True(rtScheme.Deprecated);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiComponents"/> properties.
+        /// </summary>
         [Fact]
         public void Components_Properties_CanBeSetAndGot()
         {
@@ -209,6 +292,9 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Empty(components.PathItems!);
         }
 
+        /// <summary>
+        /// Verifies <see cref="OpenApiDocument"/> properties and full JSON/YAML round-tripping.
+        /// </summary>
         [Fact]
         public void OpenApiDocument_Properties_CanBeSetAndGot()
         {
@@ -238,6 +324,13 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Empty(doc.Security!);
             Assert.Empty(doc.Tags!);
             Assert.Equal("https://example.com", doc.ExternalDocs?.Url);
+
+            var emitter = new OpenApiEmitter();
+            var parser = new OpenApiParser();
+            var yaml = emitter.EmitYaml(doc);
+            var parsedFromYaml = parser.ParseYamlOrJson(yaml);
+            Assert.Equal("3.2.0", parsedFromYaml.OpenApi);
+            Assert.Equal("https://example.com/openapi.json", parsedFromYaml.Self);
         }
     }
 }

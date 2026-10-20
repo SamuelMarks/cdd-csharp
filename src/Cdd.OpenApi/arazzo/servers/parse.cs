@@ -12,10 +12,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Arazzo.Servers
 {
     /// <summary>
-    /// Parses C# Server/Backend E2E workflow test classes, stateful workflow mock classes, and ASP.NET Core workflow controller/endpoint classes back into an <see cref="ArazzoDocument"/>.
+    /// Parses C# Server/Backend E2E workflow test classes, stateful workflow mock classes, and ASP.NET Core workflow controller/endpoint classes back into an <see cref="Cdd.OpenApi.Ir.IrService"/> or <see cref="ArazzoDocument"/>.
     /// </summary>
     public static class Parse
     {
+        /// <summary>
+        /// Parses one or more C# server workflow test, stateful mock, or server controller class declarations into an <see cref="Cdd.OpenApi.Ir.IrService"/>.
+        /// </summary>
+        /// <param name="classes">The collection of Roslyn <see cref="ClassDeclarationSyntax"/> nodes to inspect.</param>
+        /// <returns>The reconstructed <see cref="Cdd.OpenApi.Ir.IrService"/>.</returns>
+        public static Cdd.OpenApi.Ir.IrService ToIrService(IEnumerable<ClassDeclarationSyntax> classes)
+        {
+            return Cdd.OpenApi.Ir.IrService.FromArazzo(ToArazzoDocument(classes));
+        }
+
         /// <summary>
         /// Parses one or more C# server workflow test, stateful mock, or server controller class declarations into an <see cref="ArazzoDocument"/>.
         /// </summary>
@@ -29,10 +39,10 @@ namespace Cdd.OpenApi.Arazzo.Servers
             }
 
             var classList = classes.ToList();
-            bool hasWorkflowSpec = classList.Any(cls =>
-                cls.GetDescendantNodesSafe().OfType<VariableDeclaratorSyntax>().Any(v => v.Identifier.Text == "workflowSpec"));
+            bool hasXmlWorkflowTags = classList.Any(cls =>
+                cls.Members.OfType<MethodDeclarationSyntax>().Any(m => Clients.Parse.ExtractWorkflowsFromXmlTags(m).Count > 0));
 
-            if (hasWorkflowSpec)
+            if (hasXmlWorkflowTags)
             {
                 return Clients.Parse.ToArazzoDocument(classList);
             }

@@ -232,30 +232,25 @@ namespace Cdd.OpenApi.Cli
                 return 1;
             }
 
-            if (truth == "class" || truth == "function")
+            var truthSource = CliArgumentParser.ParseSyncTruthSource(truth);
+            switch (truthSource)
             {
-                Console.WriteLine($"Synchronizing from truth '{truth}'...");
-                return ToOpenApi(inputPath, outputPath);
-            }
-            else if (truth == "openapi")
-            {
-                Console.WriteLine($"Synchronizing from truth '{truth}'...");
-                return FromOpenApi(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath });
-            }
-            else if (truth == "arazzo")
-            {
-                Console.WriteLine($"Synchronizing from truth '{truth}'...");
-                return FromArazzo(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath, NoGithubActions = true, NoInstallablePackage = true });
-            }
-            else if (truth == "workflow")
-            {
-                Console.WriteLine($"Synchronizing from truth '{truth}'...");
-                return ToArazzo(inputPath, outputPath);
-            }
-            else
-            {
-                Console.Error.WriteLine($"Error: Truth source '{truth}' is not supported yet.");
-                return 1;
+                case SyncTruthSource.Class:
+                case SyncTruthSource.Function:
+                    Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                    return ToOpenApi(inputPath, outputPath);
+                case SyncTruthSource.OpenApi:
+                    Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                    return FromOpenApi(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath });
+                case SyncTruthSource.Arazzo:
+                    Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                    return FromArazzo(GenerateType.All, new CddConfig { InputPath = inputPath, OutputDir = outputPath, NoGithubActions = true, NoInstallablePackage = true });
+                case SyncTruthSource.Workflow:
+                    Console.WriteLine($"Synchronizing from truth '{truth}'...");
+                    return ToArazzo(inputPath, outputPath);
+                default:
+                    Console.Error.WriteLine($"Error: Truth source '{truth}' is not supported yet.");
+                    return 1;
             }
         }
 
@@ -295,7 +290,7 @@ namespace Cdd.OpenApi.Cli
 
             var codes = files.Select(f => File.ReadAllText(f));
             var doc = ArazzoSpecGenerator.Generate(codes);
-            var isYaml = outputPath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase);
+            var isYaml = outputPath.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || outputPath.EndsWith(".yml", StringComparison.OrdinalIgnoreCase);
             var serialized = isYaml ? Arazzo.ArazzoEmitter.EmitYaml(doc) : Arazzo.ArazzoEmitter.EmitJson(doc);
 
             File.WriteAllBytes(outputPath, System.Text.Encoding.UTF8.GetBytes(serialized));

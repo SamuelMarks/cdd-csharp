@@ -11,10 +11,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Functions
 {
     /// <summary>
-    /// Parses C# method declarations into OpenAPI operation definitions.
+    /// Parses C# method declarations into <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and OpenAPI operation definitions.
     /// </summary>
     public static class Parse
     {
+        /// <summary>
+        /// Converts a <see cref="MethodDeclarationSyntax"/> into an <see cref="Cdd.OpenApi.Ir.IrEndpoint"/>.
+        /// </summary>
+        /// <param name="method">The Roslyn method syntax node to inspect.</param>
+        /// <returns>The parsed <see cref="Cdd.OpenApi.Ir.IrEndpoint"/>.</returns>
+        public static Cdd.OpenApi.Ir.IrEndpoint ParseEndpoint(MethodDeclarationSyntax method)
+        {
+            var op = ParseFunction(method);
+            return Cdd.OpenApi.Ir.IrEndpoint.FromOpenApiOperation("/" + method.Identifier.Text.ToLowerInvariant(), "Get", op);
+        }
+
         /// <summary>
         /// Converts a <see cref="MethodDeclarationSyntax"/> into an <see cref="OpenApiOperation"/>.
         /// </summary>

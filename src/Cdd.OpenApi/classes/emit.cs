@@ -4,14 +4,16 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Cdd.OpenApi.Common;
+using Cdd.OpenApi.Ir;
+using Cdd.OpenApi.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Classes
 {
-    /// <summary>Emits C# model class syntax declarations from <see cref="OpenApiSchema"/> definitions.</summary>
+    /// <summary>Emits C# model class syntax declarations from <see cref="IrModel"/> and <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Emit
     {
         /// <summary>
@@ -22,131 +24,143 @@ namespace Cdd.OpenApi.Classes
         /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
         public static ClassDeclarationSyntax ToClass(string className, OpenApiSchema schema)
         {
-            var classNode = SyntaxFactory.ClassDeclaration(className)
+            return ToClass(IrModel.FromOpenApiSchema(className, schema));
+        }
+
+        /// <summary>
+        /// Converts an <see cref="IrModel"/> into a Roslyn <see cref="ClassDeclarationSyntax"/>.
+        /// </summary>
+        /// <param name="model">The IR model defining the class fields and metadata.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToClass(IrModel model)
+        {
+            var classNode = SyntaxFactory.ClassDeclaration(model.Name)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
 
-            if (!string.IsNullOrWhiteSpace(schema.Description))
+            if (!string.IsNullOrWhiteSpace(model.Description))
             {
-                classNode = Docstrings.Emit.WithSummary(classNode, schema.Description);
+                classNode = Docstrings.Emit.WithSummary(classNode, model.Description);
             }
-            if (schema.Example != null)
+
+            if (model.Example != null)
             {
-                classNode = Docstrings.Emit.WithTag(classNode, "example", schema.Example.ToString()!);
+                classNode = Docstrings.Emit.WithTag(classNode, "example", model.Example.ToString()!);
             }
-            if (schema.Discriminator?.PropertyName != null)
+
+            if (model.Discriminator?.PropertyName != null)
             {
-                classNode = Docstrings.Emit.WithTag(classNode, "discriminator", schema.Discriminator.PropertyName);
-                if (schema.Discriminator.DefaultMapping != null)
+                classNode = Docstrings.Emit.WithTag(classNode, "discriminator", model.Discriminator.PropertyName);
+                if (model.Discriminator.DefaultMapping != null)
                 {
-                    classNode = Docstrings.Emit.WithTag(classNode, "discriminator-defaultMapping", schema.Discriminator.DefaultMapping);
+                    classNode = Docstrings.Emit.WithTag(classNode, "discriminator-defaultMapping", model.Discriminator.DefaultMapping);
                 }
-                if (schema.Discriminator.Mapping != null && schema.Discriminator.Mapping.Any())
+
+                if (model.Discriminator.Mapping != null && model.Discriminator.Mapping.Any())
                 {
-                    var mappingStr = string.Join(", ", schema.Discriminator.Mapping.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+                    var mappingStr = string.Join(", ", model.Discriminator.Mapping.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
                     classNode = Docstrings.Emit.WithTag(classNode, "discriminator-mapping", mappingStr);
                 }
             }
-            if (schema.Xml != null)
+
+            if (model.Xml != null)
             {
-                if (schema.Xml.Name != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-name", schema.Xml.Name);
-                if (schema.Xml.Namespace != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-namespace", schema.Xml.Namespace);
-                if (schema.Xml.Prefix != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-prefix", schema.Xml.Prefix);
-                if (schema.Xml.NodeType != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-nodeType", schema.Xml.NodeType);
-                if (schema.Xml.Attribute != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-attribute", schema.Xml.Attribute.Value.ToString().ToLower());
-                if (schema.Xml.Wrapped != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-wrapped", schema.Xml.Wrapped.Value.ToString().ToLower());
+                if (model.Xml.Name != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-name", model.Xml.Name);
+                if (model.Xml.Namespace != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-namespace", model.Xml.Namespace);
+                if (model.Xml.Prefix != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-prefix", model.Xml.Prefix);
+                if (model.Xml.NodeType != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-nodeType", model.Xml.NodeType);
+                if (model.Xml.Attribute != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-attribute", model.Xml.Attribute.Value.ToString().ToLower());
+                if (model.Xml.Wrapped != null) classNode = Docstrings.Emit.WithTag(classNode, "xml-wrapped", model.Xml.Wrapped.Value.ToString().ToLower());
             }
-            if (schema.ExternalDocs?.Url != null)
+
+            if (model.ExternalDocs?.Url != null)
             {
-                classNode = Docstrings.Emit.WithTag(classNode, "externalDocs", schema.ExternalDocs.Url);
+                classNode = Docstrings.Emit.WithTag(classNode, "externalDocs", model.ExternalDocs.Url);
             }
 
             var members = new List<MemberDeclarationSyntax>();
-            if (schema.Properties != null)
+            foreach (var field in model.Fields)
             {
-                foreach (var prop in schema.Properties)
+                var propName = field.Name;
+                var isRequired = field.IsRequired;
+                var isKey = propName.Equals("id", System.StringComparison.OrdinalIgnoreCase);
+
+                var csharpType = TypeMapper.MapOpenApiToCSharp(field.Type.TypeName, "object");
+                if (!isRequired && csharpType != "object")
                 {
-                    var propName = prop.Key;
-                    var propSchema = prop.Value;
-
-                    var isRequired = schema.Required != null && schema.Required.Contains(propName);
-                    var isKey = propName.Equals("id", System.StringComparison.OrdinalIgnoreCase);
-
-                    var csharpType = Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(propSchema.Type, "object");
-
-                    if (!isRequired && csharpType != "object" && csharpType != "string")
-                    {
-                        csharpType += "?";
-                    }
-                    else if (!isRequired && csharpType == "string")
-                    {
-                        csharpType += "?";
-                    }
-
-                    var propNode = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(csharpType), propName)
-                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                        .AddAccessorListAccessors(
-                            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                            SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                        );
-
-                    var attributes = new List<AttributeSyntax>();
-
-                    if (isKey)
-                    {
-                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Key")));
-                    }
-                    if (isRequired)
-                    {
-                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Required")));
-                    }
-                    if (csharpType == "object" || csharpType == "object?")
-                    {
-                        attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("System.ComponentModel.DataAnnotations.Schema.NotMapped")));
-                    }
-
-                    if (attributes.Any())
-                    {
-                        var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributes));
-                        propNode = propNode.AddAttributeLists(attributeList);
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(propSchema.Description))
-                    {
-                        propNode = Docstrings.Emit.WithSummary(propNode, propSchema.Description);
-                    }
-                    if (propSchema.Example != null)
-                    {
-                        propNode = Docstrings.Emit.WithTag(propNode, "example", propSchema.Example.ToString()!);
-                    }
-                    if (propSchema.Discriminator?.PropertyName != null)
-                    {
-                        propNode = Docstrings.Emit.WithTag(propNode, "discriminator", propSchema.Discriminator.PropertyName);
-                        if (propSchema.Discriminator.DefaultMapping != null)
-                        {
-                            propNode = Docstrings.Emit.WithTag(propNode, "discriminator-defaultMapping", propSchema.Discriminator.DefaultMapping);
-                        }
-                        if (propSchema.Discriminator.Mapping != null && propSchema.Discriminator.Mapping.Any())
-                        {
-                            var mappingStr = string.Join(", ", propSchema.Discriminator.Mapping.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
-                            propNode = Docstrings.Emit.WithTag(propNode, "discriminator-mapping", mappingStr);
-                        }
-                    }
-                    if (propSchema.Xml != null)
-                    {
-                        if (propSchema.Xml.Name != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-name", propSchema.Xml.Name);
-                        if (propSchema.Xml.Namespace != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-namespace", propSchema.Xml.Namespace);
-                        if (propSchema.Xml.Prefix != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-prefix", propSchema.Xml.Prefix);
-                        if (propSchema.Xml.NodeType != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-nodeType", propSchema.Xml.NodeType);
-                        if (propSchema.Xml.Attribute != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-attribute", propSchema.Xml.Attribute.Value.ToString().ToLower());
-                        if (propSchema.Xml.Wrapped != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-wrapped", propSchema.Xml.Wrapped.Value.ToString().ToLower());
-                    }
-                    if (propSchema.ExternalDocs?.Url != null)
-                    {
-                        propNode = Docstrings.Emit.WithTag(propNode, "externalDocs", propSchema.ExternalDocs.Url);
-                    }
-
-                    members.Add(propNode);
+                    csharpType += "?";
                 }
+
+                var propNode = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(csharpType), propName)
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .AddAccessorListAccessors(
+                        SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                        SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                    );
+
+                var attributes = new List<AttributeSyntax>();
+
+                if (isKey)
+                {
+                    attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Key")));
+                }
+
+                if (isRequired)
+                {
+                    attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("Required")));
+                }
+
+                if (csharpType == "object")
+                {
+                    attributes.Add(SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("System.ComponentModel.DataAnnotations.Schema.NotMapped")));
+                }
+
+                if (attributes.Any())
+                {
+                    var attributeList = SyntaxFactory.AttributeList(SyntaxFactory.SeparatedList(attributes));
+                    propNode = propNode.AddAttributeLists(attributeList);
+                }
+
+                if (!string.IsNullOrWhiteSpace(field.Description))
+                {
+                    propNode = Docstrings.Emit.WithSummary(propNode, field.Description);
+                }
+
+                if (field.Example != null)
+                {
+                    propNode = Docstrings.Emit.WithTag(propNode, "example", field.Example.ToString()!);
+                }
+
+                if (field.Discriminator?.PropertyName != null)
+                {
+                    propNode = Docstrings.Emit.WithTag(propNode, "discriminator", field.Discriminator.PropertyName);
+                    if (field.Discriminator.DefaultMapping != null)
+                    {
+                        propNode = Docstrings.Emit.WithTag(propNode, "discriminator-defaultMapping", field.Discriminator.DefaultMapping);
+                    }
+
+                    if (field.Discriminator.Mapping != null && field.Discriminator.Mapping.Any())
+                    {
+                        var mappingStr = string.Join(", ", field.Discriminator.Mapping.Select(kvp => $"{kvp.Key}:{kvp.Value}"));
+                        propNode = Docstrings.Emit.WithTag(propNode, "discriminator-mapping", mappingStr);
+                    }
+                }
+
+                if (field.Xml != null)
+                {
+                    if (field.Xml.Name != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-name", field.Xml.Name);
+                    if (field.Xml.Namespace != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-namespace", field.Xml.Namespace);
+                    if (field.Xml.Prefix != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-prefix", field.Xml.Prefix);
+                    if (field.Xml.NodeType != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-nodeType", field.Xml.NodeType);
+                    if (field.Xml.Attribute != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-attribute", field.Xml.Attribute.Value.ToString().ToLower());
+                    if (field.Xml.Wrapped != null) propNode = Docstrings.Emit.WithTag(propNode, "xml-wrapped", field.Xml.Wrapped.Value.ToString().ToLower());
+                }
+
+                if (field.ExternalDocs?.Url != null)
+                {
+                    propNode = Docstrings.Emit.WithTag(propNode, "externalDocs", field.ExternalDocs.Url);
+                }
+
+                members.Add(propNode);
             }
 
             return classNode.AddMembers(members.ToArray());

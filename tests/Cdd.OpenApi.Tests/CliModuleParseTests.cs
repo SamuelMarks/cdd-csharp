@@ -1,3 +1,7 @@
+// <copyright file="CliModuleParseTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -5,8 +9,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises cli module parse tests.</summary>
     public class CliModuleParseTests
     {
+        /// <summary>Verifies or exercises to paths parses switch correctly.</summary>
         [Fact]
         public void ToPaths_ParsesSwitchCorrectly()
         {
@@ -73,6 +79,7 @@ public class MyCli
             Assert.Null(nameParam.Description);
         }
 
+        /// <summary>Verifies or exercises to paths handles non string cases and no initializer.</summary>
         [Fact]
         public void ToPaths_HandlesNonStringCasesAndNoInitializer()
         {

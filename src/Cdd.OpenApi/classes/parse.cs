@@ -4,12 +4,14 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cdd.OpenApi.Common;
+using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Classes
 {
-    /// <summary>Parses C# model class syntax declarations into <see cref="OpenApiSchema"/> definitions.</summary>
+    /// <summary>Parses C# model class syntax declarations into <see cref="IrModel"/> and <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Parse
     {
         /// <summary>
@@ -18,6 +20,16 @@ namespace Cdd.OpenApi.Classes
         /// <param name="classNode">The C# class syntax node to analyze.</param>
         /// <returns>The parsed <see cref="OpenApiSchema"/>.</returns>
         public static OpenApiSchema ToSchema(ClassDeclarationSyntax classNode)
+        {
+            return ToIrModel(classNode).ToOpenApiSchema();
+        }
+
+        /// <summary>
+        /// Extracts an <see cref="IrModel"/> from a Roslyn <see cref="ClassDeclarationSyntax"/>.
+        /// </summary>
+        /// <param name="classNode">The C# class syntax node to analyze.</param>
+        /// <returns>The parsed <see cref="IrModel"/>.</returns>
+        public static IrModel ToIrModel(ClassDeclarationSyntax classNode)
         {
             var example = Docstrings.Parse.GetTag(classNode, "example");
             var discriminatorName = Docstrings.Parse.GetTag(classNode, "discriminator");
@@ -66,16 +78,14 @@ namespace Cdd.OpenApi.Classes
                 };
             }
 
-            var schema = new OpenApiSchema
+            var model = new IrModel
             {
-                Type = "object",
+                Name = classNode.Identifier.Text,
                 Description = Docstrings.Parse.GetSummary(classNode),
-                Example = example,
+                Example = example != null ? (OpenApiAny)example : null,
                 Discriminator = discriminator,
                 Xml = xml,
-                ExternalDocs = externalDocsUrl != null ? new OpenApiExternalDocs { Url = externalDocsUrl } : null,
-                Properties = new Dictionary<string, OpenApiSchema>(),
-                Required = new List<string>()
+                ExternalDocs = externalDocsUrl != null ? new OpenApiExternalDocs { Url = externalDocsUrl } : null
             };
 
             foreach (var prop in classNode.Members.OfType<PropertyDeclarationSyntax>())
@@ -133,30 +143,30 @@ namespace Cdd.OpenApi.Classes
                     };
                 }
 
-                var (mappedType, mappedFormat) = Cdd.OpenApi.Common.TypeMapper.MapCSharpToOpenApiTypeAndFormat(baseType, "object");
+                var (mappedType, mappedFormat) = TypeMapper.MapCSharpToOpenApiTypeAndFormat(baseType, "object");
 
-                var propSchema = new OpenApiSchema
+                var field = new IrField
                 {
-                    Type = mappedType,
-                    Format = mappedFormat,
+                    Name = propName,
+                    IsRequired = !isNullable,
                     Description = Docstrings.Parse.GetSummary(prop),
-                    Example = propExample,
+                    Example = propExample != null ? (OpenApiAny)propExample : null,
                     Discriminator = propDiscriminator,
                     Xml = propXml,
-                    ExternalDocs = propExternalDocsUrl != null ? new OpenApiExternalDocs { Url = propExternalDocsUrl } : null
+                    ExternalDocs = propExternalDocsUrl != null ? new OpenApiExternalDocs { Url = propExternalDocsUrl } : null,
+                    Type = new IrTypeRef
+                    {
+                        TypeName = mappedType,
+                        Format = mappedFormat,
+                        CSharpType = baseType,
+                        IsNullable = isNullable
+                    }
                 };
 
-                schema.Properties[propName] = propSchema;
-
-                if (!isNullable)
-                {
-                    schema.Required.Add(propName);
-                }
+                model.Fields.Add(field);
             }
 
-            if (!schema.Required.Any()) schema.Required = null;
-
-            return schema;
+            return model;
         }
     }
 }

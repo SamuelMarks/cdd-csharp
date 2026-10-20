@@ -1,11 +1,17 @@
+// <copyright file="OpenApiSchemaExtensionsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json;
 using Cdd.OpenApi.Models;
 using Xunit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>Verifies or exercises open api schema extensions tests.</summary>
     public class OpenApiSchemaExtensionsTests
     {
+        /// <summary>Verifies or exercises extended schema serialize deserialize.</summary>
         [Fact]
         public void ExtendedSchema_Serialize_Deserialize()
         {

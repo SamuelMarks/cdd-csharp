@@ -1,11 +1,17 @@
+// <copyright file="OpenApiDiscriminatorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Text.Json;
 using Cdd.OpenApi.Models;
 using Xunit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>Verifies or exercises open api discriminator tests.</summary>
     public class OpenApiDiscriminatorTests
     {
+        /// <summary>Verifies or exercises discriminator serialize deserialize.</summary>
         [Fact]
         public void Discriminator_Serialize_Deserialize()
         {
@@ -26,6 +32,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("#/components/schemas/Dog", result.Mapping["dog"]);
         }
 
+        /// <summary>Verifies or exercises discriminator serialize deserialize swagger2.</summary>
         [Fact]
         public void Discriminator_Serialize_Deserialize_Swagger2()
         {
@@ -43,6 +50,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Null(result.DefaultMapping);
         }
 
+        /// <summary>Verifies or exercises discriminator serialize deserialize default mapping.</summary>
         [Fact]
         public void Discriminator_Serialize_Deserialize_DefaultMapping()
         {
@@ -60,6 +68,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Null(result.Mapping);
         }
 
+        /// <summary>Verifies or exercises discriminator deserialize invalid token throws.</summary>
         [Fact]
         public void Discriminator_Deserialize_InvalidToken_Throws()
         {
@@ -68,6 +77,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("Expected string or object for Discriminator.", ex.Message);
         }
 
+        /// <summary>Verifies or exercises schema can contain discriminator.</summary>
         [Fact]
         public void Schema_CanContainDiscriminator()
         {
@@ -84,6 +94,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal("type", result.Discriminator.PropertyName);
         }
 
+        /// <summary>Verifies or exercises discriminator deserialize null property name.</summary>
         [Fact]
         public void Discriminator_Deserialize_NullPropertyName()
         {

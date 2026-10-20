@@ -9,9 +9,21 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Mocks
 {
-    /// <summary>Emits C# mock API implementation classes from <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Emits C# mock API implementation classes from <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a mock implementation of the IR endpoints.
+        /// </summary>
+        /// <param name="name">The name of the generated mock class.</param>
+        /// <param name="endpoints">The IR endpoints to mock.</param>
+        /// <param name="tests">Whether to implement the route interface for composable unit tests.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToMock(string name, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints, bool tests = false)
+        {
+            return ToMock(name, Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(endpoints), tests);
+        }
+
         /// <summary>
         /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a mock implementation of the OpenAPI operations.
         /// </summary>
@@ -64,10 +76,13 @@ namespace Cdd.OpenApi.Mocks
                 {
                     var route = pathKvp.Key;
                     var pathItem = pathKvp.Value;
-                    if (pathItem.Get != null) members.Add(CreateMockMethod("Get", route, pathItem.Get));
-                    if (pathItem.Post != null) members.Add(CreateMockMethod("Post", route, pathItem.Post));
-                    if (pathItem.Put != null) members.Add(CreateMockMethod("Put", route, pathItem.Put));
-                    if (pathItem.Delete != null) members.Add(CreateMockMethod("Delete", route, pathItem.Delete));
+                    foreach (var opKvp in Cdd.OpenApi.Common.OperationHelpers.GetOperationsByPascalVerb(pathItem))
+                    {
+                        if (opKvp.Value != null)
+                        {
+                            members.Add(CreateMockMethod(opKvp.Key, route, opKvp.Value));
+                        }
+                    }
                 }
             }
 

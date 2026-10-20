@@ -1,3 +1,7 @@
+// <copyright file="ClassParserTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -6,8 +10,10 @@ using System.Linq;
 
 namespace Cdd.OpenApi.Tests.Classes
 {
+    /// <summary>Verifies or exercises class parser tests.</summary>
     public class ClassParserTests
     {
+        /// <summary>Verifies or exercises to schema parses class with properties to open api schema.</summary>
         [Fact]
         public void ToSchema_ParsesClassWithProperties_ToOpenApiSchema()
         {
@@ -53,6 +59,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.DoesNotContain("Name", schema.Required);
         }
 
+        /// <summary>Verifies or exercises to schema no required properties required is null.</summary>
         [Fact]
         public void ToSchema_NoRequiredProperties_RequiredIsNull()
         {
@@ -69,6 +76,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.Null(schema.Required);
         }
 
+        /// <summary>Verifies or exercises map type unknown type maps to object.</summary>
         [Fact]
         public void MapType_UnknownType_MapsToObject()
         {
@@ -84,6 +92,7 @@ namespace Cdd.OpenApi.Tests.Classes
             var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
             Assert.Equal("object", schema.Properties!["Data"].Type);
         }
+        /// <summary>Verifies or exercises map type missing cases.</summary>
         [Fact]
         public void MapType_MissingCases()
         {
@@ -108,6 +117,7 @@ namespace Cdd.OpenApi.Tests.Classes
             Assert.Equal("number", schema.Properties!["Dec"].Type);
         }
 
+        /// <summary>Verifies or exercises to schema partial xml evaluates to null for missing.</summary>
         [Fact]
         public void ToSchema_PartialXml_EvaluatesToNullForMissing()
         {

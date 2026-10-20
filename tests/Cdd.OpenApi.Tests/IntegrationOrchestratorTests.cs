@@ -1,11 +1,17 @@
+// <copyright file="IntegrationOrchestratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises integration orchestrator tests.</summary>
     public class IntegrationOrchestratorTests
     {
+        /// <summary>Verifies or exercises spec generator code generator round trip.</summary>
         [Fact]
         public void SpecGenerator_CodeGenerator_RoundTrip()
         {

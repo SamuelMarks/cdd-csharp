@@ -13,8 +13,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Arazzo
 {
+    /// <summary>Verifies or exercises arazzo models and parser tests.</summary>
     public class ArazzoModelsAndParserTests
     {
+        /// <summary>Verifies or exercises parse and emit full json and yaml round trip preserves all fields.</summary>
         [Fact]
         public void ParseAndEmit_FullJsonAndYamlRoundTrip_PreservesAllFields()
         {
@@ -263,6 +265,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             Assert.Equal(2, parsedFromYaml.Workflows.Count);
         }
 
+        /// <summary>Verifies or exercises criterion type and step output equality and converters work correctly.</summary>
         [Fact]
         public void CriterionTypeAndStepOutput_EqualityAndConverters_WorkCorrectly()
         {
@@ -353,6 +356,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             });
         }
 
+        /// <summary>Verifies or exercises validate all error conditions throw cdd exception.</summary>
         [Fact]
         public void Validate_AllErrorConditions_ThrowCddException()
         {
@@ -600,6 +604,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             }));
         }
 
+        /// <summary>Verifies or exercises yaml converter edge cases handle comments quotes multiline and arrays.</summary>
         [Fact]
         public void YamlConverter_EdgeCases_HandleCommentsQuotesMultilineAndArrays()
         {

@@ -1,11 +1,17 @@
+// <copyright file="OpenApiParserFullTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Parse;
 using System.Linq;
 
 namespace Cdd.OpenApi.Tests.Parse
 {
+    /// <summary>Verifies or exercises open api parser full tests.</summary>
     public class OpenApiParserFullTests
     {
+        /// <summary>Verifies or exercises parse json complete document returns all properties.</summary>
         [Fact]
         public void ParseJson_CompleteDocument_ReturnsAllProperties()
         {

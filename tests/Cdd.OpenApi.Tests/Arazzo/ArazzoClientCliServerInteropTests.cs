@@ -19,8 +19,11 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Arazzo
 {
+    /// <summary>Verifies or exercises arazzo client cli server interop tests.</summary>
     public class ArazzoClientCliServerInteropTests
     {
+        /// <summary>Verifies or exercises create sample arazzo.</summary>
+        /// <returns>The resulting value or task.</returns>
         private static ArazzoDocument CreateSampleArazzo()
         {
             return new ArazzoDocument
@@ -32,7 +35,15 @@ namespace Cdd.OpenApi.Tests.Arazzo
                     Title = "OrderWorkflows",
                     Summary = "Order orchestration",
                     Description = "Order processing steps",
-                    Version = "2.0.0"
+                    Version = "2.0.0",
+                    Extensions = new Dictionary<string, System.Text.Json.JsonElement>
+                    {
+                        ["x-info-meta"] = System.Text.Json.JsonDocument.Parse("\"infoVal\"").RootElement.Clone()
+                    }
+                },
+                Extensions = new Dictionary<string, System.Text.Json.JsonElement>
+                {
+                    ["x-doc-meta"] = System.Text.Json.JsonDocument.Parse("\"docVal\"").RootElement.Clone()
                 },
                 SourceDescriptions = new List<ArazzoSourceDescription>
                 {
@@ -59,7 +70,16 @@ namespace Cdd.OpenApi.Tests.Arazzo
                         WorkflowId = "prepareCart",
                         Steps = new List<ArazzoStep>
                         {
-                            new ArazzoStep { StepId = "initCart", OperationId = "createCart" }
+                            new ArazzoStep
+                            {
+                                StepId = "initCart",
+                                OperationId = "createCart",
+                                Parameters = new List<ArazzoParameter>
+                                {
+                                    new ArazzoParameter { Name = "mode", In = "query", Value = "fast" },
+                                    new ArazzoParameter { Reference = "$components.parameters.shared", Value = null }
+                                }
+                            }
                         }
                     },
                     new ArazzoWorkflow
@@ -67,7 +87,23 @@ namespace Cdd.OpenApi.Tests.Arazzo
                         WorkflowId = "placeOrder",
                         Summary = "Place an order",
                         Description = "Places an order after preparing cart",
-                        DependsOn = new List<string> { "prepareCart" },
+                        DependsOn = new List<string> { "prepareCart", "$sourceDescriptions.ordersApi.workflows.init" },
+                        Parameters = new List<ArazzoParameter>
+                        {
+                            new ArazzoParameter { Name = "traceId", In = "header", Value = "$inputs.coupon" }
+                        },
+                        SuccessActions = new List<ArazzoSuccessAction>
+                        {
+                            new ArazzoSuccessAction { Name = "done", Type = "end" }
+                        },
+                        FailureActions = new List<ArazzoFailureAction>
+                        {
+                            new ArazzoFailureAction { Name = "retryOnce", Type = "retry", RetryAfter = 1, RetryLimit = 1 }
+                        },
+                        Extensions = new Dictionary<string, System.Text.Json.JsonElement>
+                        {
+                            ["x-wf-meta"] = System.Text.Json.JsonDocument.Parse("true").RootElement.Clone()
+                        },
                         Inputs = new OpenApiSchema
                         {
                             Type = "object",
@@ -90,6 +126,21 @@ namespace Cdd.OpenApi.Tests.Arazzo
                             },
                             new ArazzoStep
                             {
+                                StepId = "dynamicWfStep",
+                                WorkflowId = "$sourceDescriptions.ordersApi.workflows.sub"
+                            },
+                            new ArazzoStep
+                            {
+                                StepId = "pathStep",
+                                OperationPath = "{$sourceDescriptions.ordersApi.url}#/paths/~1orders/post"
+                            },
+                            new ArazzoStep
+                            {
+                                StepId = "channelStep",
+                                ChannelPath = "/orders/events"
+                            },
+                            new ArazzoStep
+                            {
                                 StepId = "submitOrder",
                                 OperationId = "submitOrderOp",
                                 Outputs = new Dictionary<string, ArazzoStepOutput>
@@ -107,6 +158,7 @@ namespace Cdd.OpenApi.Tests.Arazzo
             };
         }
 
+        /// <summary>Verifies or exercises ir service from arazzo and to arazzo round trips cleanly.</summary>
         [Fact]
         public void IrService_FromArazzoAndToArazzo_RoundTripsCleanly()
         {
@@ -126,18 +178,25 @@ namespace Cdd.OpenApi.Tests.Arazzo
             Assert.Single(emptyArazzo.SourceDescriptions);
         }
 
+        /// <summary>Verifies or exercises clients cli and servers emit and parse round trip and handle handwritten code.</summary>
         [Fact]
         public void ClientsCliAndServers_EmitAndParse_RoundTripAndHandleHandwrittenCode()
         {
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Clients.Emit.ToWorkflowModels(null!));
+            Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Clients.Emit.ToWorkflowModelsFromIr(null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Clients.Emit.ToWorkflowOrchestrator("Wf", null!));
+            Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Clients.Emit.ToWorkflowOrchestratorFromIr("Wf", null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Clients.Parse.ToArazzoDocument(null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Cli.Emit.ToWorkflowCli("Cli", "Wf", null!));
+            Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Cli.Emit.ToWorkflowCliFromIr("Cli", "Wf", null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Cli.Parse.ToArazzoDocument(null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Servers.Emit.ToWorkflowTests("Tests", "Wf", null!));
+            Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Servers.Emit.ToWorkflowTestsFromIr("Tests", "Wf", null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Servers.Emit.ToWorkflowMock("Mock", null!));
+            Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Servers.Emit.ToWorkflowMockFromIr("Mock", null!));
             Assert.Throws<ArgumentNullException>(() => Cdd.OpenApi.Arazzo.Servers.Parse.ToArazzoDocument(null!));
             Assert.Throws<ArgumentNullException>(() => ArazzoCodeGenerator.Generate(null!));
+            Assert.Throws<ArgumentNullException>(() => ArazzoCodeGenerator.GenerateFromIr(null!));
             Assert.Throws<ArgumentNullException>(() => ArazzoSpecGenerator.Generate((string)null!));
             Assert.Throws<ArgumentNullException>(() => ArazzoSpecGenerator.Generate((IEnumerable<string>)null!));
 
@@ -174,6 +233,8 @@ namespace Cdd.OpenApi.Tests.Arazzo
             var serverClasses = serverTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>();
             var serverRoundTrip = Cdd.OpenApi.Arazzo.Servers.Parse.ToArazzoDocument(serverClasses);
             Assert.Equal(2, serverRoundTrip.Workflows.Count);
+            var serverIrRoundTrip = Cdd.OpenApi.Arazzo.Servers.Parse.ToIrService(serverClasses);
+            Assert.Equal(2, serverIrRoundTrip.Workflows.Count);
 
             var customServerMockCode = @"
 public class CustomServerSimulator
@@ -272,6 +333,7 @@ public class OnlyWorkflowCli
             Assert.Equal("defaultWorkflow", emptyDoc.Workflows[0].WorkflowId);
         }
 
+        /// <summary>Verifies or exercises cli program json rpc mcp and browser interop arazzo commands execute cleanly.</summary>
         [Fact]
         public void CliProgramJsonRpcMcpAndBrowserInterop_ArazzoCommands_ExecuteCleanly()
         {

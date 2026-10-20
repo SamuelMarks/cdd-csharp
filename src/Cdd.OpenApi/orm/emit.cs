@@ -10,9 +10,26 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Orm
 {
-    /// <summary>Emits Entity Framework Core <c>DbContext</c> classes from <see cref="OpenApiSchema"/> definitions.</summary>
+    /// <summary>Emits Entity Framework Core <c>DbContext</c> classes from <see cref="Cdd.OpenApi.Ir.IrModel"/> and <see cref="OpenApiSchema"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an Entity Framework Core <c>DbContext</c> from IR models.
+        /// </summary>
+        /// <param name="className">The name of the generated DbContext class.</param>
+        /// <param name="models">The IR models to expose as <c>DbSet&lt;T&gt;</c> properties.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToDbContext(string className, IReadOnlyList<Cdd.OpenApi.Ir.IrModel> models)
+        {
+            var dict = new Dictionary<string, OpenApiSchema>();
+            foreach (var m in models)
+            {
+                dict[m.Name] = m.ToOpenApiSchema();
+            }
+
+            return ToDbContext(className, dict);
+        }
+
         /// <summary>
         /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing an Entity Framework Core <c>DbContext</c>.
         /// </summary>

@@ -30,10 +30,7 @@ namespace Cdd.OpenApi.Cli
             try
             {
                 var doc = new OpenApiParser().ParseJson(specContent);
-                var type = Cdd.OpenApi.GenerateType.All;
-                if (target == "to_sdk") type = Cdd.OpenApi.GenerateType.Sdk;
-                else if (target == "to_sdk_cli") type = Cdd.OpenApi.GenerateType.SdkCli;
-                else if (target == "to_server") type = Cdd.OpenApi.GenerateType.Server;
+                var type = CliArgumentParser.ParseGenerateType(target);
 
                 bool isTests = generateTests || (command != null && command.Contains("--tests"));
 
@@ -70,10 +67,7 @@ namespace Cdd.OpenApi.Cli
             try
             {
                 var doc = Cdd.OpenApi.Arazzo.ArazzoParser.ParseYamlOrJson(arazzoContent);
-                var type = Cdd.OpenApi.GenerateType.All;
-                if (target == "to_sdk") type = Cdd.OpenApi.GenerateType.Sdk;
-                else if (target == "to_sdk_cli") type = Cdd.OpenApi.GenerateType.SdkCli;
-                else if (target == "to_server") type = Cdd.OpenApi.GenerateType.Server;
+                var type = CliArgumentParser.ParseGenerateType(target);
 
                 var codes = Cdd.OpenApi.ArazzoCodeGenerator.Generate(doc, "Generated", type, generateTests);
                 var result = new System.Collections.Generic.Dictionary<string, string>();

@@ -25,6 +25,17 @@ namespace Cdd.OpenApi.CliModule
         }
 
         /// <summary>
+        /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a CLI wrapper around a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> definitions.
+        /// </summary>
+        /// <param name="className">The name of the generated CLI class.</param>
+        /// <param name="endpoints">The IR endpoints to expose as CLI subcommands.</param>
+        /// <returns>The generated <see cref="ClassDeclarationSyntax"/>.</returns>
+        public static ClassDeclarationSyntax ToCli(string className, IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints)
+        {
+            return ToCli(className, Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(endpoints));
+        }
+
+        /// <summary>
         /// Generates a Roslyn <see cref="ClassDeclarationSyntax"/> representing a CLI wrapper around an OpenAPI specification.
         /// </summary>
         /// <param name="className">The name of the generated CLI class.</param>

@@ -1,10 +1,16 @@
+// <copyright file="OpenApiParserTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Parse;
 
 namespace Cdd.OpenApi.Tests.Parse
 {
+    /// <summary>Verifies or exercises open api parser tests.</summary>
     public class OpenApiParserTests
     {
+        /// <summary>Verifies or exercises parse json valid basic document returns document.</summary>
         [Fact]
         public void ParseJson_ValidBasicDocument_ReturnsDocument()
         {

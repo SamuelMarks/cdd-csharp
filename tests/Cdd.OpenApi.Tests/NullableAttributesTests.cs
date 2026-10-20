@@ -1,3 +1,7 @@
+// <copyright file="NullableAttributesTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using System;
 using System.Reflection;
@@ -5,8 +9,10 @@ using System.Linq;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises nullable attributes tests.</summary>
     public class NullableAttributesTests
     {
+        /// <summary>Verifies or exercises can instantiate attributes.</summary>
         [Fact]
         public void CanInstantiateAttributes()
         {

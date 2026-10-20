@@ -4,11 +4,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Cdd.OpenApi.Ir;
+using Cdd.OpenApi.Models;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Cdd.OpenApi.Ir;
-using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi
 {
@@ -17,10 +17,13 @@ namespace Cdd.OpenApi
     {
         /// <summary>Generates client SDK models and HTTP client classes.</summary>
         Sdk,
+
         /// <summary>Generates client SDK models, HTTP client classes, and a CLI wrapper.</summary>
         SdkCli,
+
         /// <summary>Generates ASP.NET Core server interfaces, routes, DAOs, EF Core DbContext, and seeders.</summary>
         Server,
+
         /// <summary>Generates all SDK, CLI, Server, ORM, and optional MCP artifacts.</summary>
         All
     }
@@ -30,163 +33,123 @@ namespace Cdd.OpenApi
     {
         /// <summary>Gets or sets the relative file path of the generated C# file.</summary>
         public string FileName { get; set; } = string.Empty;
+
         /// <summary>Gets or sets the formatted C# source code content.</summary>
         public string Code { get; set; } = string.Empty;
     }
 
-    /// <summary>Generates in-memory C# source files from an <see cref="OpenApiDocument"/>.</summary>
+    /// <summary>Generates in-memory C# source files from an <see cref="OpenApiDocument"/> or <see cref="IrService"/>.</summary>
     public static class CodeGenerator
     {
         /// <summary>
-        /// Attaches top-level OpenAPI document metadata as XML documentation tags onto a syntax node.
+        /// Attaches top-level service metadata as XML documentation tags onto a syntax node.
         /// </summary>
         /// <typeparam name="TNode">The syntax node type.</typeparam>
         /// <param name="node">The syntax node to annotate.</param>
-        /// <param name="doc">The source OpenAPI document.</param>
+        /// <param name="ir">The source IR service.</param>
         /// <returns>The annotated syntax node.</returns>
-        private static TNode AddDocTags<TNode>(TNode node, OpenApiDocument doc) where TNode : SyntaxNode
+        private static TNode AddDocTags<TNode>(TNode node, IrService ir)
+            where TNode : SyntaxNode
         {
+            if (!string.IsNullOrEmpty(ir.Self))
+            {
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "self", ir.Self);
+            }
 
+            if (!string.IsNullOrEmpty(ir.JsonSchemaDialect))
+            {
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "jsonSchemaDialect", ir.JsonSchemaDialect);
+            }
 
-            if (!string.IsNullOrEmpty(doc.Self))
+            if (!string.IsNullOrEmpty(ir.TermsOfService))
             {
-                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "self", doc.Self);
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "termsOfService", ir.TermsOfService);
             }
-            if (!string.IsNullOrEmpty(doc.JsonSchemaDialect))
+
+            if (ir.License != null && !string.IsNullOrEmpty(ir.License.Identifier))
             {
-                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "jsonSchemaDialect", doc.JsonSchemaDialect);
-            }
-            if (doc.Info != null)
-            {
-                if (!string.IsNullOrEmpty(doc.Info.TermsOfService))
-                {
-                    node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "termsOfService", doc.Info.TermsOfService);
-                }
-            }
-            if (doc.Info != null)
-            {
-                if (doc.Info.License != null)
-                {
-                    if (!string.IsNullOrEmpty(doc.Info.License.Identifier))
-                    {
-                        node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "license-identifier", doc.Info.License.Identifier);
-                    }
-                }
+                node = Cdd.OpenApi.Docstrings.Emit.WithTag(node, "license-identifier", ir.License.Identifier);
             }
 
             return node;
         }
 
         /// <summary>
-        /// Groups the operations in an <see cref="OpenApiPaths"/> object by their primary operation tag.
+        /// Groups the endpoints in an <see cref="IrService"/> by their primary operation tag, merging path-level parameters non-destructively.
         /// </summary>
-        /// <param name="paths">The OpenAPI paths to group.</param>
-        /// <returns>A dictionary mapping normalized tag names to their corresponding <see cref="OpenApiPaths"/>.</returns>
-        private static Dictionary<string, OpenApiPaths> GroupPathsByTag(OpenApiPaths paths)
+        /// <param name="ir">The IR service containing endpoints and path metadata.</param>
+        /// <returns>A dictionary mapping normalized tag names to their corresponding <see cref="IrEndpoint"/> lists.</returns>
+        private static Dictionary<string, List<IrEndpoint>> GroupEndpointsByTag(IrService ir)
         {
-            var result = new Dictionary<string, OpenApiPaths>();
-            foreach (var pathKvp in paths)
+            var result = new Dictionary<string, List<IrEndpoint>>();
+            var pathsWithEndpoints = new HashSet<string>();
+
+            foreach (var ep in ir.Endpoints)
             {
-                var routePath = pathKvp.Key;
-                var pathItem = pathKvp.Value;
-
-                var operations = new[] { pathItem.Get, pathItem.Put, pathItem.Post, pathItem.Delete, pathItem.Options, pathItem.Head, pathItem.Patch, pathItem.Trace, pathItem.Query };
-                if (pathItem.AdditionalOperations != null)
+                pathsWithEndpoints.Add(ep.Path);
+                var tag = "Default";
+                if (ep.Tags != null && ep.Tags.Count > 0 && !string.IsNullOrEmpty(ep.Tags[0]))
                 {
-                    var opsList = new List<OpenApiOperation?>(operations);
-                    opsList.AddRange(pathItem.AdditionalOperations.Values);
-                    operations = opsList.ToArray();
+                    tag = ep.Tags[0];
+                    tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
                 }
 
-                bool hasOperations = false;
-                foreach (var op in operations)
+                if (!result.TryGetValue(tag, out var list))
                 {
-                    if (op == null) continue;
-                    hasOperations = true;
-                    var tag = "Default";
-                    if (op.Tags != null && op.Tags.Count > 0)
-                    {
-                        tag = op.Tags[0];
-                    }
+                    list = new List<IrEndpoint>();
+                    result[tag] = list;
+                }
 
-                    if (tag.Length > 0)
+                var mergedParams = new List<IrParameter>();
+                var existingNames = new HashSet<string>(ep.Parameters.Select(p => $"{p.Location}:{p.Name}"));
+                var pathParams = ir.PathMetadata[ep.Path].Parameters;
+                if (pathParams != null)
+                {
+                    foreach (var pathParam in pathParams)
                     {
-                        tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
-                    }
-
-                    if (!result.ContainsKey(tag))
-                    {
-                        result[tag] = new OpenApiPaths();
-                    }
-
-                    if (!result[tag].ContainsKey(routePath))
-                    {
-                        var newPathItem = new OpenApiPathItem
+                        if (!existingNames.Contains($"{pathParam.In}:{pathParam.Name}"))
                         {
-                            Summary = pathItem.Summary,
-                            Description = pathItem.Description,
-                            Parameters = pathItem.Parameters,
-                            Servers = pathItem.Servers,
-                            Ref = pathItem.Ref
-                        };
-                        result[tag][routePath] = newPathItem;
-                    }
-
-                    var currentItem = result[tag][routePath];
-                    if (pathItem.Parameters != null && pathItem.Parameters.Count > 0)
-                    {
-                        var mergedParams = new List<OpenApiParameter>();
-                        var existingNames = new HashSet<string>(op.Parameters?.Select(p => $"{p.In}:{p.Name}") ?? Enumerable.Empty<string>());
-                        foreach (var pathParam in pathItem.Parameters)
-                        {
-                            if (!existingNames.Contains($"{pathParam.In}:{pathParam.Name}"))
-                            {
-                                mergedParams.Add(pathParam);
-                            }
-                        }
-
-                        if (op.Parameters != null)
-                        {
-                            mergedParams.AddRange(op.Parameters);
-                        }
-
-                        op.Parameters = mergedParams;
-                    }
-
-                    if (op == pathItem.Get) currentItem.Get = op;
-                    else if (op == pathItem.Put) currentItem.Put = op;
-                    else if (op == pathItem.Post) currentItem.Post = op;
-                    else if (op == pathItem.Delete) currentItem.Delete = op;
-                    else if (op == pathItem.Options) currentItem.Options = op;
-                    else if (op == pathItem.Head) currentItem.Head = op;
-                    else if (op == pathItem.Patch) currentItem.Patch = op;
-                    else if (op == pathItem.Trace) currentItem.Trace = op;
-                    else if (op == pathItem.Query) currentItem.Query = op;
-                    else if (pathItem.AdditionalOperations != null)
-                    {
-                        foreach (var kvp in pathItem.AdditionalOperations)
-                        {
-                            if (kvp.Value == op)
-                            {
-                                if (currentItem.AdditionalOperations == null)
-                                {
-                                    currentItem.AdditionalOperations = new Dictionary<string, OpenApiOperation>();
-                                }
-                                currentItem.AdditionalOperations[kvp.Key] = op;
-                            }
+                            mergedParams.Add(IrParameter.FromOpenApiParameter(pathParam));
                         }
                     }
                 }
 
-                if (!hasOperations)
+                mergedParams.AddRange(ep.Parameters);
+
+                var clonedEndpoint = new IrEndpoint
+                {
+                    Path = ep.Path,
+                    HttpMethod = ep.HttpMethod,
+                    OperationId = ep.OperationId,
+                    HasExplicitOperationId = ep.HasExplicitOperationId,
+                    Summary = ep.Summary,
+                    Description = ep.Description,
+                    Tags = ep.Tags,
+                    ExternalDocs = ep.ExternalDocs,
+                    Deprecated = ep.Deprecated,
+                    RequestBody = ep.RequestBody,
+                    IrBody = ep.IrBody,
+                    Callbacks = ep.Callbacks,
+                    Security = ep.Security,
+                    Servers = ep.Servers,
+                    Parameters = mergedParams,
+                    Responses = ep.Responses
+                };
+
+                list.Add(clonedEndpoint);
+            }
+
+            foreach (var metaKvp in ir.PathMetadata)
+            {
+                if (!pathsWithEndpoints.Contains(metaKvp.Key))
                 {
                     if (!result.ContainsKey("Default"))
                     {
-                        result["Default"] = new OpenApiPaths();
+                        result["Default"] = new List<IrEndpoint>();
                     }
-                    result["Default"][routePath] = pathItem;
                 }
             }
+
             return result;
         }
 
@@ -201,62 +164,75 @@ namespace Cdd.OpenApi
         /// <returns>A list of generated source code files.</returns>
         public static List<GeneratedCode> Generate(OpenApiDocument doc, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false, bool mcp = false)
         {
+            if (doc == null) return new List<GeneratedCode>();
+            return GenerateFromIr(IrService.FromOpenApi(doc), baseNamespace, type, tests, mcp);
+        }
+
+        /// <summary>
+        /// Generates C# source files from an <see cref="IrService"/>.
+        /// </summary>
+        /// <param name="ir">The IR service to generate code from.</param>
+        /// <param name="baseNamespace">The root C# namespace for generated files.</param>
+        /// <param name="type">The target generation mode (All, Sdk, SdkCli, Server).</param>
+        /// <param name="tests">Whether to generate composable unit/integration test suites and mocks.</param>
+        /// <param name="mcp">Whether to explicitly generate MCP server and model files regardless of target type.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> GenerateFromIr(IrService ir, string baseNamespace = "Generated", GenerateType type = GenerateType.All, bool tests = false, bool mcp = false)
+        {
             var results = new List<GeneratedCode>();
-            if (doc == null) return results;
 
-            doc = IrService.FromOpenApi(doc).ToOpenApi();
+            var hasPaths = ir.Endpoints.Count > 0 || ir.PathMetadata.Count > 0;
+            var groupedEndpoints = hasPaths ? GroupEndpointsByTag(ir) : new Dictionary<string, List<IrEndpoint>>();
 
-            if (doc.Components?.Schemas != null)
+            if (ir.Models.Count > 0 || ir.HasEmptySchemasObject)
             {
-                foreach (var schemaKvp in doc.Components.Schemas)
+                foreach (var model in ir.Models)
                 {
-                    var classNode = Cdd.OpenApi.Classes.Emit.ToClass(schemaKvp.Key, schemaKvp.Value);
+                    var classNode = Cdd.OpenApi.Classes.Emit.ToClass(model);
                     var singleModelNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.ComponentModel.DataAnnotations")))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Text.Json.Serialization")))
                         .AddMembers(classNode);
                     results.Add(new GeneratedCode
                     {
-                        FileName = $"src/Models/{schemaKvp.Key}.cs",
+                        FileName = $"src/Models/{model.Name}.cs",
                         Code = WasmSafeRoslyn.FormatSafe(singleModelNs)
                     });
                 }
 
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
-                    var ormSchemas = doc.Components.Schemas
-                        .Where(kvp => kvp.Value.Type == "object" || kvp.Value.Properties != null)
-                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    var ormModels = ir.Models
+                        .Where(m => m.Fields.Count > 0 || m.Schema!.Type == "object")
+                        .ToList();
 
-                    var dbContextNode = Cdd.OpenApi.Orm.Emit.ToDbContext("AppDbContext", ormSchemas);
+                    var dbContextNode = Cdd.OpenApi.Orm.Emit.ToDbContext("AppDbContext", ormModels);
                     var dbContextNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Models"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.EntityFrameworkCore")))
                         .AddMembers(dbContextNode);
                     results.Add(new GeneratedCode { FileName = "src/Data/AppDbContext.cs", Code = WasmSafeRoslyn.FormatSafe(dbContextNsNode) });
 
-                    var daoResults = Cdd.OpenApi.Orm.DaoGenerator.GenerateDaos(ormSchemas, baseNamespace);
+                    var daoResults = Cdd.OpenApi.Orm.DaoGenerator.GenerateDaos(ormModels, baseNamespace);
                     results.AddRange(daoResults);
 
                     if (tests)
                     {
-                        var daoTestResults = Cdd.OpenApi.Orm.DaoTestsGenerator.GenerateDaoTests(ormSchemas, baseNamespace);
+                        var daoTestResults = Cdd.OpenApi.Orm.DaoTestsGenerator.GenerateDaoTests(ormModels, baseNamespace);
                         results.AddRange(daoTestResults);
                     }
 
                     var configResults = Cdd.OpenApi.Orm.ConfigGenerator.GenerateConfig(baseNamespace);
                     results.AddRange(configResults);
 
-                    var seederResults = Cdd.OpenApi.Orm.SeederGenerator.GenerateSeeder(ormSchemas, baseNamespace, tests);
+                    var seederResults = Cdd.OpenApi.Orm.SeederGenerator.GenerateSeeder(ormModels, baseNamespace, tests);
                     results.AddRange(seederResults);
 
-                    var routeTags = doc.Paths != null ? GroupPathsByTag(doc.Paths) : new Dictionary<string, OpenApiPaths>();
-
-                    var entrypointResults = Cdd.OpenApi.Orm.ServerEntrypointGenerator.GenerateEntrypoint(baseNamespace, tests, routeTags.Keys);
+                    var entrypointResults = Cdd.OpenApi.Orm.ServerEntrypointGenerator.GenerateEntrypoint(baseNamespace, tests, groupedEndpoints.Keys);
                     results.AddRange(entrypointResults);
 
-                    if (doc.Paths != null && doc.Paths.Count > 0)
+                    if (hasPaths)
                     {
-                        var routeResults = Cdd.OpenApi.Orm.ServerRoutesGenerator.GenerateRoutes(routeTags, baseNamespace, doc.Components.Schemas);
+                        var routeResults = Cdd.OpenApi.Orm.ServerRoutesGenerator.GenerateRoutes(groupedEndpoints, baseNamespace, ir.Models);
                         results.AddRange(routeResults);
                     }
 
@@ -268,7 +244,7 @@ namespace Cdd.OpenApi
                 }
             }
 
-            if (doc.Paths != null && doc.Paths.Count > 0)
+            if (hasPaths)
             {
                 var attrUsage = SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(
                     SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("AttributeUsage"))
@@ -291,6 +267,7 @@ namespace Cdd.OpenApi
                                 .AddParameterListParameters(ctorParams)
                                 .WithBody(SyntaxFactory.Block()));
                     }
+
                     return cls;
                 }
 
@@ -311,16 +288,14 @@ namespace Cdd.OpenApi
                     );
                 results.Add(new GeneratedCode { FileName = "Attributes.cs", Code = WasmSafeRoslyn.FormatSafe(attrNs) });
 
-                var groupedPaths = GroupPathsByTag(doc.Paths);
-
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
-                    foreach (var group in groupedPaths)
+                    foreach (var group in groupedEndpoints)
                     {
                         var tag = group.Key;
-                        var subPaths = group.Value;
-                        var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface($"I{tag}Api", subPaths);
-                        interfaceNode = AddDocTags(interfaceNode, doc);
+                        var subEndpoints = group.Value;
+                        var interfaceNode = Cdd.OpenApi.Routes.Emit.ToInterface($"I{tag}Api", subEndpoints, ir.PathMetadata);
+                        interfaceNode = AddDocTags(interfaceNode, ir);
                         var nsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Api"))
                             .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Microsoft.AspNetCore.Mvc")))
                             .AddMembers(interfaceNode);
@@ -330,22 +305,23 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All || type == GenerateType.Sdk)
                 {
-                    foreach (var group in groupedPaths)
+                    foreach (var group in groupedEndpoints)
                     {
                         var tag = group.Key;
-                        var subPaths = group.Value;
-                        var clientNode = Cdd.OpenApi.Clients.Emit.ToClient($"{tag}ApiClient", subPaths);
-                        clientNode = AddDocTags(clientNode, doc);
+                        var subEndpoints = group.Value;
+                        var clientNode = Cdd.OpenApi.Clients.Emit.ToClient($"{tag}ApiClient", subEndpoints);
+                        clientNode = AddDocTags(clientNode, ir);
                         var clientNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Client"))
-                            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
-                                       SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
+                            .AddUsings(
+                                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Models")),
+                                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Net.Http.Json")))
                             .AddMembers(clientNode);
                         results.Add(new GeneratedCode { FileName = $"src/Client/{tag}ApiClient.cs", Code = WasmSafeRoslyn.FormatSafe(clientNsNode) });
 
                         if (tests)
                         {
-                            var clientTestsNode = Cdd.OpenApi.TestsModule.Emit.ToClientTests($"{tag}ApiClientTests", subPaths, tests);
-                            clientTestsNode = AddDocTags(clientTestsNode, doc);
+                            var clientTestsNode = Cdd.OpenApi.TestsModule.Emit.ToClientTests($"{tag}ApiClientTests", subEndpoints, tests);
+                            clientTestsNode = AddDocTags(clientTestsNode, ir);
                             var clientTestsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
                                 .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Client")))
                                 .AddMembers(clientTestsNode);
@@ -356,12 +332,12 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli)
                 {
-                    foreach (var group in groupedPaths)
+                    foreach (var group in groupedEndpoints)
                     {
                         var tag = group.Key;
-                        var subPaths = group.Value;
-                        var cliNode = Cdd.OpenApi.CliModule.Emit.ToCli($"{tag}ApiClientCli", subPaths);
-                        cliNode = AddDocTags(cliNode, doc);
+                        var subEndpoints = group.Value;
+                        var cliNode = Cdd.OpenApi.CliModule.Emit.ToCli($"{tag}ApiClientCli", subEndpoints);
+                        cliNode = AddDocTags(cliNode, ir);
                         var cliNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                             .AddMembers(cliNode);
                         results.Add(new GeneratedCode { FileName = $"src/Cli/{tag}ApiClientCli.cs", Code = WasmSafeRoslyn.FormatSafe(cliNsNode) });
@@ -370,7 +346,7 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All || type == GenerateType.SdkCli || mcp)
                 {
-                    var mcpServerNode = Cdd.OpenApi.Mcp.Emit.ToMcpServer("McpServer", doc.Paths);
+                    var mcpServerNode = Cdd.OpenApi.Mcp.Emit.ToMcpServerFromIr("McpServer", ir.Endpoints);
                     var mcpServerNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")))
                         .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.IO")))
@@ -389,19 +365,19 @@ namespace Cdd.OpenApi
 
                 if (type == GenerateType.All || type == GenerateType.Server)
                 {
-                    foreach (var group in groupedPaths)
+                    foreach (var group in groupedEndpoints)
                     {
                         var tag = group.Key;
-                        var subPaths = group.Value;
-                        var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock($"{tag}ApiMock", subPaths, tests);
-                        mockNode = AddDocTags(mockNode, doc);
+                        var subEndpoints = group.Value;
+                        var mockNode = Cdd.OpenApi.Mocks.Emit.ToMock($"{tag}ApiMock", subEndpoints, tests);
+                        mockNode = AddDocTags(mockNode, ir);
                         var mockNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
                             .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                             .AddMembers(mockNode);
                         results.Add(new GeneratedCode { FileName = $"src/Mocks/{tag}ApiMock.cs", Code = WasmSafeRoslyn.FormatSafe(mockNsNode) });
 
-                        var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests($"{tag}ApiTests", subPaths, tests);
-                        testsNode = AddDocTags(testsNode, doc);
+                        var testsNode = Cdd.OpenApi.TestsModule.Emit.ToTests($"{tag}ApiTests", subEndpoints, tests);
+                        testsNode = AddDocTags(testsNode, ir);
                         var testsNsNode = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
                             .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Api")))
                             .AddMembers(testsNode);

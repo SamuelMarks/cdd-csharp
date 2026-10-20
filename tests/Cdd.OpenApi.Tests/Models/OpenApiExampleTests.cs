@@ -1,10 +1,16 @@
+// <copyright file="OpenApiExampleTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>Verifies or exercises open api example tests.</summary>
     public class OpenApiExampleTests
     {
+        /// <summary>Verifies or exercises example properties can be set and got.</summary>
         [Fact]
         public void Example_Properties_CanBeSetAndGot()
         {

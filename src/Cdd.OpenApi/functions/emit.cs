@@ -11,10 +11,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Functions
 {
     /// <summary>
-    /// Emits C# static function declarations from OpenAPI operation definitions.
+    /// Emits C# static function declarations from <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and OpenAPI operation definitions.
     /// </summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates a <see cref="MethodDeclarationSyntax"/> from an <see cref="Cdd.OpenApi.Ir.IrEndpoint"/>.
+        /// </summary>
+        /// <param name="endpoint">The IR endpoint to convert into a C# function.</param>
+        /// <returns>The generated <see cref="MethodDeclarationSyntax"/>.</returns>
+        public static MethodDeclarationSyntax EmitFunction(Cdd.OpenApi.Ir.IrEndpoint endpoint)
+        {
+            return EmitFunction(endpoint.ToOpenApiOperation());
+        }
+
         /// <summary>
         /// Generates a <see cref="MethodDeclarationSyntax"/> from an <see cref="OpenApiOperation"/>.
         /// </summary>

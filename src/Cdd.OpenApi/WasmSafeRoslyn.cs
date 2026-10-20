@@ -124,6 +124,23 @@ namespace Cdd.OpenApi
         }
 
         /// <summary>
+        /// Formats generic type parameters and constraint clauses for a type or method declaration.
+        /// </summary>
+        /// <param name="typeParameterList">Optional generic type parameter list syntax node.</param>
+        /// <param name="constraintClauses">Optional generic constraint clauses syntax list.</param>
+        /// <returns>A tuple of formatted type parameters and formatted constraint clauses.</returns>
+        private static (string TypeParams, string Constraints) FormatGenerics(
+            TypeParameterListSyntax? typeParameterList,
+            SyntaxList<TypeParameterConstraintClauseSyntax> constraintClauses)
+        {
+            var typeParams = typeParameterList != null ? WasmSafeFormatter.Format(typeParameterList) : string.Empty;
+            var constraints = constraintClauses.Count > 0
+                ? " " + string.Join(" ", constraintClauses.Select(c => WasmSafeFormatter.Format(c)))
+                : string.Empty;
+            return (typeParams, constraints);
+        }
+
+        /// <summary>
         /// Formats a record declaration syntax node safely without deep recursion.
         /// </summary>
         /// <param name="recordNode">The record declaration syntax node to format.</param>
@@ -133,8 +150,9 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             AppendLeadingTrivia(sb, recordNode, recordNode.AttributeLists);
             var modifiers = string.Join(" ", recordNode.Modifiers.Select(m => m.Text));
+            var (typeParams, constraints) = FormatGenerics(recordNode.TypeParameterList, recordNode.ConstraintClauses);
             var baseList = recordNode.BaseList != null ? $" : {string.Join(", ", recordNode.BaseList.Types.Select(t => WasmSafeFormatter.Format(t)))}" : "";
-            sb.AppendLine($"{modifiers} record {recordNode.Identifier.Text}{baseList}");
+            sb.AppendLine($"{modifiers} record {recordNode.Identifier.Text}{typeParams}{baseList}{constraints}");
             sb.AppendLine("{");
             foreach (var member in recordNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -151,8 +169,9 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             AppendLeadingTrivia(sb, structNode, structNode.AttributeLists);
             var modifiers = string.Join(" ", structNode.Modifiers.Select(m => m.Text));
+            var (typeParams, constraints) = FormatGenerics(structNode.TypeParameterList, structNode.ConstraintClauses);
             var baseList = structNode.BaseList != null ? $" : {string.Join(", ", structNode.BaseList.Types.Select(t => WasmSafeFormatter.Format(t)))}" : "";
-            sb.AppendLine($"{modifiers} struct {structNode.Identifier.Text}{baseList}");
+            sb.AppendLine($"{modifiers} struct {structNode.Identifier.Text}{typeParams}{baseList}{constraints}");
             sb.AppendLine("{");
             foreach (var member in structNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -186,8 +205,9 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             AppendLeadingTrivia(sb, classNode, classNode.AttributeLists);
             var modifiers = string.Join(" ", classNode.Modifiers.Select(m => m.Text));
+            var (typeParams, constraints) = FormatGenerics(classNode.TypeParameterList, classNode.ConstraintClauses);
             var baseList = classNode.BaseList != null ? $" : {string.Join(", ", classNode.BaseList.Types.Select(t => WasmSafeFormatter.Format(t)))}" : "";
-            sb.AppendLine($"{modifiers} class {classNode.Identifier.Text}{baseList}");
+            sb.AppendLine($"{modifiers} class {classNode.Identifier.Text}{typeParams}{baseList}{constraints}");
             sb.AppendLine("{");
             foreach (var member in classNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -204,8 +224,9 @@ namespace Cdd.OpenApi
             var sb = new System.Text.StringBuilder();
             AppendLeadingTrivia(sb, interfaceNode, interfaceNode.AttributeLists);
             var modifiers = string.Join(" ", interfaceNode.Modifiers.Select(m => m.Text));
+            var (typeParams, constraints) = FormatGenerics(interfaceNode.TypeParameterList, interfaceNode.ConstraintClauses);
             var baseList = interfaceNode.BaseList != null ? $" : {string.Join(", ", interfaceNode.BaseList.Types.Select(t => WasmSafeFormatter.Format(t)))}" : "";
-            sb.AppendLine($"{modifiers} interface {interfaceNode.Identifier.Text}{baseList}");
+            sb.AppendLine($"{modifiers} interface {interfaceNode.Identifier.Text}{typeParams}{baseList}{constraints}");
             sb.AppendLine("{");
             foreach (var member in interfaceNode.Members) sb.AppendLine(FormatMemberSafe(member));
             sb.AppendLine("}");
@@ -223,8 +244,11 @@ namespace Cdd.OpenApi
             AppendLeadingTrivia(sb, methodNode, methodNode.AttributeLists);
             var modifiers = string.Join(" ", methodNode.Modifiers.Select(m => m.Text));
             var returnType = WasmSafeFormatter.Format(methodNode.ReturnType);
+            var (typeParams, constraints) = FormatGenerics(methodNode.TypeParameterList, methodNode.ConstraintClauses);
             var parameters = string.Join(", ", methodNode.ParameterList.Parameters.Select(p => WasmSafeFormatter.Format(p)));
-            var sig = string.IsNullOrEmpty(modifiers) ? $"{returnType} {methodNode.Identifier.Text}({parameters})" : $"{modifiers} {returnType} {methodNode.Identifier.Text}({parameters})";
+            var sig = string.IsNullOrEmpty(modifiers)
+                ? $"{returnType} {methodNode.Identifier.Text}{typeParams}({parameters}){constraints}"
+                : $"{modifiers} {returnType} {methodNode.Identifier.Text}{typeParams}({parameters}){constraints}";
             if (methodNode.Body == null && methodNode.ExpressionBody == null) sb.AppendLine($"{sig};");
             else if (methodNode.ExpressionBody != null) sb.AppendLine($"{sig} => {WasmSafeFormatter.Format(methodNode.ExpressionBody.Expression)};");
             else

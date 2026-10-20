@@ -4,16 +4,16 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Ir;
 using Cdd.OpenApi.Models;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi
 {
-    /// <summary>Extracts an <see cref="OpenApiDocument"/> specification from C# source code files.</summary>
+    /// <summary>Extracts an <see cref="OpenApiDocument"/> or <see cref="IrService"/> specification from C# source code files.</summary>
     public static class SpecGenerator
     {
         /// <summary>
@@ -23,12 +23,23 @@ namespace Cdd.OpenApi
         /// <returns>The extracted <see cref="OpenApiDocument"/>.</returns>
         public static OpenApiDocument Generate(IEnumerable<string> csharpSourceCodes)
         {
-            var doc = new OpenApiDocument
+            return GenerateIr(csharpSourceCodes).ToOpenApi();
+        }
+
+        /// <summary>
+        /// Parses a collection of C# source code strings and generates a unified <see cref="IrService"/>.
+        /// </summary>
+        /// <param name="csharpSourceCodes">The C# source code texts to analyze.</param>
+        /// <returns>The extracted <see cref="IrService"/>.</returns>
+        public static IrService GenerateIr(IEnumerable<string> csharpSourceCodes)
+        {
+            var service = new IrService
             {
-                Info = new OpenApiInfo { Title = "Generated API", Version = "3.2.0" },
-                Paths = new OpenApiPaths(),
-                Components = new OpenApiComponents { Schemas = new Dictionary<string, OpenApiSchema>() }
+                Title = "Generated API",
+                Version = "3.2.0"
             };
+
+            var modelsByName = new Dictionary<string, IrModel>();
 
             foreach (var code in csharpSourceCodes)
             {
@@ -39,26 +50,25 @@ namespace Cdd.OpenApi
                 {
                     var role = CSharpRoleClassifier.Classify(classNode);
 
-                    // Extract Info tags if they exist on a main entry point or prominent class
                     if (CSharpRoleClassifier.IsDocumentMetadataHost(classNode))
                     {
                         var selfStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "self");
-                        if (!string.IsNullOrEmpty(selfStr)) doc.Self = selfStr;
+                        if (!string.IsNullOrEmpty(selfStr)) service.Self = selfStr;
 
                         var dialectStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "jsonSchemaDialect");
-                        if (!string.IsNullOrEmpty(dialectStr)) doc.JsonSchemaDialect = dialectStr;
+                        if (!string.IsNullOrEmpty(dialectStr)) service.JsonSchemaDialect = dialectStr;
 
                         var desc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "description");
-                        if (!string.IsNullOrEmpty(desc)) doc.Info.Description = desc;
+                        if (!string.IsNullOrEmpty(desc)) service.Description = desc;
 
                         var summary = Cdd.OpenApi.Docstrings.Parse.GetSummary(classNode);
-                        if (!string.IsNullOrEmpty(summary)) doc.Info.Summary = summary;
+                        if (!string.IsNullOrEmpty(summary)) service.Summary = summary;
 
                         var version = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "version");
-                        if (!string.IsNullOrEmpty(version)) doc.Info.Version = version;
+                        if (!string.IsNullOrEmpty(version)) service.Version = version;
 
                         var terms = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "termsOfService");
-                        if (!string.IsNullOrEmpty(terms)) doc.Info.TermsOfService = terms;
+                        if (!string.IsNullOrEmpty(terms)) service.TermsOfService = terms;
 
                         var contactName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "contact-name");
                         var contactEmail = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "contact-email");
@@ -66,7 +76,7 @@ namespace Cdd.OpenApi
 
                         if (!string.IsNullOrEmpty(contactName) || !string.IsNullOrEmpty(contactEmail) || !string.IsNullOrEmpty(contactUrl))
                         {
-                            doc.Info.Contact = new OpenApiContact { Name = contactName, Email = contactEmail, Url = contactUrl };
+                            service.Contact = new OpenApiContact { Name = contactName, Email = contactEmail, Url = contactUrl };
                         }
 
                         var licenseName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "license-name");
@@ -74,52 +84,43 @@ namespace Cdd.OpenApi
                         var licenseId = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "license-identifier");
                         if (!string.IsNullOrEmpty(licenseName))
                         {
-                            doc.Info.License = new OpenApiLicense { Name = licenseName, Url = licenseUrl, Identifier = licenseId };
+                            service.License = new OpenApiLicense { Name = licenseName, Url = licenseUrl, Identifier = licenseId };
                         }
 
                         var serverUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "server-url");
                         var serverDescription = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "server-description");
                         if (!string.IsNullOrEmpty(serverUrl))
                         {
-                            if (doc.Servers == null) doc.Servers = new List<OpenApiServer>();
-                            doc.Servers.Add(new OpenApiServer { Url = serverUrl, Description = serverDescription });
+                            service.Servers ??= new List<OpenApiServer>();
+                            service.Servers.Add(new OpenApiServer { Url = serverUrl, Description = serverDescription });
                         }
 
                         var extDocsUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "externalDocs-url");
                         var extDocsDesc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "externalDocs-description");
                         if (!string.IsNullOrEmpty(extDocsUrl))
                         {
-                            doc.ExternalDocs = new OpenApiExternalDocs { Url = extDocsUrl, Description = extDocsDesc };
+                            service.ExternalDocs = new OpenApiExternalDocs { Url = extDocsUrl, Description = extDocsDesc };
                         }
 
                         var tagName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "tag-name");
                         var tagDesc = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "tag-description");
                         if (!string.IsNullOrEmpty(tagName))
                         {
-                            if (doc.Tags == null) doc.Tags = new List<OpenApiTag>();
-                            doc.Tags.Add(new OpenApiTag { Name = tagName, Description = tagDesc });
+                            service.Tags ??= new List<OpenApiTag>();
+                            service.Tags.Add(new OpenApiTag { Name = tagName, Description = tagDesc });
                         }
                     }
 
                     if (role == CSharpClassRole.RouteController)
                     {
-                        var paths = Cdd.OpenApi.Routes.Parse.ToPaths(classNode);
-                        foreach (var p in paths)
-                        {
-                            doc.Paths![p.Key] = p.Value;
-                        }
+                        var (endpoints, pathMeta) = Cdd.OpenApi.Routes.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, pathMeta);
 
-                        // Check for Authorize attribute on class or methods to add simple Bearer auth
                         var hasAuth = classNode.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")) ||
                                       classNode.GetDescendantNodesSafe().OfType<MethodDeclarationSyntax>().Any(m => m.AttributeLists.SelectMany(al => al.Attributes).Any(a => a.Name.ToString().Contains("Authorize")));
 
                         if (hasAuth)
                         {
-                            if (doc.Components!.SecuritySchemes == null)
-                            {
-                                doc.Components.SecuritySchemes = new Dictionary<string, OpenApiSecurityScheme>();
-                            }
-
                             var authName = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "security-name") ?? "Bearer";
                             var authType = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "security-type") ?? "http";
                             var authScheme = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "security-scheme") ?? "bearer";
@@ -131,8 +132,9 @@ namespace Cdd.OpenApi
                             var authDeprecatedStr = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "security-deprecated");
                             bool? authDeprecated = authDeprecatedStr != null && authDeprecatedStr.ToLower() == "true" ? true : null;
 
-                            var schemeObj = new OpenApiSecurityScheme
+                            var schemeObj = new IrSecurityScheme
                             {
+                                SchemeName = authName,
                                 Type = authType,
                                 Scheme = authScheme,
                                 BearerFormat = authBearerFormat,
@@ -143,7 +145,7 @@ namespace Cdd.OpenApi
                                 Deprecated = authDeprecated
                             };
 
-                            var oauthFlowType = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-flow"); // e.g. clientCredentials
+                            var oauthFlowType = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-flow");
                             if (!string.IsNullOrEmpty(oauthFlowType))
                             {
                                 var authUrl = Cdd.OpenApi.Docstrings.Parse.GetTag(classNode, "oauth-authorizationUrl");
@@ -186,80 +188,75 @@ namespace Cdd.OpenApi
                                 schemeObj.BearerFormat = null;
                             }
 
-                            doc.Components.SecuritySchemes[authName] = schemeObj;
+                            service.SecuritySchemes.RemoveAll(s => s.SchemeName == authName);
+                            service.SecuritySchemes.Add(schemeObj);
 
-                            if (doc.Security == null)
-                            {
-                                doc.Security = new List<IDictionary<string, IList<string>>>();
-                            }
-                            doc.Security.Add(new Dictionary<string, IList<string>> { { authName, new List<string>() } });
+                            service.Security ??= new List<IDictionary<string, IList<string>>>();
+                            service.Security.Add(new Dictionary<string, IList<string>> { { authName, new List<string>() } });
                         }
                     }
                     else if (role == CSharpClassRole.HttpClient)
                     {
-                        var paths = Cdd.OpenApi.Clients.Parse.ToPaths(classNode);
-                        foreach (var p in paths)
-                        {
-                            doc.Paths![p.Key] = p.Value;
-                        }
+                        var endpoints = Cdd.OpenApi.Clients.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, null);
                     }
                     else if (role == CSharpClassRole.MockService)
                     {
-                        var paths = Cdd.OpenApi.Mocks.Parse.ToPaths(classNode);
-                        foreach (var p in paths)
-                        {
-                            doc.Paths![p.Key] = p.Value;
-                        }
+                        var endpoints = Cdd.OpenApi.Mocks.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, null);
                     }
                     else if (role == CSharpClassRole.CliEntrypoint)
                     {
-                        var paths = Cdd.OpenApi.CliModule.Parse.ToPaths(classNode);
-                        foreach (var p in paths)
-                        {
-                            doc.Paths![p.Key] = p.Value;
-                        }
+                        var (endpoints, pathMeta) = Cdd.OpenApi.CliModule.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, pathMeta);
                     }
                     else if (role == CSharpClassRole.TestSuite)
                     {
-                        var paths = Cdd.OpenApi.TestsModule.Parse.ToPaths(classNode);
-                        foreach (var p in paths)
-                        {
-                            doc.Paths![p.Key] = p.Value;
-                        }
+                        var endpoints = Cdd.OpenApi.TestsModule.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, null);
                     }
                     else if (role == CSharpClassRole.DbContext)
                     {
-                        var schemas = Cdd.OpenApi.Orm.Parse.ToSchemas(classNode);
-                        foreach (var s in schemas)
+                        var models = Cdd.OpenApi.Orm.Parse.ToIrModels(classNode);
+                        foreach (var m in models)
                         {
-                            doc.Components!.Schemas![s.Key] = s.Value;
+                            modelsByName[m.Name] = m;
                         }
                     }
                     else
                     {
-                        var schema = Cdd.OpenApi.Classes.Parse.ToSchema(classNode);
-                        doc.Components!.Schemas![classNode.Identifier.Text] = schema;
+                        var model = Cdd.OpenApi.Classes.Parse.ToIrModel(classNode);
+                        modelsByName[model.Name] = model;
                     }
                 }
             }
 
-            if (!doc.Paths!.Any()) doc.Paths = null;
-            if (doc.Components != null)
+            service.Models = modelsByName.Values.ToList();
+            return service;
+        }
+
+        /// <summary>
+        /// Merges extracted <see cref="IrEndpoint"/> instances and optional path metadata into the target <see cref="IrService"/>.
+        /// </summary>
+        /// <param name="service">The target IR service.</param>
+        /// <param name="endpoints">The endpoints to merge.</param>
+        /// <param name="pathMeta">Optional path metadata dictionary.</param>
+        private static void MergeEndpoints(IrService service, IEnumerable<IrEndpoint> endpoints, Dictionary<string, IrPathMetadata>? pathMeta)
+        {
+            if (pathMeta != null)
             {
-                if (doc.Components.Schemas != null)
+                foreach (var kvp in pathMeta)
                 {
-                    if (!doc.Components.Schemas.Any())
-                    {
-                        doc.Components.Schemas = null;
-                    }
-                }
-                if (doc.Components.Schemas == null && doc.Components.SecuritySchemes == null)
-                {
-                    doc.Components = null;
+                    service.PathMetadata[kvp.Key] = kvp.Value;
                 }
             }
 
-            return IrService.FromOpenApi(doc).ToOpenApi();
+            foreach (var ep in endpoints)
+            {
+                var key = $"{ep.HttpMethod}:{ep.Path}";
+                service.Endpoints.RemoveAll(e => $"{e.HttpMethod}:{e.Path}" == key);
+                service.Endpoints.Add(ep);
+            }
         }
     }
 }

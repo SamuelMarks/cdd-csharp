@@ -1,3 +1,7 @@
+// <copyright file="OrmEmitTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Orm;
 
 namespace Cdd.OpenApi.Tests.Orm
 {
+    /// <summary>Verifies or exercises orm emit tests.</summary>
     public class OrmEmitTests
     {
+        /// <summary>Verifies or exercises to db context generates model builder ignore and has no key.</summary>
         [Fact]
         public void ToDbContext_GeneratesModelBuilderIgnoreAndHasNoKey()
         {

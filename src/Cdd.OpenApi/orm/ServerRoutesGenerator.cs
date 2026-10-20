@@ -13,6 +13,31 @@ namespace Cdd.OpenApi.Orm
     /// <summary>Generates the minimal API routes for the server.</summary>
     public static class ServerRoutesGenerator
     {
+        /// <summary>Generates modular route extensions for the grouped IR endpoints and models.</summary>
+        /// <param name="groupedEndpoints">The IR endpoints grouped by tag.</param>
+        /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>
+        /// <param name="models">The IR models used to match route payloads and parameters to DAOs.</param>
+        /// <returns>A list of generated source code files.</returns>
+        public static List<GeneratedCode> GenerateRoutes(
+            IReadOnlyDictionary<string, List<Cdd.OpenApi.Ir.IrEndpoint>> groupedEndpoints,
+            string baseNamespace,
+            IReadOnlyList<Cdd.OpenApi.Ir.IrModel> models)
+        {
+            var groupedPaths = new Dictionary<string, OpenApiPaths>();
+            foreach (var kvp in groupedEndpoints)
+            {
+                groupedPaths[kvp.Key] = Cdd.OpenApi.Common.OperationHelpers.ConvertEndpointsToPaths(kvp.Value);
+            }
+
+            var schemas = new Dictionary<string, OpenApiSchema>();
+            foreach (var m in models)
+            {
+                schemas[m.Name] = m.ToOpenApiSchema();
+            }
+
+            return GenerateRoutes(groupedPaths, baseNamespace, schemas);
+        }
+
         /// <summary>Generates modular route extensions for the grouped OpenAPI paths.</summary>
         /// <param name="groupedPaths">The OpenAPI paths grouped by tag.</param>
         /// <param name="baseNamespace">The base C# namespace for the generated classes.</param>

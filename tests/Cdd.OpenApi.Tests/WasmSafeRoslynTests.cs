@@ -1,3 +1,7 @@
+// <copyright file="WasmSafeRoslynTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -6,14 +10,20 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises wasm safe roslyn tests.</summary>
     public class WasmSafeRoslynTests
     {
+        /// <summary>Verifies or exercises parse member.</summary>
+        /// <typeparam name="T">The T type parameter.</typeparam>
+        /// <param name="code">The code parameter.</param>
+        /// <returns>The resulting value or task.</returns>
         private T ParseMember<T>(string code) where T : MemberDeclarationSyntax
         {
             var tree = CSharpSyntaxTree.ParseText(code);
             return tree.GetRoot().DescendantNodes().OfType<T>().First();
         }
 
+        /// <summary>Verifies or exercises get descendant nodes safe returns expected nodes.</summary>
         [Fact]
         public void GetDescendantNodesSafe_ReturnsExpectedNodes()
         {
@@ -24,6 +34,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(nodes, n => n is MethodDeclarationSyntax);
         }
 
+        /// <summary>Verifies or exercises format constructor safe expression body formats correctly.</summary>
         [Fact]
         public void FormatConstructorSafe_ExpressionBody_FormatsCorrectly()
         {
@@ -32,6 +43,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("=> System.Console.WriteLine(1);", result);
         }
 
+        /// <summary>Verifies or exercises format constructor safe no body formats correctly.</summary>
         [Fact]
         public void FormatConstructorSafe_NoBody_FormatsCorrectly()
         {
@@ -41,6 +53,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(";", result);
         }
 
+        /// <summary>Verifies or exercises format property safe expression body formats correctly.</summary>
         [Fact]
         public void FormatPropertySafe_ExpressionBody_FormatsCorrectly()
         {
@@ -49,6 +62,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("=> 1;", result);
         }
 
+        /// <summary>Verifies or exercises format property safe no accessor list no expression body formats correctly.</summary>
         [Fact]
         public void FormatPropertySafe_NoAccessorList_NoExpressionBody_FormatsCorrectly()
         {
@@ -57,6 +71,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains(";", result);
         }
 
+        /// <summary>Verifies or exercises format member safe unknown member returns formatted.</summary>
         [Fact]
         public void FormatMemberSafe_UnknownMember_ReturnsFormatted()
         {
@@ -64,6 +79,7 @@ namespace Cdd.OpenApi.Tests
             var result = WasmSafeRoslyn.FormatSafe(SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName("N")).AddMembers(del));
             Assert.Contains("public delegate void D();", result);
         }
+        /// <summary>Verifies or exercises wasm safe formatter extra closing braces does not crash.</summary>
         [Fact]
         public void WasmSafeFormatter_ExtraClosingBraces_DoesNotCrash()
         {
@@ -73,6 +89,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("}", formatted);
         }
 
+        /// <summary>Verifies or exercises wasm safe roslyn formats attributes and expression bodies.</summary>
         [Fact]
         public void WasmSafeRoslyn_FormatsAttributesAndExpressionBodies()
         {
@@ -80,14 +97,14 @@ namespace Cdd.OpenApi.Tests
 // Leading file comment
 namespace N {
     [Serializable]
-    public class C {
+    public class C<T> where T : class {
         [Obsolete]
         private int _f;
 
         [Obsolete]
         public C() {}
 
-        public int M() => 1;
+        public int M<U>() where U : struct => 1;
     }
 
     [Obsolete]

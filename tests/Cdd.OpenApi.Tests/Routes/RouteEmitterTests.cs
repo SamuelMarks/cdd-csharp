@@ -1,3 +1,7 @@
+// <copyright file="RouteEmitterTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Xunit;
 using Cdd.OpenApi.Models;
 using Cdd.OpenApi.Routes;
@@ -5,8 +9,10 @@ using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Routes
 {
+    /// <summary>Verifies or exercises route emitter tests.</summary>
     public class RouteEmitterTests
     {
+        /// <summary>Verifies or exercises to interface valid paths generates correct interface.</summary>
         [Fact]
         public void ToInterface_ValidPaths_GeneratesCorrectInterface()
         {
@@ -47,6 +53,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Contains("McpMessageEndpoint", code);
         }
 
+        /// <summary>Verifies or exercises to interface with request body and empty schema generates iaction result.</summary>
         [Fact]
         public void ToInterface_WithRequestBodyAndEmptySchema_GeneratesIActionResult()
         {
@@ -91,6 +98,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> UploadData([FromBody] object body);", code);
         }
 
+        /// <summary>Verifies or exercises to interface with response no content generates iaction result.</summary>
         [Fact]
         public void ToInterface_WithResponseNoContent_GeneratesIActionResult()
         {
@@ -118,6 +126,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> GetNoContent();", code);
         }
 
+        /// <summary>Verifies or exercises to interface with request body and no type generates object.</summary>
         [Fact]
         public void ToInterface_WithRequestBodyAndNoType_GeneratesObject()
         {
@@ -148,6 +157,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("void UploadDataObj([FromBody] object body);", code);
         }
 
+        /// <summary>Verifies or exercises to interface generates method name when operation id missing.</summary>
         [Fact]
         public void ToInterface_GeneratesMethodNameWhenOperationIdMissing()
         {
@@ -166,6 +176,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("[HttpPut(\"/store/order\")]", code);
         }
 
+        /// <summary>Verifies or exercises map type to csharp maps number to double.</summary>
         [Fact]
         public void MapTypeToCSharp_MapsNumberToDouble()
         {
@@ -192,6 +203,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("void TestMethod(double weight, bool flag, string unknown);", code);
         }
 
+        /// <summary>Verifies or exercises to interface full coverage.</summary>
         [Fact]
         public void ToInterface_FullCoverage()
         {
@@ -279,6 +291,7 @@ namespace Cdd.OpenApi.Tests.Routes
             AssertHelper.ContainsNoWhitespace("AllowReserved", code);
             AssertHelper.ContainsNoWhitespace("application/json:integer", code);
         }
+        /// <summary>Verifies or exercises to interface examples parsing coverage.</summary>
         [Fact]
         public void ToInterface_ExamplesParsing_Coverage()
         {
@@ -309,6 +322,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Contains("p5=true", code.Replace(" ", ""));
         }
 
+        /// <summary>Verifies or exercises to interface emit missing branches coverage.</summary>
         [Fact]
         public void ToInterface_Emit_MissingBranches_Coverage()
         {
@@ -587,6 +601,7 @@ namespace Cdd.OpenApi.Tests.Routes
             Assert.Contains("GetDesc", code);
         }
 
+        /// <summary>Verifies or exercises to interface empty collections coverage.</summary>
         [Fact]
         public void ToInterface_EmptyCollections_Coverage()
         {

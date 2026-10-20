@@ -12,9 +12,26 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Routes
 {
-    /// <summary>Emits ASP.NET Core route controller interfaces from <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Emits ASP.NET Core route controller interfaces from <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates an ASP.NET Core controller route interface from a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances.
+        /// </summary>
+        /// <param name="interfaceName">The name of the generated interface.</param>
+        /// <param name="endpoints">The IR endpoints to convert into route methods.</param>
+        /// <param name="pathMetadata">Optional path-level metadata keyed by path template.</param>
+        /// <param name="includeMcp">Whether to include MCP SSE and JSON-RPC message endpoints.</param>
+        /// <returns>The generated <see cref="InterfaceDeclarationSyntax"/>.</returns>
+        public static InterfaceDeclarationSyntax ToInterface(
+            string interfaceName,
+            IReadOnlyList<Cdd.OpenApi.Ir.IrEndpoint> endpoints,
+            IReadOnlyDictionary<string, Cdd.OpenApi.Ir.IrPathMetadata>? pathMetadata = null,
+            bool includeMcp = true)
+        {
+            return ToInterface(interfaceName, OperationHelpers.ConvertEndpointsToPaths(endpoints, pathMetadata), includeMcp);
+        }
+
         /// <summary>
         /// Generates an ASP.NET Core controller route interface from an <see cref="OpenApiPaths"/> collection.
         /// </summary>

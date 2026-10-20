@@ -1,3 +1,7 @@
+// <copyright file="ParseTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Orm;
 
 namespace Cdd.OpenApi.Tests.Orm
 {
+    /// <summary>Verifies or exercises parse tests.</summary>
     public class ParseTests
     {
+        /// <summary>Verifies or exercises to schemas parses db context returns schemas.</summary>
         [Fact]
         public void ToSchemas_ParsesDbContext_ReturnsSchemas()
         {

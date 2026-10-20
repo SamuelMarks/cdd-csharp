@@ -218,6 +218,135 @@ namespace Cdd.OpenApi.Common
         }
 
         /// <summary>
+        /// Converts a collection of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances and optional path metadata into an <see cref="OpenApiPaths"/> dictionary.
+        /// </summary>
+        /// <param name="endpoints">The IR endpoints to convert.</param>
+        /// <param name="pathMetadata">Optional path-level metadata keyed by path template.</param>
+        /// <returns>The constructed <see cref="OpenApiPaths"/> dictionary.</returns>
+        public static OpenApiPaths ConvertEndpointsToPaths(
+            IEnumerable<Cdd.OpenApi.Ir.IrEndpoint> endpoints,
+            IReadOnlyDictionary<string, Cdd.OpenApi.Ir.IrPathMetadata>? pathMetadata = null)
+        {
+            var paths = new OpenApiPaths();
+            if (pathMetadata != null)
+            {
+                foreach (var metaKvp in pathMetadata)
+                {
+                    paths[metaKvp.Key] = new OpenApiPathItem
+                    {
+                        Ref = metaKvp.Value.Ref,
+                        Summary = metaKvp.Value.Summary,
+                        Description = metaKvp.Value.Description,
+                        Servers = metaKvp.Value.Servers,
+                        Parameters = metaKvp.Value.Parameters
+                    };
+                }
+            }
+
+            foreach (var ep in endpoints)
+            {
+                if (!paths.TryGetValue(ep.Path, out var pathItem))
+                {
+                    pathItem = new OpenApiPathItem();
+                    paths[ep.Path] = pathItem;
+                }
+
+                SetOperation(pathItem, ep.HttpMethod, ep.ToOpenApiOperation());
+            }
+
+            return paths;
+        }
+
+        /// <summary>
+        /// Extracts a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances from an <see cref="IDictionary{TKey, TValue}"/> of route paths to <see cref="OpenApiPathItem"/>.
+        /// </summary>
+        /// <param name="paths">The OpenAPI paths dictionary to inspect.</param>
+        /// <returns>A list of extracted <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances.</returns>
+        public static List<Cdd.OpenApi.Ir.IrEndpoint> ExtractEndpointsFromPaths(IDictionary<string, OpenApiPathItem> paths)
+        {
+            var endpoints = new List<Cdd.OpenApi.Ir.IrEndpoint>();
+            foreach (var pathKvp in paths)
+            {
+                var ops = GetOperationsByPascalVerb(pathKvp.Value);
+                foreach (var opKvp in ops)
+                {
+                    if (opKvp.Value != null)
+                    {
+                        endpoints.Add(Cdd.OpenApi.Ir.IrEndpoint.FromOpenApiOperation(pathKvp.Key, opKvp.Key, opKvp.Value));
+                    }
+                }
+            }
+
+            return endpoints;
+        }
+
+        /// <summary>
+        /// Infers an <see cref="OpenApiPathItem"/> dictionary from method names on a C# class (used for mocks and unit test suites).
+        /// </summary>
+        /// <param name="classNode">The C# class declaration syntax node to inspect.</param>
+        /// <param name="stripTestSuffix">Whether to strip a trailing <c>Test</c> suffix from method names before inferring the verb and operationId.</param>
+        /// <returns>A dictionary mapping inferred route paths to <see cref="OpenApiPathItem"/> instances.</returns>
+        public static IDictionary<string, OpenApiPathItem> ParseHeuristicPaths(
+            Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax classNode,
+            bool stripTestSuffix)
+        {
+            var paths = new Dictionary<string, OpenApiPathItem>();
+            foreach (var method in classNode.Members.OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>())
+            {
+                var name = method.Identifier.Text;
+                if (stripTestSuffix && name.EndsWith("Test", System.StringComparison.Ordinal))
+                {
+                    name = name.Substring(0, name.Length - 4);
+                }
+
+                var route = "/" + name.ToLowerInvariant();
+                var op = new OpenApiOperation { OperationId = name };
+                var pathItem = new OpenApiPathItem();
+
+                if (name.StartsWith("Post", System.StringComparison.Ordinal) && name.Length > 4)
+                {
+                    pathItem.Post = op;
+                }
+                else if (name.StartsWith("Put", System.StringComparison.Ordinal) && name.Length > 3)
+                {
+                    pathItem.Put = op;
+                }
+                else if (name.StartsWith("Delete", System.StringComparison.Ordinal) && name.Length > 6)
+                {
+                    pathItem.Delete = op;
+                }
+                else if (name.StartsWith("Patch", System.StringComparison.Ordinal) && name.Length > 5)
+                {
+                    pathItem.Patch = op;
+                }
+                else if (name.StartsWith("Options", System.StringComparison.Ordinal) && name.Length > 7)
+                {
+                    pathItem.Options = op;
+                }
+                else if (name.StartsWith("Head", System.StringComparison.Ordinal) && name.Length > 4)
+                {
+                    pathItem.Head = op;
+                }
+                else if (name.StartsWith("Trace", System.StringComparison.Ordinal) && name.Length > 5)
+                {
+                    pathItem.Trace = op;
+                }
+                else if (name.StartsWith("Query", System.StringComparison.Ordinal) && name.Length > 5)
+                {
+                    pathItem.Query = op;
+                }
+                else
+                {
+                    pathItem.Get = op;
+                }
+
+                paths[route] = pathItem;
+            }
+
+            return paths;
+        }
+
+        /// <summary>
         /// Converts a PascalCase or camelCase identifier to snake_case.
         /// </summary>
         /// <param name="text">The input identifier string.</param>

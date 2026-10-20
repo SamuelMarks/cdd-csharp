@@ -20,10 +20,41 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Arazzo.Clients
 {
     /// <summary>
-    /// Emits strongly-typed C# Client SDK workflow orchestrator classes and input/output DTOs from an <see cref="ArazzoDocument"/>.
+    /// Emits strongly-typed C# Client SDK workflow orchestrator classes and input/output DTOs from an <see cref="Cdd.OpenApi.Ir.IrService"/> or <see cref="ArazzoDocument"/>.
     /// </summary>
     public static class Emit
     {
+        /// <summary>
+        /// Generates the strongly-typed input and output DTO classes for all workflows and reusable input schemas in <paramref name="service"/>.
+        /// </summary>
+        /// <param name="service">The source <see cref="Cdd.OpenApi.Ir.IrService"/>.</param>
+        /// <returns>A list of Roslyn <see cref="ClassDeclarationSyntax"/> nodes representing the workflow DTOs.</returns>
+        public static List<ClassDeclarationSyntax> ToWorkflowModelsFromIr(Cdd.OpenApi.Ir.IrService service)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+
+            return ToWorkflowModels(service.ToArazzo());
+        }
+
+        /// <summary>
+        /// Generates a strongly-typed C# Client SDK workflow orchestrator class from an <see cref="Cdd.OpenApi.Ir.IrService"/>.
+        /// </summary>
+        /// <param name="className">The name of the generated workflow orchestrator class (e.g., <c>"PetstoreWorkflows"</c>).</param>
+        /// <param name="service">The source <see cref="Cdd.OpenApi.Ir.IrService"/>.</param>
+        /// <returns>A Roslyn <see cref="ClassDeclarationSyntax"/> representing the workflow orchestrator class.</returns>
+        public static ClassDeclarationSyntax ToWorkflowOrchestratorFromIr(string className, Cdd.OpenApi.Ir.IrService service)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+
+            return ToWorkflowOrchestrator(className, service.ToArazzo());
+        }
+
         /// <summary>
         /// Generates the strongly-typed input and output DTO classes for all workflows and reusable input schemas in <paramref name="doc"/>.
         /// </summary>
@@ -77,25 +108,12 @@ namespace Cdd.OpenApi.Arazzo.Clients
             sb.AppendLine("{");
             if (!string.IsNullOrEmpty(doc.Self))
             {
-                sb.AppendLine($"    /// <summary>The canonical base URI of the Arazzo document.</summary>");
+                sb.AppendLine("    /// <summary>The canonical base URI of the Arazzo document.</summary>");
                 sb.AppendLine($"    public const string SelfUri = {dq}{EscapeCSharp(doc.Self!)}{dq};");
             }
 
             sb.AppendLine("    /// <summary>The underlying HTTP client used for workflow step execution.</summary>");
             sb.AppendLine("    private readonly System.Net.Http.HttpClient _httpClient;");
-            var docMeta = new ArazzoDocument
-            {
-                Arazzo = doc.Arazzo,
-                Self = doc.Self,
-                Info = doc.Info,
-                SourceDescriptions = doc.SourceDescriptions,
-                Components = doc.Components,
-                Extensions = doc.Extensions,
-                Workflows = new List<ArazzoWorkflow>()
-            };
-            var docMetaB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(docMeta, ArazzoJsonContext.Default.ArazzoDocument)));
-            sb.AppendLine("    /// <summary>Base64-encoded Arazzo document header metadata.</summary>");
-            sb.AppendLine($"    public const string DocumentSpec = {dq}{docMetaB64}{dq};");
             sb.AppendLine($"    /// <summary>Initializes a new instance of the <see cref={dq}{className}{dq}/> class.</summary>");
             sb.AppendLine($"    public {className}()");
             sb.AppendLine("    {");
@@ -177,6 +195,85 @@ namespace Cdd.OpenApi.Arazzo.Clients
         }
 
         /// <summary>
+        /// Appends structured XML documentation tags for a workflow to <paramref name="sb"/>.
+        /// </summary>
+        /// <param name="sb">The target string builder.</param>
+        /// <param name="wf">The workflow definition.</param>
+        /// <param name="indent">The leading indentation string.</param>
+        internal static void AppendWorkflowXmlMetadata(StringBuilder sb, ArazzoWorkflow wf, string indent = "    ")
+        {
+            var dq = StringEscaper.DoubleQuote;
+            sb.AppendLine($"{indent}/// <arazzo-workflow id={dq}{EscapeXml(wf.WorkflowId)}{dq} />");
+            if (!string.IsNullOrEmpty(wf.Description))
+            {
+                sb.AppendLine($"{indent}/// <arazzo-workflow-description>{EscapeXml(wf.Description!)}</arazzo-workflow-description>");
+            }
+
+            if (wf.Inputs != null)
+            {
+                var inputsJson = JsonSerializer.Serialize(wf.Inputs, Cdd.OpenApi.Parse.OpenApiJsonContext.Default.OpenApiSchema);
+                sb.AppendLine($"{indent}/// <arazzo-workflow-inputs>{EscapeXml(inputsJson)}</arazzo-workflow-inputs>");
+            }
+
+            if (wf.DependsOn != null)
+            {
+                foreach (var dep in wf.DependsOn)
+                {
+                    sb.AppendLine($"{indent}/// <arazzo-depends-on>{EscapeXml(dep)}</arazzo-depends-on>");
+                }
+            }
+
+            if (wf.Parameters != null)
+            {
+                foreach (var p in wf.Parameters)
+                {
+                    var pJson = JsonSerializer.Serialize(p, ArazzoJsonContext.Default.ArazzoParameter);
+                    sb.AppendLine($"{indent}/// <arazzo-workflow-param>{EscapeXml(pJson)}</arazzo-workflow-param>");
+                }
+            }
+
+            if (wf.SuccessActions != null)
+            {
+                foreach (var sa in wf.SuccessActions)
+                {
+                    var saJson = JsonSerializer.Serialize(sa, ArazzoJsonContext.Default.ArazzoSuccessAction);
+                    sb.AppendLine($"{indent}/// <arazzo-workflow-success-action>{EscapeXml(saJson)}</arazzo-workflow-success-action>");
+                }
+            }
+
+            if (wf.FailureActions != null)
+            {
+                foreach (var fa in wf.FailureActions)
+                {
+                    var faJson = JsonSerializer.Serialize(fa, ArazzoJsonContext.Default.ArazzoFailureAction);
+                    sb.AppendLine($"{indent}/// <arazzo-workflow-failure-action>{EscapeXml(faJson)}</arazzo-workflow-failure-action>");
+                }
+            }
+
+            if (wf.Outputs != null)
+            {
+                foreach (var outKvp in wf.Outputs)
+                {
+                    sb.AppendLine($"{indent}/// <arazzo-workflow-output key={dq}{EscapeXml(outKvp.Key)}{dq}>{EscapeXml(outKvp.Value)}</arazzo-workflow-output>");
+                }
+            }
+
+            if (wf.Extensions != null)
+            {
+                foreach (var ext in wf.Extensions)
+                {
+                    sb.AppendLine($"{indent}/// <arazzo-workflow-ext key={dq}{EscapeXml(ext.Key)}{dq}>{EscapeXml(ext.Value.GetRawText())}</arazzo-workflow-ext>");
+                }
+            }
+
+            foreach (var step in wf.Steps)
+            {
+                var stepJson = JsonSerializer.Serialize(step, ArazzoJsonContext.Default.ArazzoStep);
+                sb.AppendLine($"{indent}/// <arazzo-step id={dq}{EscapeXml(step.StepId)}{dq}>{EscapeXml(stepJson)}</arazzo-step>");
+            }
+        }
+
+        /// <summary>
         /// Appends a strongly-typed async workflow execution method to <paramref name="sb"/>.
         /// </summary>
         /// <param name="sb">The target string builder.</param>
@@ -185,15 +282,12 @@ namespace Cdd.OpenApi.Arazzo.Clients
         {
             var dq = StringEscaper.DoubleQuote;
             var wfPascal = RuntimeExpression.ToPascalIdentifier(wf.WorkflowId);
-            var wfJson = JsonSerializer.Serialize(wf, ArazzoJsonContext.Default.ArazzoWorkflow);
-            var wfB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(wfJson));
 
             var summary = wf.Summary ?? wf.Description ?? $"Executes workflow '{wf.WorkflowId}'.";
             sb.AppendLine($"    /// <summary>{EscapeXml(summary)}</summary>");
+            AppendWorkflowXmlMetadata(sb, wf, "    ");
             sb.AppendLine($"    public async System.Threading.Tasks.Task<{wfPascal}Output> {wfPascal}Async({wfPascal}Input input)")
                 .AppendLine("    {")
-                .AppendLine($"        string workflowSpec = {dq}{wfB64}{dq};")
-                .AppendLine("        _ = workflowSpec;")
                 .AppendLine("        var stepOutputs = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>();");
 
             if (wf.DependsOn != null)
@@ -210,20 +304,41 @@ namespace Cdd.OpenApi.Arazzo.Clients
 
             foreach (var step in wf.Steps)
             {
+                var stepPascal = RuntimeExpression.ToPascalIdentifier(step.StepId);
                 sb.AppendLine($"        stepOutputs[{dq}{EscapeCSharp(step.StepId)}{dq}] = new System.Collections.Generic.Dictionary<string, string>();");
+
                 if (step.Timeout.HasValue && step.Timeout.Value > 0)
                 {
-                    sb.AppendLine($"        var cts_{RuntimeExpression.ToPascalIdentifier(step.StepId)} = new System.Threading.CancellationTokenSource({step.Timeout.Value});");
-                    sb.AppendLine($"        cts_{RuntimeExpression.ToPascalIdentifier(step.StepId)}.Dispose();");
+                    sb.AppendLine($"        using var cts_{stepPascal} = new System.Threading.CancellationTokenSource({step.Timeout.Value});");
+                    sb.AppendLine($"        var token_{stepPascal} = cts_{stepPascal}.Token;");
+                }
+                else
+                {
+                    sb.AppendLine($"        var token_{stepPascal} = System.Threading.CancellationToken.None;");
                 }
 
                 if (!string.IsNullOrEmpty(step.WorkflowId) && !step.WorkflowId!.StartsWith("$", StringComparison.Ordinal))
                 {
                     var subPascal = RuntimeExpression.ToPascalIdentifier(step.WorkflowId!);
-                    sb.AppendLine($"        var subResult_{RuntimeExpression.ToPascalIdentifier(step.StepId)} = await {subPascal}Async(new {subPascal}Input());");
+                    sb.AppendLine($"        _ = token_{stepPascal};");
+                    sb.AppendLine($"        var subResult_{stepPascal} = await {subPascal}Async(new {subPascal}Input());");
                 }
                 else
                 {
+                    var targetOp = step.OperationId ?? step.OperationPath ?? step.ChannelPath ?? step.WorkflowId!;
+                    sb.AppendLine($"        using var req_{stepPascal} = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, {dq}https://localhost/{EscapeCSharp(targetOp)}{dq});");
+                    if (step.Parameters != null)
+                    {
+                        foreach (var param in step.Parameters)
+                        {
+                            var pName = param.Name ?? param.Reference!;
+                            var pVal = param.Value?.ToString() ?? string.Empty;
+                            sb.AppendLine($"        req_{stepPascal}.Options.Set(new System.Net.Http.HttpRequestOptionsKey<string>({dq}{EscapeCSharp(pName)}{dq}), {dq}{EscapeCSharp(pVal)}{dq});");
+                        }
+                    }
+
+                    sb.AppendLine($"        _ = _httpClient;");
+                    sb.AppendLine($"        _ = token_{stepPascal};");
                     sb.AppendLine("        await System.Threading.Tasks.Task.CompletedTask;");
                 }
 
@@ -260,11 +375,49 @@ namespace Cdd.OpenApi.Arazzo.Clients
         /// <param name="defaultSummary">Fallback summary text.</param>
         internal static void AppendDocMetadataHeader(StringBuilder sb, ArazzoDocument doc, string defaultSummary)
         {
+            var dq = StringEscaper.DoubleQuote;
             var summaryText = doc.Info.Summary ?? defaultSummary;
             sb.AppendLine($"/// <summary>{EscapeXml(summaryText)}</summary>");
             sb.AppendLine($"/// <arazzo-title>{EscapeXml(doc.Info.Title)}</arazzo-title>");
             sb.AppendLine($"/// <arazzo-info-version>{EscapeXml(doc.Info.Version)}</arazzo-info-version>");
             sb.AppendLine($"/// <arazzo-version>{EscapeXml(doc.Arazzo)}</arazzo-version>");
+            if (!string.IsNullOrEmpty(doc.Self))
+            {
+                sb.AppendLine($"/// <arazzo-self>{EscapeXml(doc.Self!)}</arazzo-self>");
+            }
+
+            if (!string.IsNullOrEmpty(doc.Info.Description))
+            {
+                sb.AppendLine($"/// <arazzo-description>{EscapeXml(doc.Info.Description!)}</arazzo-description>");
+            }
+
+            if (doc.Info.Extensions != null)
+            {
+                foreach (var ext in doc.Info.Extensions)
+                {
+                    sb.AppendLine($"/// <arazzo-info-ext key={dq}{EscapeXml(ext.Key)}{dq}>{EscapeXml(ext.Value.GetRawText())}</arazzo-info-ext>");
+                }
+            }
+
+            foreach (var sd in doc.SourceDescriptions)
+            {
+                var sdJson = JsonSerializer.Serialize(sd, ArazzoJsonContext.Default.ArazzoSourceDescription);
+                sb.AppendLine($"/// <arazzo-source name={dq}{EscapeXml(sd.Name)}{dq}>{EscapeXml(sdJson)}</arazzo-source>");
+            }
+
+            if (doc.Components != null)
+            {
+                var compJson = JsonSerializer.Serialize(doc.Components, ArazzoJsonContext.Default.ArazzoComponents);
+                sb.AppendLine($"/// <arazzo-components>{EscapeXml(compJson)}</arazzo-components>");
+            }
+
+            if (doc.Extensions != null)
+            {
+                foreach (var ext in doc.Extensions)
+                {
+                    sb.AppendLine($"/// <arazzo-ext key={dq}{EscapeXml(ext.Key)}{dq}>{EscapeXml(ext.Value.GetRawText())}</arazzo-ext>");
+                }
+            }
         }
 
         /// <summary>

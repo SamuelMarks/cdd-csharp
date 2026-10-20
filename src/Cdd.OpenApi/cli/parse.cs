@@ -11,9 +11,29 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.CliModule
 {
-    /// <summary>Parses C# command-line interface (CLI) classes into <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Parses C# command-line interface (CLI) classes into <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Parse
     {
+        /// <summary>
+        /// Extracts a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances and path metadata by analyzing command switch statements in a C# CLI class.
+        /// </summary>
+        /// <param name="classNode">The C# CLI class syntax node to analyze.</param>
+        /// <returns>A tuple of extracted <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances and path metadata.</returns>
+        public static (List<Cdd.OpenApi.Ir.IrEndpoint> Endpoints, Dictionary<string, Cdd.OpenApi.Ir.IrPathMetadata> PathMetadata) ToEndpoints(ClassDeclarationSyntax classNode)
+        {
+            var paths = ToPaths(classNode);
+            var metadata = new Dictionary<string, Cdd.OpenApi.Ir.IrPathMetadata>();
+            foreach (var kvp in paths)
+            {
+                metadata[kvp.Key] = new Cdd.OpenApi.Ir.IrPathMetadata
+                {
+                    Parameters = kvp.Value.Parameters
+                };
+            }
+
+            return (Cdd.OpenApi.Common.OperationHelpers.ExtractEndpointsFromPaths(paths), metadata);
+        }
+
         /// <summary>
         /// Extracts an <see cref="OpenApiPaths"/> object by analyzing command switch statements in a C# CLI class.
         /// </summary>

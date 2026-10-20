@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Cdd.OpenApi
 {
     /// <summary>
-    /// Orchestrates C# code generation (Client SDK workflow orchestrators, DTOs, Client SDK CLI workflow runners, Server E2E workflow tests, and stateful mocks) from an <see cref="ArazzoDocument"/>.
+    /// Orchestrates C# code generation (Client SDK workflow orchestrators, DTOs, Client SDK CLI workflow runners, Server E2E workflow tests, and stateful mocks) from an <see cref="ArazzoDocument"/> or <see cref="IrService"/>.
     /// </summary>
     public static class ArazzoCodeGenerator
     {
@@ -39,7 +39,29 @@ namespace Cdd.OpenApi
                 throw new ArgumentNullException(nameof(doc));
             }
 
-            doc = IrService.FromArazzo(doc).ToArazzo();
+            return GenerateFromIr(IrService.FromArazzo(doc), baseNamespace, type, tests, sourceOpenApiDocs);
+        }
+
+        /// <summary>
+        /// Generates C# source files from an <see cref="IrService"/> and optional linked <see cref="OpenApiDocument"/> specifications.
+        /// </summary>
+        /// <param name="ir">The source <see cref="IrService"/>.</param>
+        /// <param name="baseNamespace">The root C# namespace for generated files.</param>
+        /// <param name="type">The target generation mode (<c>Sdk</c>, <c>SdkCli</c>, <c>Server</c>, or <c>All</c>).</param>
+        /// <param name="tests">Whether to also emit xUnit workflow test files.</param>
+        /// <param name="sourceOpenApiDocs">Optional map of source description names to linked <see cref="OpenApiDocument"/> instances.</param>
+        /// <returns>A list of <see cref="GeneratedCode"/> entries ready to be written to disk.</returns>
+        public static List<GeneratedCode> GenerateFromIr(
+            IrService ir,
+            string baseNamespace = "Generated",
+            GenerateType type = GenerateType.All,
+            bool tests = false,
+            IDictionary<string, OpenApiDocument>? sourceOpenApiDocs = null)
+        {
+            if (ir == null)
+            {
+                throw new ArgumentNullException(nameof(ir));
+            }
 
             var results = new List<GeneratedCode>();
             if (sourceOpenApiDocs != null)
@@ -51,10 +73,10 @@ namespace Cdd.OpenApi
                 }
             }
 
-            var prefix = RuntimeExpression.ToPascalIdentifier(doc.Info.Title);
+            var prefix = RuntimeExpression.ToPascalIdentifier(ir.Title);
             var orchestratorClassName = $"{prefix}Workflows";
 
-            var modelNodes = Arazzo.Clients.Emit.ToWorkflowModels(doc);
+            var modelNodes = Arazzo.Clients.Emit.ToWorkflowModelsFromIr(ir);
             if (modelNodes.Count > 0)
             {
                 var wfModelsNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Workflows"))
@@ -68,7 +90,7 @@ namespace Cdd.OpenApi
 
             if (type == GenerateType.All || type == GenerateType.Sdk || type == GenerateType.SdkCli)
             {
-                var orchestratorNode = Arazzo.Clients.Emit.ToWorkflowOrchestrator(orchestratorClassName, doc);
+                var orchestratorNode = Arazzo.Clients.Emit.ToWorkflowOrchestratorFromIr(orchestratorClassName, ir);
                 var wfNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Workflows"))
                     .AddMembers(orchestratorNode);
                 results.Add(new GeneratedCode
@@ -81,7 +103,7 @@ namespace Cdd.OpenApi
             if (type == GenerateType.All || type == GenerateType.SdkCli)
             {
                 var cliClassName = $"{prefix}WorkflowCli";
-                var cliNode = Arazzo.Cli.Emit.ToWorkflowCli(cliClassName, orchestratorClassName, doc);
+                var cliNode = Arazzo.Cli.Emit.ToWorkflowCliFromIr(cliClassName, orchestratorClassName, ir);
                 var cliNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Cli"))
                     .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Workflows")))
                     .AddMembers(cliNode);
@@ -95,7 +117,7 @@ namespace Cdd.OpenApi
             if (type == GenerateType.All || type == GenerateType.Server)
             {
                 var mockClassName = $"{prefix}WorkflowMock";
-                var mockNode = Arazzo.Servers.Emit.ToWorkflowMock(mockClassName, doc);
+                var mockNode = Arazzo.Servers.Emit.ToWorkflowMockFromIr(mockClassName, ir);
                 var mockNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Mocks"))
                     .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Workflows")))
                     .AddMembers(mockNode);
@@ -110,7 +132,7 @@ namespace Cdd.OpenApi
             {
                 var testsClassName = $"{prefix}WorkflowTests";
                 var targetRunner = (type == GenerateType.Server) ? $"{prefix}WorkflowMock" : orchestratorClassName;
-                var testNode = Arazzo.Servers.Emit.ToWorkflowTests(testsClassName, targetRunner, doc);
+                var testNode = Arazzo.Servers.Emit.ToWorkflowTestsFromIr(testsClassName, targetRunner, ir);
                 var testsNs = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName($"{baseNamespace}.Tests"))
                     .AddUsings(
                         SyntaxFactory.UsingDirective(SyntaxFactory.ParseName($"{baseNamespace}.Workflows")),

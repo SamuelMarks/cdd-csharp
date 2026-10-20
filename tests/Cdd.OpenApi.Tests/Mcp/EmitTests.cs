@@ -1,3 +1,7 @@
+// <copyright file="EmitTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Linq;
 using Cdd.OpenApi.Mcp;
 using Cdd.OpenApi.Models;
@@ -6,8 +10,10 @@ using Xunit;
 
 namespace Cdd.OpenApi.Tests.Mcp
 {
+    /// <summary>Verifies or exercises emit tests.</summary>
     public class EmitTests
     {
+        /// <summary>Verifies or exercises to mcp server generates class.</summary>
         [Fact]
         public void ToMcpServer_GeneratesClass()
         {
@@ -43,6 +49,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("ApiClientCli.Main", code);
         }
 
+        /// <summary>Verifies or exercises to mcp server null paths generates empty server.</summary>
         [Fact]
         public void ToMcpServer_NullPaths_GeneratesEmptyServer()
         {
@@ -56,6 +63,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("Console.OpenStandardInput", code);
         }
 
+        /// <summary>Verifies or exercises to mcp transport generates interface.</summary>
         [Fact]
         public void ToMcpTransport_GeneratesInterface()
         {
@@ -67,6 +75,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("ReceiveAsync", code);
         }
 
+        /// <summary>Verifies or exercises to mcp models generates models.</summary>
         [Fact]
         public void ToMcpModels_GeneratesModels()
         {
@@ -80,6 +89,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.True(hasTool);
         }
 
+        /// <summary>Verifies or exercises to mcp server snake case coverage.</summary>
         [Fact]
         public void ToMcpServer_SnakeCase_Coverage()
         {
@@ -102,6 +112,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("test_post_operation", code); // snake case
         }
 
+        /// <summary>Verifies or exercises to mcp server no operation id fallback.</summary>
         [Fact]
         public void ToMcpServer_NoOperationId_Fallback()
         {
@@ -122,6 +133,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("puttest3id", code); // fallback name from path
         }
 
+        /// <summary>Verifies or exercises to mcp server no parameters no summary coverage.</summary>
         [Fact]
         public void ToMcpServer_NoParameters_NoSummary_Coverage()
         {
@@ -150,6 +162,7 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Contains("param1", code);
         }
 
+        /// <summary>Verifies or exercises to snake case empty string coverage.</summary>
         [Fact]
         public void ToSnakeCase_EmptyString_Coverage()
         {

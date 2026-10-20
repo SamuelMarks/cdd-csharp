@@ -5,8 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using Cdd.OpenApi.Arazzo.Clients;
 using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models.Arazzo;
@@ -16,10 +14,20 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi.Arazzo.Cli
 {
     /// <summary>
-    /// Parses C# Client SDK CLI workflow runner classes back into an <see cref="ArazzoDocument"/>.
+    /// Parses C# Client SDK CLI workflow runner classes back into an <see cref="Cdd.OpenApi.Ir.IrService"/> or <see cref="ArazzoDocument"/>.
     /// </summary>
     public static class Parse
     {
+        /// <summary>
+        /// Parses one or more C# CLI workflow runner class declarations into an <see cref="Cdd.OpenApi.Ir.IrService"/>.
+        /// </summary>
+        /// <param name="classes">The collection of Roslyn <see cref="ClassDeclarationSyntax"/> nodes to inspect.</param>
+        /// <returns>The reconstructed <see cref="Cdd.OpenApi.Ir.IrService"/>.</returns>
+        public static Cdd.OpenApi.Ir.IrService ToIrService(IEnumerable<ClassDeclarationSyntax> classes)
+        {
+            return Cdd.OpenApi.Ir.IrService.FromArazzo(ToArazzoDocument(classes));
+        }
+
         /// <summary>
         /// Parses one or more C# CLI workflow runner class declarations into an <see cref="ArazzoDocument"/>.
         /// </summary>
@@ -45,6 +53,20 @@ namespace Cdd.OpenApi.Arazzo.Cli
                 Clients.Parse.ParseClassMetadata(cls, doc);
                 foreach (var method in cls.Members.OfType<MethodDeclarationSyntax>())
                 {
+                    var taggedWorkflows = Clients.Parse.ExtractWorkflowsFromXmlTags(method);
+                    if (taggedWorkflows.Count > 0)
+                    {
+                        foreach (var taggedWf in taggedWorkflows)
+                        {
+                            if (!doc.Workflows.Any(w => w.WorkflowId == taggedWf.WorkflowId))
+                            {
+                                doc.Workflows.Add(taggedWf);
+                            }
+                        }
+
+                        continue;
+                    }
+
                     if (method.Body == null) continue;
                     foreach (var stmt in method.Body.Statements)
                     {
@@ -82,15 +104,6 @@ namespace Cdd.OpenApi.Arazzo.Cli
             {
                 var caseLabel = section.Labels.OfType<CaseSwitchLabelSyntax>().FirstOrDefault();
                 if (caseLabel == null) continue;
-
-                var b64 = Clients.Parse.ExtractWorkflowSpecFromText(section.ToFullString());
-                if (!string.IsNullOrWhiteSpace(b64))
-                {
-                    var bytes = Convert.FromBase64String(b64!);
-                    var wfFromSpec = JsonSerializer.Deserialize(Encoding.UTF8.GetString(bytes), ArazzoJsonContext.Default.ArazzoWorkflow)!;
-                    doc.Workflows.Add(wfFromSpec);
-                    continue;
-                }
 
                 var wfId = caseLabel.Value.ToString().Trim().Replace(dq, string.Empty);
                 var wf = new ArazzoWorkflow

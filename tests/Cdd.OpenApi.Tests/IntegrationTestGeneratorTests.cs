@@ -1,11 +1,17 @@
+// <copyright file="IntegrationTestGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises integration test generator tests.</summary>
     public class IntegrationTestGeneratorTests
     {
+        /// <summary>Verifies or exercises generate covers all branches.</summary>
         [Fact]
         public void Generate_CoversAllBranches()
         {
@@ -166,6 +172,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("TestGettestAsync", generated);
         }
 
+        /// <summary>Verifies or exercises generate fallback to base url.</summary>
         [Fact]
         public void Generate_FallbackToBaseUrl()
         {
@@ -177,6 +184,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("http://localhost:8080/mybase/", generated);
         }
 
+        /// <summary>Verifies or exercises generate invalid url in server hits else.</summary>
         [Fact]
         public void Generate_InvalidUrlInServer_HitsElse()
         {
@@ -191,6 +199,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("http://localhost:8080/not-an-absolute-url/", generated);
         }
 
+        /// <summary>Verifies or exercises generate request body types.</summary>
         [Fact]
         public void Generate_RequestBody_Types()
         {
@@ -209,6 +218,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises generate doc null returns empty.</summary>
         [Fact]
         public void Generate_DocNull_ReturnsEmpty()
         {
@@ -228,6 +238,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("http://localhost:8080/v2/", IntegrationTestGenerator.Generate(doc4));
         }
 
+        /// <summary>Verifies or exercises generate no servers or base path fallback.</summary>
         [Fact]
         public void Generate_NoServersOrBasePath_Fallback()
         {

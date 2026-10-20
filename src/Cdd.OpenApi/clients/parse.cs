@@ -11,9 +11,19 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.Clients
 {
-    /// <summary>Parses C# HTTP client class declarations into <see cref="OpenApiPaths"/> definitions.</summary>
+    /// <summary>Parses C# HTTP client class declarations into <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and <see cref="OpenApiPaths"/> definitions.</summary>
     public static class Parse
     {
+        /// <summary>
+        /// Extracts a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances by analyzing HTTP client method invocations in a C# class.
+        /// </summary>
+        /// <param name="classNode">The C# client class syntax node to analyze.</param>
+        /// <returns>The extracted list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances.</returns>
+        public static List<Cdd.OpenApi.Ir.IrEndpoint> ToEndpoints(ClassDeclarationSyntax classNode)
+        {
+            return OperationHelpers.ExtractEndpointsFromPaths(ToPaths(classNode));
+        }
+
         /// <summary>
         /// Extracts an <see cref="OpenApiPaths"/> object by analyzing HTTP client method invocations in a C# class.
         /// </summary>

@@ -1,11 +1,18 @@
+// <copyright file="OpenApiParserExceptionsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System;
 using Xunit;
 using Cdd.OpenApi.Parse;
 
 namespace Cdd.OpenApi.Tests.Parse
 {
+    /// <summary>Verifies or exercises open api parser exceptions tests.</summary>
     public class OpenApiParserExceptionsTests
     {
+        /// <summary>Verifies or exercises parse json empty or null input throws argument exception.</summary>
+        /// <param name="input">The input JSON string to test.</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -18,6 +25,7 @@ namespace Cdd.OpenApi.Tests.Parse
             Assert.Contains("JSON content cannot be null or empty", exception.Message);
         }
 
+        /// <summary>Verifies or exercises parse json invalid json throws format exception.</summary>
         [Fact]
         public void ParseJson_InvalidJson_ThrowsFormatException()
         {

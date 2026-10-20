@@ -3,17 +3,27 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cdd.OpenApi.TestsModule
 {
     /// <summary>
-    /// Parses C# test suite classes into OpenAPI path item definitions.
+    /// Parses C# test suite classes into <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> and OpenAPI path item definitions.
     /// </summary>
     public static class Parse
     {
+        /// <summary>
+        /// Converts a test <see cref="ClassDeclarationSyntax"/> into a list of <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances.
+        /// </summary>
+        /// <param name="classNode">The Roslyn class syntax node representing an API test suite.</param>
+        /// <returns>A list of extracted <see cref="Cdd.OpenApi.Ir.IrEndpoint"/> instances.</returns>
+        public static List<Cdd.OpenApi.Ir.IrEndpoint> ToEndpoints(ClassDeclarationSyntax classNode)
+        {
+            return OperationHelpers.ExtractEndpointsFromPaths(ToPaths(classNode));
+        }
+
         /// <summary>
         /// Converts a test <see cref="ClassDeclarationSyntax"/> into an OpenAPI paths dictionary.
         /// </summary>
@@ -21,35 +31,7 @@ namespace Cdd.OpenApi.TestsModule
         /// <returns>A dictionary mapping route paths to <see cref="OpenApiPathItem"/> instances.</returns>
         public static IDictionary<string, OpenApiPathItem> ToPaths(ClassDeclarationSyntax classNode)
         {
-            var paths = new Dictionary<string, OpenApiPathItem>();
-            foreach (var method in classNode.Members.OfType<MethodDeclarationSyntax>())
-            {
-                var name = method.Identifier.Text;
-                if (name.EndsWith("Test")) name = name.Substring(0, name.Length - 4);
-                var route = "/" + name.ToLowerInvariant();
-                var op = new OpenApiOperation { OperationId = name };
-                var pathItem = new OpenApiPathItem();
-
-                if (name.StartsWith("Post") && name.Length > 4)
-                {
-                    pathItem.Post = op;
-                }
-                else if (name.StartsWith("Put") && name.Length > 3)
-                {
-                    pathItem.Put = op;
-                }
-                else if (name.StartsWith("Delete") && name.Length > 6)
-                {
-                    pathItem.Delete = op;
-                }
-                else
-                {
-                    pathItem.Get = op;
-                }
-
-                paths[route] = pathItem;
-            }
-            return paths;
+            return OperationHelpers.ParseHeuristicPaths(classNode, stripTestSuffix: true);
         }
     }
 }

@@ -1,3 +1,7 @@
+// <copyright file="SpecGeneratorTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -5,8 +9,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises spec generator tests.</summary>
     public class SpecGeneratorTests
     {
+        /// <summary>Verifies or exercises generate info tags returns correct document.</summary>
         [Fact]
         public void Generate_InfoTags_ReturnsCorrectDocument()
         {
@@ -71,6 +77,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("User management", doc.Tags[0].Description);
         }
 
+        /// <summary>Verifies or exercises generate security tags returns security scheme.</summary>
         [Fact]
         public void Generate_SecurityTags_ReturnsSecurityScheme()
         {
@@ -121,6 +128,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("Access to admin", scheme.Flows.ClientCredentials.Scopes["admin"]);
         }
 
+        /// <summary>Verifies or exercises generate security tags password flow.</summary>
         [Fact]
         public void Generate_SecurityTags_PasswordFlow()
         {
@@ -141,6 +149,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Equal("pets", scheme.Flows.Password.Scopes!["read"]);
         }
 
+        /// <summary>Verifies or exercises generate security tags implicit flow.</summary>
         [Fact]
         public void Generate_SecurityTags_ImplicitFlow()
         {
@@ -158,6 +167,7 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.Implicit);
         }
 
+        /// <summary>Verifies or exercises generate security tags auth code flow.</summary>
         [Fact]
         public void Generate_SecurityTags_AuthCodeFlow()
         {
@@ -175,6 +185,7 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.AuthorizationCode);
         }
 
+        /// <summary>Verifies or exercises generate security tags device flow.</summary>
         [Fact]
         public void Generate_SecurityTags_DeviceFlow()
         {
@@ -192,6 +203,7 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc.Components!.SecuritySchemes!["Bearer"].Flows!.DeviceAuthorization);
         }
 
+        /// <summary>Verifies or exercises generate db context returns schemas.</summary>
         [Fact]
         public void Generate_DbContext_ReturnsSchemas()
         {
@@ -211,6 +223,7 @@ namespace Cdd.OpenApi.Tests
             Assert.True(doc.Components.Schemas.ContainsKey("User"));
         }
 
+        /// <summary>Verifies or exercises generate cli returns paths.</summary>
         [Fact]
         public void Generate_Cli_ReturnsPaths()
         {
@@ -231,6 +244,7 @@ namespace Cdd.OpenApi.Tests
             Assert.True(doc.Paths.ContainsKey("/test"));
         }
 
+        /// <summary>Verifies or exercises generate tests returns paths.</summary>
         [Fact]
         public void Generate_Tests_ReturnsPaths()
         {
@@ -247,6 +261,7 @@ namespace Cdd.OpenApi.Tests
             Assert.True(doc.Paths.ContainsKey("/test1"));
         }
 
+        /// <summary>Verifies or exercises generate mock returns paths.</summary>
         [Fact]
         public void Generate_Mock_ReturnsPaths()
         {
@@ -263,6 +278,7 @@ namespace Cdd.OpenApi.Tests
             Assert.True(doc.Paths.ContainsKey("/mockmethod"));
         }
 
+        /// <summary>Verifies or exercises generate client methods returns paths.</summary>
         [Fact]
         public void Generate_ClientMethods_ReturnsPaths()
         {
@@ -287,6 +303,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises generate client methods other method.</summary>
         [Fact]
         public void Generate_ClientMethods_OtherMethod()
         {
@@ -309,6 +326,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises generate security tags scope no colon2.</summary>
         [Fact]
         public void Generate_SecurityTags_ScopeNoColon2()
         {
@@ -332,6 +350,7 @@ namespace Cdd.OpenApi.Tests
 
 
 
+        /// <summary>Verifies or exercises generate empty security schemes.</summary>
         [Fact]
         public void Generate_EmptySecuritySchemes()
         {
@@ -347,6 +366,10 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc);
         }
 
+        /// <summary>Verifies or exercises generate security tags oauth scopes formats.</summary>
+        /// <param name="scopesTag">The scopes tag string.</param>
+        /// <param name="expectedKey">The expected scope key.</param>
+        /// <param name="expectedDescription">The expected scope description.</param>
         [Theory]
         [InlineData("admin", "admin", "Access to admin")]
         [InlineData("admin:admin", "admin", "admin")]
@@ -372,6 +395,7 @@ namespace Cdd.OpenApi.Tests
         }
 
 
+        /// <summary>Verifies or exercises generate empty components sets to null.</summary>
         [Fact]
         public void Generate_EmptyComponents_SetsToNull()
         {
@@ -387,6 +411,7 @@ namespace Cdd.OpenApi.Tests
             Assert.Null(doc.Components);
         }
 
+        /// <summary>Verifies or exercises generate empty doc removes empty collections.</summary>
         [Fact]
         public void Generate_EmptyDoc_RemovesEmptyCollections()
         {

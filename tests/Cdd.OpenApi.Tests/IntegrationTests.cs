@@ -1,3 +1,7 @@
+// <copyright file="IntegrationTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.IO;
 using Xunit;
 using Cdd.OpenApi.Parse;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Models;
 
 namespace Cdd.OpenApi.Tests
 {
+    /// <summary>Verifies or exercises integration tests.</summary>
     public class IntegrationTests
     {
+        /// <summary>Verifies or exercises parse and emit preserves information.</summary>
         [Fact]
         public void ParseAndEmit_PreservesInformation()
         {
@@ -98,6 +104,7 @@ namespace Cdd.OpenApi.Tests
             Assert.NotNull(doc2.Components?.Schemas?["Pet"].AnyOf);
             Assert.NotNull(doc2.Components?.Schemas?["Pet"].OneOf);
         }
+        /// <summary>Verifies or exercises generates info from program class tags.</summary>
         [Fact]
         public void GeneratesInfoFromProgramClassTags()
         {
@@ -124,6 +131,7 @@ public class Program
             Assert.NotNull(doc.Info.License);
             Assert.Equal("MIT", doc.Info.License.Name);
         }
+        /// <summary>Verifies or exercises generates servers from program class tags.</summary>
         [Fact]
         public void GeneratesServersFromProgramClassTags()
         {
@@ -142,6 +150,7 @@ public class Program
             Assert.Equal("https://api.example.com/v1", server.Url);
             Assert.Equal("Production Server", server.Description);
         }
+        /// <summary>Verifies or exercises generates external docs from program class tags.</summary>
         [Fact]
         public void GeneratesExternalDocsFromProgramClassTags()
         {
@@ -159,6 +168,7 @@ public class Program
             Assert.Equal("https://example.com/docs", doc.ExternalDocs.Url);
             Assert.Equal("Find more info here", doc.ExternalDocs.Description);
         }
+        /// <summary>Verifies or exercises generates schema with discriminator and xml.</summary>
         [Fact]
         public void GeneratesSchemaWithDiscriminatorAndXml()
         {
@@ -190,6 +200,7 @@ public class Program
             Assert.NotNull(nameProp?.Xml);
             Assert.True(nameProp.Xml.Wrapped);
         }
+        /// <summary>Verifies or exercises generates security scheme from authorize attribute.</summary>
         [Fact]
         public void GeneratesSecuritySchemeFromAuthorizeAttribute()
         {
@@ -228,6 +239,7 @@ public class Program
             var req = Assert.Single(doc.Security);
             Assert.True(req.ContainsKey("OAuth2"));
         }
+        /// <summary>Verifies or exercises generates security scheme from authorize attribute with more oauth flows.</summary>
         [Fact]
         public void GeneratesSecuritySchemeFromAuthorizeAttribute_WithMoreOAuthFlows()
         {
@@ -255,6 +267,7 @@ public class Program
             Assert.Equal("https://example.com/token", scheme.Flows.DeviceAuthorization.TokenUrl);
             Assert.Equal("https://example.com/refresh", scheme.Flows.DeviceAuthorization.RefreshUrl);
         }
+        /// <summary>Verifies or exercises generates security scheme from authorize attribute with metadata and deprecated.</summary>
         [Fact]
         public void GeneratesSecuritySchemeFromAuthorizeAttribute_WithMetadataAndDeprecated()
         {
@@ -277,6 +290,7 @@ public class Program
             Assert.Equal("https://meta.com/.well-known", scheme.Oauth2MetadataUrl);
             Assert.True(scheme.Deprecated);
         }
+        /// <summary>Verifies or exercises generates security scheme from authorize attribute with multiple security requirements.</summary>
         [Fact]
         public void GeneratesSecuritySchemeFromAuthorizeAttribute_WithMultipleSecurityRequirements()
         {

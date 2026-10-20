@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Cdd.OpenApi
 {
     /// <summary>
-    /// Synthesizes an <see cref="ArazzoDocument"/> by reverse-parsing C# source files (SDK workflow orchestrators, CLI workflow runners, or Server E2E workflow tests/mocks).
+    /// Synthesizes an <see cref="ArazzoDocument"/> or <see cref="IrService"/> by reverse-parsing C# source files (SDK workflow orchestrators, CLI workflow runners, or Server E2E workflow tests/mocks).
     /// </summary>
     public static class ArazzoSpecGenerator
     {
@@ -39,6 +39,16 @@ namespace Cdd.OpenApi
         /// <param name="csharpSourceCodes">The collection of C# source code strings.</param>
         /// <returns>The reconstructed <see cref="ArazzoDocument"/>.</returns>
         public static ArazzoDocument Generate(IEnumerable<string> csharpSourceCodes)
+        {
+            return GenerateIr(csharpSourceCodes).ToArazzo();
+        }
+
+        /// <summary>
+        /// Parses multiple C# source code strings into a unified <see cref="IrService"/>.
+        /// </summary>
+        /// <param name="csharpSourceCodes">The collection of C# source code strings.</param>
+        /// <returns>The reconstructed <see cref="IrService"/>.</returns>
+        public static IrService GenerateIr(IEnumerable<string> csharpSourceCodes)
         {
             if (csharpSourceCodes == null)
             {
@@ -72,24 +82,22 @@ namespace Cdd.OpenApi
 
             if (nonCliOrchestratorClasses.Count > 0)
             {
-                var doc = Arazzo.Clients.Parse.ToArazzoDocument(allClasses.Where(c => !c.Identifier.Text.EndsWith("Cli", StringComparison.Ordinal)));
-                return IrService.FromArazzo(doc).ToArazzo();
+                return Arazzo.Clients.Parse.ToIrService(allClasses.Where(c => !c.Identifier.Text.EndsWith("Cli", StringComparison.Ordinal)));
             }
 
             if (cliClasses.Count > 0)
             {
-                var doc = Arazzo.Cli.Parse.ToArazzoDocument(cliClasses);
-                return IrService.FromArazzo(doc).ToArazzo();
+                return Arazzo.Cli.Parse.ToIrService(cliClasses);
             }
 
-            var fallbackDoc = Arazzo.Clients.Parse.ToArazzoDocument(allClasses);
-            fallbackDoc.Workflows.Add(new ArazzoWorkflow
+            var fallbackIr = Arazzo.Clients.Parse.ToIrService(allClasses);
+            fallbackIr.Workflows.Add(new IrWorkflow
             {
                 WorkflowId = "defaultWorkflow",
                 Summary = "Synthesized default workflow",
-                Steps = new List<ArazzoStep>
+                Steps = new List<IrWorkflowStep>
                 {
-                    new ArazzoStep
+                    new IrWorkflowStep
                     {
                         StepId = "step1",
                         OperationId = "defaultOperation"
@@ -97,7 +105,7 @@ namespace Cdd.OpenApi
                 }
             });
 
-            return IrService.FromArazzo(fallbackDoc).ToArazzo();
+            return fallbackIr;
         }
     }
 }

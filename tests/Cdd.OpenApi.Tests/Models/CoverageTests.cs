@@ -1,3 +1,7 @@
+// <copyright file="CoverageTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using System.Collections.Generic;
 using Xunit;
 using Cdd.OpenApi.Models;
@@ -6,8 +10,10 @@ using Cdd.OpenApi.Emit;
 
 namespace Cdd.OpenApi.Tests.Models
 {
+    /// <summary>Verifies or exercises coverage tests.</summary>
     public class CoverageTests
     {
+        /// <summary>Verifies or exercises open api parameter properties and round trip.</summary>
         [Fact]
         public void OpenApiParameter_PropertiesAndRoundTrip()
         {
@@ -60,6 +66,8 @@ namespace Cdd.OpenApi.Tests.Models
             var parsedDoc = new OpenApiParser().ParseJson(json);
             var parsedParam = parsedDoc.Paths!["/items"].Get!.Parameters![0];
 
+            OpenApiAny? nullStringAny = (string?)null;
+            Assert.Null(nullStringAny);
             Assert.Equal("name", parsedParam.Name);
             Assert.Equal("query", parsedParam.In);
             Assert.Equal("desc", parsedParam.Description);
@@ -92,6 +100,7 @@ namespace Cdd.OpenApi.Tests.Models
             Assert.Equal(2, parsedParam.MultipleOf);
         }
 
+        /// <summary>Verifies or exercises open api security scheme properties and round trip.</summary>
         [Fact]
         public void OpenApiSecurityScheme_PropertiesAndRoundTrip()
         {

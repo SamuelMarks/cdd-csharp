@@ -1,3 +1,7 @@
+// <copyright file="DocstringsTests.cs" company="Cdd.OpenApi">
+// Copyright (c) Cdd.OpenApi. All rights reserved.
+// </copyright>
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,8 +12,10 @@ using System.Collections.Generic;
 
 namespace Cdd.OpenApi.Tests.Docstrings
 {
+    /// <summary>Verifies or exercises docstrings tests.</summary>
     public class DocstringsTests
     {
+        /// <summary>Verifies or exercises parse get summary extracts text correctly.</summary>
         [Fact]
         public void Parse_GetSummary_ExtractsTextCorrectly()
         {
@@ -28,6 +34,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Equal("This is a test summary. It spans multiple lines.", summary);
         }
 
+        /// <summary>Verifies or exercises parse get summary no summary returns null.</summary>
         [Fact]
         public void Parse_GetSummary_NoSummary_ReturnsNull()
         {
@@ -40,6 +47,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Null(summary);
         }
 
+        /// <summary>Verifies or exercises parse get summary no summary element returns null.</summary>
         [Fact]
         public void Parse_GetSummary_NoSummaryElement_ReturnsNull()
         {
@@ -56,6 +64,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Null(summary);
         }
 
+        /// <summary>Verifies or exercises emit create summary creates valid trivia.</summary>
         [Fact]
         public void Emit_CreateSummary_CreatesValidTrivia()
         {
@@ -67,6 +76,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Contains("</summary>", triviaString);
         }
 
+        /// <summary>Verifies or exercises emit create summary null or empty returns empty list.</summary>
         [Fact]
         public void Emit_CreateSummary_NullOrEmpty_ReturnsEmptyList()
         {
@@ -74,6 +84,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Empty(trivia);
         }
 
+        /// <summary>Verifies or exercises emit with summary attaches to node.</summary>
         [Fact]
         public void Emit_WithSummary_AttachesToNode()
         {
@@ -86,6 +97,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Contains("TestClass", code);
         }
 
+        /// <summary>Verifies or exercises parse full coverage.</summary>
         [Fact]
         public void Parse_FullCoverage()
         {
@@ -129,6 +141,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Single(servers.ElementAt(2).Variables!);
         }
 
+        /// <summary>Verifies or exercises emit with tag null or empty text returns node.</summary>
         [Fact]
         public void Emit_WithTag_NullOrEmptyText_ReturnsNode()
         {
@@ -137,6 +150,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Same(classNode, classWithDocs);
         }
 
+        /// <summary>Verifies or exercises emit with tag with attributes null or empty text and no attributes returns node.</summary>
         [Fact]
         public void Emit_WithTagWithAttributes_NullOrEmptyTextAndNoAttributes_ReturnsNode()
         {
@@ -152,6 +166,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Same(classNode, result2);
         }
 
+        /// <summary>Verifies or exercises emit with tag with attributes null or empty text with attributes adds tag.</summary>
         [Fact]
         public void Emit_WithTagWithAttributes_NullOrEmptyTextWithAttributes_AddsTag()
         {
@@ -165,6 +180,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             Assert.Contains("</mytag>", code);
         }
 
+        /// <summary>Verifies or exercises emit create tag with attributes null or empty text and no attributes returns empty.</summary>
         [Fact]
         public void Emit_CreateTagWithAttributes_NullOrEmptyTextAndNoAttributes_ReturnsEmpty()
         {
@@ -179,6 +195,7 @@ namespace Cdd.OpenApi.Tests.Docstrings
             var result3 = Cdd.OpenApi.Docstrings.Emit.CreateTagWithAttributes("mytag", validAttrs, null!);
             Assert.NotEmpty(result3);
         }
+        /// <summary>Verifies or exercises parse get servers edge cases.</summary>
         [Fact]
         public void Parse_GetServers_EdgeCases()
         {
