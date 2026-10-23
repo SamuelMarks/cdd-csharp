@@ -57,6 +57,9 @@ namespace Cdd.OpenApi.Tests.Clients
             AssertHelper.ContainsNoWhitespace("GetUsersAsync()", code);
             AssertHelper.ContainsNoWhitespace("CreateUserAsync(int id)", code);
             AssertHelper.ContainsNoWhitespace("PutusersidAsync()", code);
+            AssertHelper.ContainsNoWhitespace("public interface IMcpTransport", code);
+            AssertHelper.ContainsNoWhitespace("ExecuteOverTransportAsync(IMcpTransport transport, string payload)", code);
+            Assert.DoesNotContain("Cdd.OpenApi", code);
 
             // Should contain mapping types correctly
             // Let's test all mapped types:
