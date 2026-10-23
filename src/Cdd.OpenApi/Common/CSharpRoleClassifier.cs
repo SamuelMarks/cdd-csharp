@@ -31,7 +31,10 @@ namespace Cdd.OpenApi.Common
         TestSuite,
 
         /// <summary>An Entity Framework Core <c>DbContext</c> subclass containing <c>DbSet&lt;T&gt;</c> properties.</summary>
-        DbContext
+        DbContext,
+
+        /// <summary>A Model Context Protocol (MCP) server class exposing tools and resources.</summary>
+        McpServer
     }
 
     /// <summary>
@@ -99,6 +102,11 @@ namespace Cdd.OpenApi.Common
             if (className.EndsWith("Tests"))
             {
                 return CSharpClassRole.TestSuite;
+            }
+
+            if (Mcp.Parse.IsMcpServerClass(classNode))
+            {
+                return CSharpClassRole.McpServer;
             }
 
             return CSharpClassRole.Model;

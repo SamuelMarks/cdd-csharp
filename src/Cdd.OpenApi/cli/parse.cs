@@ -53,6 +53,22 @@ namespace Cdd.OpenApi.CliModule
                         if (label.Value is LiteralExpressionSyntax literal && literal.Token.IsKind(SyntaxKind.StringLiteralToken))
                         {
                             var commandName = literal.Token.ValueText;
+                            if (commandName == "mcp")
+                            {
+                                paths["/mcp"] = new OpenApiPathItem
+                                {
+                                    Post = new OpenApiOperation
+                                    {
+                                        OperationId = "mcp",
+                                        Summary = "Start the MCP stdio server",
+                                        Responses = new OpenApiResponses
+                                        {
+                                            ["200"] = new OpenApiResponse { Description = "MCP Server started" }
+                                        }
+                                    }
+                                };
+                                continue;
+                            }
 
                             var parameters = new List<OpenApiParameter>();
                             var localDecls = section.Statements.OfType<LocalDeclarationStatementSyntax>();

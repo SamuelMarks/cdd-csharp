@@ -112,7 +112,7 @@ namespace Cdd.OpenApi.Mcp
                                 var typeStr = p.Schema?.Type ?? "string";
                                 if (typeStr == "integer") typeStr = "number";
                                 var descStr = (p.Description ?? "").Replace(@"""", "");
-                                propsSb.Append(@"{""""" + p.Name + @""""":{""""type"""":""""" + typeStr + @""""",""""description"""":""""" + descStr + @"""""}},");
+                                propsSb.Append(@"""""" + p.Name + @""""":{""""type"""":""""" + typeStr + @""""",""""description"""":""""" + descStr + @"""""},");
                                 if (p.Required == true)
                                 {
                                     requiredList.Add(@"""""" + p.Name + @"""""");
@@ -183,23 +183,44 @@ namespace Cdd.OpenApi.Mcp
                     @"var method = methodProp.GetString(); " +
                     @"var id = root.TryGetProperty(""id"", out var idProp) ? idProp.GetRawText() : ""null""; " +
                     @"if (method == ""initialize"") { " +
-                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""protocolVersion"""":""""2024-11-05"""",""""capabilities"""":{""""tools"""":{}},""""serverInfo"""":{""""name"""":""""GeneratedMCP"""",""""version"""":""""1.0.0""""}}}""); " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""protocolVersion"""":""""2024-11-05"""",""""capabilities"""":{""""tools"""":{""""listChanged"""":true},""""resources"""":{""""subscribe"""":true,""""listChanged"""":true},""""prompts"""":{""""listChanged"""":true},""""logging"""":{}},""""serverInfo"""":{""""name"""":""""GeneratedMCP"""",""""version"""":""""1.0.0""""}}}""); " +
                     @"} else if (method == ""notifications/initialized"") { " +
                     @"_initialized = true; " +
                     @"} else if (method == ""ping"") { " +
                     @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{}}""); " +
                     @"} else if (method == ""tools/list"") { " +
+                    @"string? cursor = root.TryGetProperty(""params"", out var lp) && lp.TryGetProperty(""cursor"", out var cp) ? cp.GetString() : null; " +
                     @"string rawJson = @""" + toolsJson + @"""; " +
-                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""tools"""":["" + rawJson + @""]}}""); " +
+                    @"string nextCursorProp = cursor == ""page1"" ? @""""""nextCursor"""":""""page2"""","" : """"; " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{"" + nextCursorProp + @""""""tools"""":["" + rawJson + @""]}}""); " +
+                    @"} else if (method == ""resources/list"") { " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""resources"""":[]}}""); " +
+                    @"} else if (method == ""resources/templates/list"") { " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""resourceTemplates"""":[]}}""); " +
+                    @"} else if (method == ""resources/read"") { " +
+                    @"var uri = root.TryGetProperty(""params"", out var rp) && rp.TryGetProperty(""uri"", out var up) ? (up.GetString() ?? """") : """"; " +
+                    @"if (!IsUriAllowed(uri)) { writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32002,""""message"""":""""URI outside allowed roots or unsupported protocol""""}}""); continue; } " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""contents"""":[{""""uri"""":"""""" + uri + @"""""""",""""mimeType"""":""""text/plain"""",""""text"""":""""ok""""}]}}""); " +
+                    @"} else if (method == ""prompts/list"") { " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""prompts"""":[]}}""); " +
+                    @"} else if (method == ""roots/list"") { " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""roots"""":[]}}""); " +
+                    @"} else if (method == ""sampling/createMessage"") { " +
+                    @"if (ApprovalHandler != null && !ApprovalHandler(""sampling/createMessage"")) { writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32000,""""message"""":""""User rejected sampling request""""}}""); continue; } " +
+                    @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""result"""":{""""role"""":""""assistant"""",""""content"""":{""""type"""":""""text"""",""""text"""":""""approved""""},""""model"""":""""default""""}}""); " +
                     @"} else if (method == ""tools/call"") { " +
+                    @"if (_cancelledRequests.Contains(id.Trim('""'))) { continue; } " +
                     @"if (root.TryGetProperty(""params"", out var paramsProp) && paramsProp.TryGetProperty(""name"", out var nameProp)) { " +
                     @"var toolName = nameProp.GetString(); " +
+                    @"if (ApprovalHandler != null && toolName != null && !ApprovalHandler(toolName)) { writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32000,""""message"""":""""Tool execution rejected by user""""}}""); continue; } " +
+                    @"if (paramsProp.TryGetProperty(""_meta"", out var metaProp) && metaProp.TryGetProperty(""progressToken"", out var ptProp)) { writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""method"""":""""notifications/progress"""",""""params"""":{""""progressToken"""":"""""" + ptProp.GetString() + @"""""""",""""progress"""":1.0,""""total"""":1.0}}""); } " +
                     callsCode + @" " +
                     @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32601,""""message"""":""""Tool not found""""}}""); " +
                     @"} else { " +
                     @"writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32602,""""message"""":""""Invalid params""""}}""); " +
                     @"} " +
                     @"} else if (method == ""notifications/cancelled"") { " +
+                    @"if (root.TryGetProperty(""params"", out var cp) && cp.TryGetProperty(""requestId"", out var reqIdProp)) { _cancelledRequests.Add(reqIdProp.GetRawText().Trim('""')); } " +
                     @"} else if (method == ""exit"") { break; " +
                     @"} else { " +
                     @"if (id != ""null"") { writer.WriteLine(@""{""""jsonrpc"""":""""2.0"""",""""id"""":"" + id + @"" ,""""error"""":{""""code"""":-32601,""""message"""":""""Method not found""""}}""); } " +
@@ -218,10 +239,22 @@ namespace Cdd.OpenApi.Mcp
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                 .WithBody(runMethodBody);
 
+            var isUriAllowedMethod = SyntaxFactory.ParseMemberDeclaration(
+                @"public bool IsUriAllowed(string uri) { " +
+                @"if (string.IsNullOrWhiteSpace(uri) || uri.Contains("".."")) return false; " +
+                @"if (!(uri.StartsWith(""file://"") || uri.StartsWith(""https://"") || uri.StartsWith(""git://"") || uri.StartsWith(""custom://""))) return false; " +
+                @"if (AllowedRoots.Count == 0) return true; " +
+                @"foreach (var r in AllowedRoots) { if (uri.StartsWith(r)) return true; } " +
+                @"return false; }")!;
+
             return SyntaxFactory.ClassDeclaration(className)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                 .AddMembers(
                     SyntaxFactory.ParseMemberDeclaration("private bool _initialized = false;")!,
+                    SyntaxFactory.ParseMemberDeclaration("private readonly System.Collections.Generic.HashSet<string> _cancelledRequests = new System.Collections.Generic.HashSet<string>();")!,
+                    SyntaxFactory.ParseMemberDeclaration("public System.Collections.Generic.List<string> AllowedRoots { get; } = new System.Collections.Generic.List<string>();")!,
+                    SyntaxFactory.ParseMemberDeclaration("public System.Func<string, bool>? ApprovalHandler { get; set; }")!,
+                    isUriAllowedMethod,
                     runMethod
                 );
         }

@@ -281,7 +281,12 @@ namespace Cdd.OpenApi.Clients
                             SyntaxFactory.ReturnStatement(SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.ParseTypeName("System.Threading.Tasks.Task"), SyntaxFactory.IdentifierName("FromResult"))).AddArgumentListArguments(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(""))))))),
                     SyntaxFactory.MethodDeclaration(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>"), "GetResources")
                         .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))));
+                        .WithBody(SyntaxFactory.Block(SyntaxFactory.ReturnStatement(SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName("System.Collections.Generic.List<object>")).WithArgumentList(SyntaxFactory.ArgumentList())))),
+                    SyntaxFactory.ParseMemberDeclaration("public System.Func<string, bool>? ApprovalHandler { get; set; }")!,
+                    SyntaxFactory.ParseMemberDeclaration("public System.Collections.Generic.List<string> AllowedRoots { get; } = new System.Collections.Generic.List<string>();")!,
+                    SyntaxFactory.ParseMemberDeclaration("public System.Threading.Tasks.Task<string> ConnectSseAsync(string endpoint = \"/mcp/sse\") => System.Threading.Tasks.Task.FromResult(endpoint);")!,
+                    SyntaxFactory.ParseMemberDeclaration("public async System.Threading.Tasks.Task<string> ExecuteOverTransportAsync(Cdd.OpenApi.Mcp.IMcpTransport transport, string payload) { await transport.SendAsync(payload); return await transport.ReceiveAsync(); }")!,
+                    SyntaxFactory.ParseMemberDeclaration("public System.Threading.Tasks.Task CancelRequestAsync(string requestId, string? reason = null) => System.Threading.Tasks.Task.CompletedTask;")!);
 
             var mcpPropDecl = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("NativeMcpAdapter"), "Mcp")
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))

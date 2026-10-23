@@ -24,6 +24,16 @@ namespace Cdd.OpenApi.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiAny? Value { get; set; }
 
+        /// <summary>Gets or sets an example of the data structure that MUST be valid according to the relevant Schema Object (OpenAPI 3.2.0).</summary>
+        [JsonPropertyName("dataValue")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public OpenApiAny? DataValue { get; set; }
+
+        /// <summary>Gets or sets an example of the serialized form of the value, including encoding and escaping (OpenAPI 3.2.0).</summary>
+        [JsonPropertyName("serializedValue")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? SerializedValue { get; set; }
+
         /// <summary>Gets or sets a URI that points to the literal example value.</summary>
         [JsonPropertyName("externalValue")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

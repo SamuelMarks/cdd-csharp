@@ -209,7 +209,7 @@ CddGenerator.GenerateServer(new CddConfig
 });
 
 // 3. Reverse-compile existing C# source code back into an OpenAPI 3.2.0 specification
-OpenApiDocument extractedSpec = SpecGenerator.Generate(new[] { File.ReadAllText("Models/Pet.cs") });
+OpenApiDocument extractedSpec = SpecGenerator.Generate(new List<string> { File.ReadAllText("Models/Pet.cs") });
 File.WriteAllText("openapi.json", new OpenApiEmitter().EmitJson(extractedSpec));
 
 // 4. Compile Arazzo 1.1.0 workflows and generate documentation snippet JSON

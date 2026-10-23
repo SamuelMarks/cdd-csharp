@@ -170,5 +170,98 @@ namespace Cdd.OpenApi.Tests.Mcp
             Assert.Equal("", Cdd.OpenApi.Mcp.Emit.ToSnakeCase(""));
             Assert.Equal("get_user_by_id", Cdd.OpenApi.Mcp.Emit.ToSnakeCase("GetUserById"));
         }
+
+        /// <summary>Verifies or exercises mcp parse and spec generator integration.</summary>
+        [Fact]
+        public void McpParse_ExtractsPathsAndEndpoints()
+        {
+            Assert.False(Cdd.OpenApi.Mcp.Parse.IsMcpServerClass(null!));
+            Assert.Empty(Cdd.OpenApi.Mcp.Parse.ToPaths(null!));
+            Cdd.OpenApi.Mcp.Parse.TryExtractToolsFromRawJson("", new OpenApiPaths());
+            Cdd.OpenApi.Mcp.Parse.TryExtractToolsFromRawJson("{}", null!);
+
+            var nonMcpClass = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseMemberDeclaration("public class RegularModel { public int Id { get; set; } }") as ClassDeclarationSyntax;
+            Assert.False(Cdd.OpenApi.Mcp.Parse.IsMcpServerClass(nonMcpClass!));
+
+            var bodyDetectedMcpClass = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseMemberDeclaration(
+                "public class CustomRunner { public void Execute() { var s = \"tools/list\"; } }") as ClassDeclarationSyntax;
+            Assert.True(Cdd.OpenApi.Mcp.Parse.IsMcpServerClass(bodyDetectedMcpClass!));
+            Assert.Empty(Cdd.OpenApi.Mcp.Parse.ToPaths(bodyDetectedMcpClass!));
+
+            var paths = new OpenApiPaths
+            {
+                ["/users"] = new OpenApiPathItem
+                {
+                    Post = new OpenApiOperation
+                    {
+                        OperationId = "create_user",
+                        Summary = "Create user",
+                        Parameters = new System.Collections.Generic.List<OpenApiParameter>
+                        {
+                            new OpenApiParameter { Name = "age", In = "query", Required = true, Description = "User age", Schema = new OpenApiSchema { Type = "integer" } },
+                            new OpenApiParameter { Name = "name", In = "query", Required = false, Description = "", Schema = new OpenApiSchema { Type = "string" } }
+                        }
+                    }
+                }
+            };
+
+            var mcpClass = Cdd.OpenApi.Mcp.Emit.ToMcpServer("UsersMcpServer", paths);
+            Assert.True(Cdd.OpenApi.Mcp.Parse.IsMcpServerClass(mcpClass));
+
+            var extractedPaths = Cdd.OpenApi.Mcp.Parse.ToPaths(mcpClass);
+            Assert.True(extractedPaths.ContainsKey("/create_user"));
+            var op = extractedPaths["/create_user"].Post!;
+            Assert.Equal("create_user", op.OperationId);
+            Assert.Equal("Create user", op.Summary);
+            Assert.Equal(2, op.Parameters!.Count);
+            Assert.Equal("age", op.Parameters[0].Name);
+            Assert.True(op.Parameters[0].Required);
+            Assert.Equal("integer", op.Parameters[0].Schema!.Type);
+
+            var targetPaths = new OpenApiPaths();
+            Cdd.OpenApi.Mcp.Parse.TryExtractToolsFromRawJson("[{\"description\":\"missing name\"},{\"name\":\"\"},{\"name\":\"minimal_tool\",\"inputSchema\":{\"type\":\"object\"}}]", targetPaths);
+            Assert.True(targetPaths.ContainsKey("/minimal_tool"));
+            Assert.Null(targetPaths["/minimal_tool"].Post!.Parameters);
+
+            var specDoc = SpecGenerator.Generate(new[] { mcpClass.ToFormattedString() });
+            Assert.NotNull(specDoc.Paths);
+            Assert.True(specDoc.Paths!.ContainsKey("/create_user"));
+        }
+
+        /// <summary>Verifies or exercises presence, absence, and skipped conformance behavior across OpenAPI 3.2.0, Swagger 2.0, Arazzo 1.1.0, and MCP 1.0.0 targets.</summary>
+        [Fact]
+        public void Conformance_PresenceAbsenceAndSkipped_AcrossSpecsAndTargets()
+        {
+            var minimalOpenApi = new OpenApiDocument
+            {
+                OpenApi = "3.2.0",
+                Info = new OpenApiInfo { Title = "Minimal", Version = "1.0.0" }
+            };
+            var sdkOnlyFiles = CodeGenerator.Generate(
+                minimalOpenApi,
+                baseNamespace: "MinimalNs",
+                type: GenerateType.Sdk,
+                tests: false,
+                mcp: false);
+            Assert.Empty(sdkOnlyFiles);
+
+            var emittedMinimalJson = new Cdd.OpenApi.Emit.OpenApiEmitter().EmitJson(minimalOpenApi);
+            Assert.DoesNotContain("\"paths\"", emittedMinimalJson);
+            Assert.DoesNotContain("\"components\"", emittedMinimalJson);
+            Assert.DoesNotContain("\"webhooks\"", emittedMinimalJson);
+
+            var minimalSwagger = new Cdd.OpenApi.Parse.OpenApiParser().ParseJson(
+                "{\"swagger\":\"2.0\",\"info\":{\"title\":\"SwagMin\",\"version\":\"1.0\"},\"paths\":{}}");
+            Assert.Equal("3.2.0", minimalSwagger.OpenApi);
+            Assert.Empty(minimalSwagger.Paths!);
+
+            var minimalArazzo = Cdd.OpenApi.Arazzo.ArazzoParser.ParseJson(
+                "{\"arazzo\":\"1.1.0\",\"info\":{\"title\":\"ArazzoMin\",\"version\":\"1.0.0\"},\"sourceDescriptions\":[{\"name\":\"api\",\"url\":\"./openapi.json\"}],\"workflows\":[{\"workflowId\":\"wf1\",\"steps\":[{\"stepId\":\"s1\",\"operationId\":\"op1\"}]}]}");
+            var arazzoClientFiles = ArazzoCodeGenerator.Generate(minimalArazzo, "ArazzoNs", type: GenerateType.Sdk, tests: false);
+            Assert.NotEmpty(arazzoClientFiles);
+            var extractedArazzo = ArazzoSpecGenerator.Generate(arazzoClientFiles.Select(f => f.Code));
+            Assert.Equal("ArazzoMin", extractedArazzo.Info.Title);
+            Assert.Null(extractedArazzo.Components);
+        }
     }
 }

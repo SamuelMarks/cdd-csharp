@@ -69,7 +69,9 @@ namespace Cdd.OpenApi.Common
                 foreach (var ex in openApiParam.Examples)
                 {
                     exampleArgs.Add(SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(ex.Key))));
-                    var exVal = ex.Value.Value?.ToString() ?? string.Empty;
+                    var exVal = ex.Value.Value?.ToString()
+                        ?? (ex.Value.DataValue != null ? $"dataValue:{ex.Value.DataValue}" : null)
+                        ?? (ex.Value.SerializedValue != null ? $"serializedValue:{ex.Value.SerializedValue}" : string.Empty);
                     exampleArgs.Add(SyntaxFactory.AttributeArgument(SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(exVal))));
                 }
 
@@ -156,7 +158,13 @@ namespace Cdd.OpenApi.Common
                         if (h.Example != null) attrs["header-example"] = h.Example.ToString();
                         if (h.Examples != null && h.Examples.Count > 0)
                         {
-                            attrs["header-examples"] = string.Join(",", h.Examples.Select(e => $"{e.Key}:{e.Value.Value}"));
+                            attrs["header-examples"] = string.Join(",", h.Examples.Select(e =>
+                            {
+                                var valStr = e.Value.Value?.ToString()
+                                    ?? (e.Value.DataValue != null ? $"dataValue={e.Value.DataValue}" : null)
+                                    ?? (e.Value.SerializedValue != null ? $"serializedValue={e.Value.SerializedValue}" : string.Empty);
+                                return $"{e.Key}:{valStr}";
+                            }));
                         }
                         if (!string.IsNullOrEmpty(h.Style)) attrs["header-style"] = h.Style;
                         if (h.Explode.HasValue) attrs["header-explode"] = h.Explode.Value.ToString().ToLowerInvariant();

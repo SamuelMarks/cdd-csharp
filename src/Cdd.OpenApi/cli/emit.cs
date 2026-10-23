@@ -101,7 +101,12 @@ namespace Cdd.OpenApi.CliModule
                         {
                             string exampleStr = "";
                             if (p.Example != null) exampleStr = $" (Example: {p.Example})";
-                            else if (p.Examples != null && p.Examples.Any()) exampleStr = $" (Example: {p.Examples.First().Value.Value})";
+                            else if (p.Examples != null && p.Examples.Any())
+                            {
+                                var firstEx = p.Examples.First().Value;
+                                var exVal = firstEx.Value?.ToString() ?? firstEx.DataValue?.ToString() ?? firstEx.SerializedValue;
+                                exampleStr = $" (Example: {exVal})";
+                            }
 
                             helpStr += $" System.Console.WriteLine(\"  --{p.Name.ToLower()} <{p.Schema?.Type ?? "string"}> : {p.Description ?? "No description"}{exampleStr}\");";
 

@@ -41,6 +41,8 @@ public class MyCli
                 break;
             case ""query"":
                 break;
+            case ""mcp"":
+                break;
         }
     }
 }
@@ -60,6 +62,7 @@ public class MyCli
             Assert.True(paths.ContainsKey("/patch"));
             Assert.True(paths.ContainsKey("/trace"));
             Assert.True(paths.ContainsKey("/query"));
+            Assert.True(paths.ContainsKey("/mcp"));
 
             var postPath = paths["/post"];
             Assert.NotNull(postPath.Post);

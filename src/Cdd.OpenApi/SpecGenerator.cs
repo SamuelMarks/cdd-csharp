@@ -215,6 +215,11 @@ namespace Cdd.OpenApi
                         var endpoints = Cdd.OpenApi.TestsModule.Parse.ToEndpoints(classNode);
                         MergeEndpoints(service, endpoints, null);
                     }
+                    else if (role == CSharpClassRole.McpServer)
+                    {
+                        var endpoints = Cdd.OpenApi.Mcp.Parse.ToEndpoints(classNode);
+                        MergeEndpoints(service, endpoints, null);
+                    }
                     else if (role == CSharpClassRole.DbContext)
                     {
                         var models = Cdd.OpenApi.Orm.Parse.ToIrModels(classNode);

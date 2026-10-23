@@ -54,7 +54,21 @@ namespace Cdd.OpenApi.Common
                         foreach (var pair in hex.Split(','))
                         {
                             var kv = pair.Split(new[] { ':' }, 2);
-                            if (kv.Length == 2) headerObj.Examples[kv[0]] = new OpenApiExample { Value = kv[1] };
+                            if (kv.Length == 2)
+                            {
+                                if (kv[1].StartsWith("dataValue=", System.StringComparison.Ordinal))
+                                {
+                                    headerObj.Examples[kv[0]] = new OpenApiExample { DataValue = kv[1].Substring("dataValue=".Length) };
+                                }
+                                else if (kv[1].StartsWith("serializedValue=", System.StringComparison.Ordinal))
+                                {
+                                    headerObj.Examples[kv[0]] = new OpenApiExample { SerializedValue = kv[1].Substring("serializedValue=".Length) };
+                                }
+                                else
+                                {
+                                    headerObj.Examples[kv[0]] = new OpenApiExample { Value = kv[1] };
+                                }
+                            }
                         }
                     }
                     if (tag.Attributes.TryGetValue("header-style", out var hs))
@@ -213,7 +227,18 @@ namespace Cdd.OpenApi.Common
                     var val = (args[i + 1].Expression as LiteralExpressionSyntax)?.Token.ValueText;
                     if (key != null && val != null)
                     {
-                        paramObj.Examples[key] = new OpenApiExample { Value = val };
+                        if (val.StartsWith("dataValue:", System.StringComparison.Ordinal))
+                        {
+                            paramObj.Examples[key] = new OpenApiExample { DataValue = val.Substring("dataValue:".Length) };
+                        }
+                        else if (val.StartsWith("serializedValue:", System.StringComparison.Ordinal))
+                        {
+                            paramObj.Examples[key] = new OpenApiExample { SerializedValue = val.Substring("serializedValue:".Length) };
+                        }
+                        else
+                        {
+                            paramObj.Examples[key] = new OpenApiExample { Value = val };
+                        }
                     }
                 }
             }

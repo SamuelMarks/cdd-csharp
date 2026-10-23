@@ -29,6 +29,7 @@ namespace Cdd.OpenApi.Parse
     [JsonSerializable(typeof(OpenApiTag))]
     [JsonSerializable(typeof(OpenApiExternalDocs))]
     [JsonSerializable(typeof(OpenApiDiscriminator))]
+    [JsonSerializable(typeof(OpenApiExample))]
     [JsonSerializable(typeof(OpenApiXml))]
     [JsonSerializable(typeof(OpenApiAny))]
     [JsonSerializable(typeof(string[]))]
