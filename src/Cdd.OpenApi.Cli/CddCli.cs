@@ -352,9 +352,12 @@ namespace Cdd.OpenApi.Cli
         /// <param name="args">The command line arguments.</param>
         /// <param name="cancellationToken">Optional cancellation token to stop the server loop.</param>
         /// <returns>Exit code (0 for success).</returns>
+        [System.Runtime.Versioning.UnsupportedOSPlatform("browser")]
         public static int ServeJsonRpc(string[] args, System.Threading.CancellationToken cancellationToken = default)
         {
+#pragma warning disable CA1416
             return HttpSpecServer.ServeJsonRpc(args, cancellationToken);
+#pragma warning restore CA1416
         }
     }
 }

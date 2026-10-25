@@ -5,7 +5,7 @@
 - Make
 
 ## Building the project
-Run `make build` to restore packages and build all projects including the CLI.
+Run `make build` to restore packages and build all projects including the CLI, or run the CLI directly via `dotnet run --project src/Cdd.OpenApi.Cli --framework net10.0 -- <args>`.
 
 ## Running Tests
 Run `make test` to execute all tests under `tests/`.

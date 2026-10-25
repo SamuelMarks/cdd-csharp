@@ -33,6 +33,7 @@ docs: build_docs
 	rm -rf docs/html
 	ln -sfn _site docs/html
 
+TARGET_FRAMEWORK ?= net10.0
 BIN_DIR ?= bin/Release/net8.0/linux-x64/publish
 build:
 	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -r linux-x64 --self-contained -o $(BIN_DIR)
@@ -47,8 +48,8 @@ ifeq (run,$(firstword $(MAKECMDGOALS)))
   endif
 endif
 
-run: build
-	$(BIN_DIR)/cdd-csharp $(RUN_ARGS)
+run:
+	dotnet run --project src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj --framework $(TARGET_FRAMEWORK) -- $(ARGS) $(RUN_ARGS)
 
 build_wasm:
 	dotnet restore src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -r browser-wasm

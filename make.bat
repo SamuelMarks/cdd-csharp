@@ -56,7 +56,7 @@ goto end
 :build
 set BIN_DIR=%2
 if "%BIN_DIR%"=="" set BIN_DIR=bin\Release\net10.0\win-x64\publish
-dotnet publish src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj -c Release -r win-x64 --self-contained -o %BIN_DIR%
+dotnet publish src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj -c Release -f net10.0 -r win-x64 --self-contained -o %BIN_DIR%
 goto end
 
 :test
@@ -64,13 +64,11 @@ dotnet test CddOpenApi.slnx
 goto end
 
 :run
-set BIN_DIR=bin\Release\net10.0\win-x64\publish
-dotnet publish src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj -c Release -r win-x64 --self-contained -o %BIN_DIR%
-%BIN_DIR%\cdd-csharp.exe %2 %3 %4 %5 %6 %7 %8 %9
+dotnet run --project src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj --framework net10.0 -- %2 %3 %4 %5 %6 %7 %8 %9
 goto end
 
 :build_wasm
-dotnet publish src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj -c Release -r browser-wasm -o bin\wasm\
+dotnet publish src\Cdd.OpenApi.Cli\Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -r browser-wasm -o bin\wasm\
 goto end
 
 :build_docker

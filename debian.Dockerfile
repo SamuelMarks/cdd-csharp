@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0 AS build
 WORKDIR /app
 COPY . .
-RUN dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -r linux-x64 --self-contained -o /app/out
+RUN dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net10.0 -r linux-x64 --self-contained -o /app/out
 
 FROM debian:12-slim
 RUN apt-get update && apt-get install -y libicu72 && rm -rf /var/lib/apt/lists/*

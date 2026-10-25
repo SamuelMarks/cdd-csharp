@@ -7,6 +7,12 @@ The `cdd-csharp` package is available as a .NET global tool on NuGet:
 dotnet tool install --global cdd-csharp
 ```
 
+Or run directly from source by specifying the target framework (`net10.0` or `net8.0`):
+
+```bash
+dotnet run --project src/Cdd.OpenApi.Cli --framework net10.0 -- --help
+```
+
 ## CLI Usage
 
 ### Generate C# Code from OpenAPI 3.2.0 / Swagger 2.0

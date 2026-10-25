@@ -17,5 +17,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishTrimmed>true</PublishTrimmed>
+    <NoWarn Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 </Project>

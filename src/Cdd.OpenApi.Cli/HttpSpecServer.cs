@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.Versioning;
 using System.Text.Json.Nodes;
 using System.Threading;
 
@@ -14,6 +15,7 @@ namespace Cdd.OpenApi.Cli
     /// <summary>
     /// Implements the HTTP JSON-RPC endpoint server for the <c>serve_json_rpc</c> CLI command.
     /// </summary>
+    [UnsupportedOSPlatform("browser")]
     public static class HttpSpecServer
     {
         /// <summary>

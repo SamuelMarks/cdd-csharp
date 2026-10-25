@@ -236,6 +236,9 @@ make test
 # Install globally via NuGet
 dotnet tool install --global cdd-csharp
 
+# Or run the CLI directly from source (specify --framework when multi-targeted)
+dotnet run --project src/Cdd.OpenApi.Cli --framework net10.0 -- --help
+
 # Restore, build, format-check, and run the test suite with the .NET SDK
 dotnet restore CddOpenApi.slnx
 dotnet build CddOpenApi.slnx -c Release

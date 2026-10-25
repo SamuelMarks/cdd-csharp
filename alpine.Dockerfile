@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-alpine AS build
 WORKDIR /app
 COPY . .
-RUN dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -r linux-musl-x64 --self-contained -o /app/out
+RUN dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net10.0 -r linux-musl-x64 --self-contained -o /app/out
 
 FROM mcr.microsoft.com/dotnet/nightly/runtime-deps:10.0-alpine
 WORKDIR /app

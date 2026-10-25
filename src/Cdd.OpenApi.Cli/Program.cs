@@ -128,7 +128,9 @@ namespace Cdd.OpenApi.Cli
                 }
                 else if (command == "serve_json_rpc")
                 {
+#pragma warning disable CA1416
                     return CddCli.ServeJsonRpc(args);
+#pragma warning restore CA1416
                 }
                 else if (command == "mcp")
                 {

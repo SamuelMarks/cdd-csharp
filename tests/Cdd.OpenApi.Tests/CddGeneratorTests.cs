@@ -327,6 +327,8 @@ namespace Cdd.OpenApi.Tests
                 Assert.True(File.Exists(Path.Combine(tempDir, "README.md")));
 
                 CddGenerator.GenerateSdk(config);
+                Assert.Contains("<TargetFramework>net10.0</TargetFramework>", File.ReadAllText(Path.Combine(tempDir, "src", "GeneratedProject", "GeneratedProject.csproj")));
+                Assert.Contains("<TargetFramework>net10.0</TargetFramework>", File.ReadAllText(Path.Combine(tempDir, "tests", "GeneratedProject.Tests", "GeneratedProject.Tests.csproj")));
                 CddGenerator.GenerateSdkCli(config);
                 CddGenerator.GenerateServer(config);
 

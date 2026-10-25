@@ -11,6 +11,8 @@ using System.Text;
 using Xunit;
 using Cdd.OpenApi.Cli;
 
+#pragma warning disable CA1416 // Validate platform compatibility
+
 namespace Cdd.OpenApi.Tests.Cli
 {
     /// <summary>Verifies or exercises coverage tests.</summary>
