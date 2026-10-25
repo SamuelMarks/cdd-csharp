@@ -118,7 +118,7 @@ namespace Cdd.OpenApi.Common
                             itemObj[kvp.Key] = kvp.Value!.DeepClone();
                         }
 
-                        arr.Add(itemObj);
+                        arr.Add((JsonNode)itemObj);
                     }
                     else
                     {
