@@ -22,6 +22,7 @@ install_base:
 
 install_deps:
 	dotnet restore CddOpenApi.slnx
+	dotnet workload list | grep -q wasm-tools-net8 || dotnet workload install wasm-tools wasm-tools-net8 --skip-manifest-update
 
 DOCS_DIR ?= docs/_site
 build_docs:
@@ -52,6 +53,7 @@ run:
 	dotnet run --project src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj --framework $(TARGET_FRAMEWORK) -- $(ARGS) $(RUN_ARGS)
 
 build_wasm:
+	dotnet workload list | grep -q wasm-tools-net8 || dotnet workload install wasm-tools wasm-tools-net8 --skip-manifest-update
 	dotnet restore src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -r browser-wasm
 	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -r browser-wasm
 	mkdir -p bin

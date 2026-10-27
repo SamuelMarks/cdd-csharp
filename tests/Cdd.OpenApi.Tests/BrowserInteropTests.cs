@@ -102,5 +102,41 @@ namespace Cdd.OpenApi.Tests
             var result = BrowserInterop.FromOpenApi(spec, "from_openapi --tests", "all");
             Assert.Contains("tests/IntegrationTests.cs", result);
         }
+
+        /// <summary>Verifies or exercises generate from open api delegates to from open api.</summary>
+        [Fact]
+        public void GenerateFromOpenApi_ValidSpec_ReturnsJsonDictionary()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.GenerateFromOpenApi(spec, "from_openapi", "to_sdk");
+            Assert.Contains("Client.cs", result);
+        }
+
+        /// <summary>Verifies or exercises from open api target to docs json returns docs json.</summary>
+        [Fact]
+        public void FromOpenApi_TargetToDocsJson_ReturnsDocsJson()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.FromOpenApi(spec, "from_openapi", "to_docs_json");
+            Assert.Contains("getTest", result);
+        }
+
+        /// <summary>Verifies or exercises from open api command to docs json with flags returns docs json.</summary>
+        [Fact]
+        public void FromOpenApi_CommandToDocsJsonWithFlags_ReturnsDocsJson()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.FromOpenApi(spec, "to_docs_json --no-imports --no-wrapping", "to_sdk");
+            Assert.Contains("getTest", result);
+        }
+
+        /// <summary>Verifies or exercises from open api target to docs json with null command returns docs json.</summary>
+        [Fact]
+        public void FromOpenApi_TargetToDocsJson_NullCommand_ReturnsDocsJson()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.FromOpenApi(spec, null!, "to_docs_json");
+            Assert.Contains("getTest", result);
+        }
     }
 }

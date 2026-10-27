@@ -17,11 +17,25 @@ namespace Cdd.OpenApi.Cli
     public partial class BrowserInterop
     {
         /// <summary>
+        /// Generates C# source files or documentation JSON from an OpenAPI JSON specification string for WebAssembly browser interop.
+        /// </summary>
+        /// <param name="specContent">The raw OpenAPI specification JSON string.</param>
+        /// <param name="command">The CLI command string containing optional flags such as <c>--tests</c>.</param>
+        /// <param name="target">The target generation mode (<c>to_sdk</c>, <c>to_sdk_cli</c>, <c>to_server</c>, <c>to_docs_json</c>, or <c>all</c>).</param>
+        /// <param name="generateTests">Whether to generate unit and integration test suites.</param>
+        /// <returns>A JSON-serialized dictionary mapping generated file paths to their C# source code contents, or documentation JSON when <paramref name="target"/> is <c>to_docs_json</c>.</returns>
+        [JSExport]
+        internal static string GenerateFromOpenApi(string specContent, string command, string target, bool generateTests = false)
+        {
+            return FromOpenApi(specContent, command, target, generateTests);
+        }
+
+        /// <summary>
         /// Generates C# source files from an OpenAPI JSON specification string for WebAssembly browser interop.
         /// </summary>
         /// <param name="specContent">The raw OpenAPI specification JSON string.</param>
         /// <param name="command">The CLI command string containing optional flags such as <c>--tests</c>.</param>
-        /// <param name="target">The target generation mode (<c>to_sdk</c>, <c>to_sdk_cli</c>, <c>to_server</c>, or <c>all</c>).</param>
+        /// <param name="target">The target generation mode (<c>to_sdk</c>, <c>to_sdk_cli</c>, <c>to_server</c>, <c>to_docs_json</c>, or <c>all</c>).</param>
         /// <param name="generateTests">Whether to generate unit and integration test suites.</param>
         /// <returns>A JSON-serialized dictionary mapping generated file paths to their C# source code contents.</returns>
         [JSExport]
@@ -30,6 +44,14 @@ namespace Cdd.OpenApi.Cli
             try
             {
                 var doc = new OpenApiParser().ParseJson(specContent);
+                if (string.Equals(target, "to_docs_json", StringComparison.OrdinalIgnoreCase) ||
+                    (command != null && command.Contains("to_docs_json", StringComparison.OrdinalIgnoreCase)))
+                {
+                    bool noImports = command != null && command.Contains("--no-imports", StringComparison.OrdinalIgnoreCase);
+                    bool noWrapping = command != null && command.Contains("--no-wrapping", StringComparison.OrdinalIgnoreCase);
+                    return Cdd.OpenApi.DocsJson.DocsJsonGenerator.Generate(doc, noImports, noWrapping);
+                }
+
                 var type = CliArgumentParser.ParseGenerateType(target);
 
                 bool isTests = generateTests || (command != null && command.Contains("--tests"));

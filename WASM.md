@@ -13,8 +13,9 @@ make build_wasm
 
 ### Important Build Requirements
 To ensure the WASM build is correctly packaged and compatible with the browser runtime (e.g., for `cdd-web-ui`), the build process **must**:
-1. Include the `-r browser-wasm` flag during `dotnet publish` to instruct the compiler to generate WebAssembly artifacts.
-2. Package the `AppBundle/_framework` directory rather than the raw `publish` output directory. `AppBundle` correctly generates the `blazor.boot.json` metadata file and configures the native WASM binaries which are required by the .NET WebAssembly runtime. Failing to do this will result in missing file errors like `Failed to load config file ./blazor.boot.json`.
+1. Have the `wasm-tools` and `wasm-tools-net8` .NET workloads installed (`make build_wasm` and `make install_deps` automatically check for and install these workloads if missing).
+2. Include the `-r browser-wasm` flag during `dotnet publish` to instruct the compiler to generate WebAssembly artifacts.
+3. Package the `AppBundle/_framework` directory rather than the raw `publish` output directory. `AppBundle` correctly generates the `blazor.boot.json` metadata file and configures the native WASM binaries which are required by the .NET WebAssembly runtime. Failing to do this will result in missing file errors like `Failed to load config file ./blazor.boot.json`.
 
 ## Concurrency in Web Workers
 
