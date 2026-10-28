@@ -17,6 +17,15 @@ To ensure the WASM build is correctly packaged and compatible with the browser r
 2. Include the `-r browser-wasm` flag during `dotnet publish` to instruct the compiler to generate WebAssembly artifacts.
 3. Package the `AppBundle/_framework` directory rather than the raw `publish` output directory. `AppBundle` correctly generates the `blazor.boot.json` metadata file and configures the native WASM binaries which are required by the .NET WebAssembly runtime. Failing to do this will result in missing file errors like `Failed to load config file ./blazor.boot.json`.
 
+## Bundle Size Optimization
+
+The `browser-wasm` publish profile is configured to minimize both uncompressed `_framework` asset size and compressed archive size:
+- **Satellite Resource Exclusion (`SatelliteResourceLanguages=en`)**: Prevents bundling localized Roslyn compiler diagnostic satellite assemblies (`*.resources.wasm` across 13 locales).
+- **Invariant Globalization & Timezones (`InvariantGlobalization=true`, `InvariantTimezone=true`)**: Eliminates `icudt_*.dat` ICU data files and strips ICU/timezone tables from `dotnet.native.wasm` and `System.Private.CoreLib.wasm`.
+- **Full ILLink Trimming & Feature Switches (`TrimMode=full`)**: Enables full assembly trimming across `Cdd.OpenApi`, `Microsoft.CodeAnalysis`, and the BCL, alongside disabling unused runtime features (`DebuggerSupport`, `EnableDiagnostics`, `EventSourceSupport`, `MetricsSupport`, `HttpActivityPropagationSupport`, `MetadataUpdaterSupport`, `StackTraceSupport`, `WasmEnableLegacyJsInterop`, `JsonSerializerIsReflectionEnabledByDefault`) and stripping exception resource strings (`UseSystemResourceKeys=true`).
+- **Browser-Specific ILLink Method Substitutions (`ILLink.Substitutions.xml`)**: Stubs out desktop-only networking paths (`HttpSpecServer.ServeJsonRpc` and synchronous `CddCli.FetchHttpContent`) during `browser-wasm` linking so `System.Net.Http.wasm`, `System.Net.HttpListener.wasm`, `System.Net.Primitives.wasm`, and `System.Diagnostics.DiagnosticSource.wasm` are completely trimmed without introducing `#if` branches.
+- **Native Runtime Relinking (`WasmBuildNative=true`, `-Oz`, `WasmNativeStrip=true`)**: Relinks and strips `dotnet.native.wasm` with Emscripten `-Oz` size optimization, dead internal-call elimination (`WasmLinkIcalls=true`), and symbol/sourcemap exclusion (`WasmNativeDebugSymbols=false`, `WasmEmitSymbolMap=false`, `WasmEmitSourceMap=false`).
+
 ## Concurrency in Web Workers
 
 When running `cdd-csharp` in a browser Web Worker (e.g., within `cdd-web-ui`), ensure the .NET initialization (`dotnet.create()`) is strictly controlled to avoid race conditions.

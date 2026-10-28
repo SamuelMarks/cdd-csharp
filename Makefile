@@ -57,9 +57,10 @@ build_wasm:
 	dotnet restore src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -r browser-wasm
 	dotnet publish src/Cdd.OpenApi.Cli/Cdd.OpenApi.Cli.csproj -c Release -f net8.0 -r browser-wasm
 	mkdir -p bin
-	rm -rf bin/cdd-csharp
+	rm -rf bin/cdd-csharp bin/cdd-csharp-wasm.zip
 	cp -r src/Cdd.OpenApi.Cli/bin/Release/net8.0/browser-wasm/AppBundle/_framework bin/cdd-csharp
-	cd bin && zip -rq cdd-csharp-wasm.zip cdd-csharp
+	rm -f bin/cdd-csharp/*.map bin/cdd-csharp/*.symbols
+	cd bin && zip -rq9 cdd-csharp-wasm.zip cdd-csharp
 build_docker:
 	docker build -t cdd-csharp-alpine -f alpine.Dockerfile .
 	docker build -t cdd-csharp-debian -f debian.Dockerfile .

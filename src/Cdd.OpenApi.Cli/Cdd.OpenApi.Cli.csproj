@@ -17,6 +17,45 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishTrimmed>true</PublishTrimmed>
-    <NoWarn Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">$(NoWarn);CA1416</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <NoWarn Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">$(NoWarn);CA1416;IL2026;IL2075;IL2104</NoWarn>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <TrimMode>full</TrimMode>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <WasmBuildNative>true</WasmBuildNative>
+    <WasmNativeStrip>true</WasmNativeStrip>
+    <WasmNativeDebugSymbols>false</WasmNativeDebugSymbols>
+    <WasmEmitSymbolMap>false</WasmEmitSymbolMap>
+    <WasmEmitSourceMap>false</WasmEmitSourceMap>
+    <WasmLinkIcalls>true</WasmLinkIcalls>
+    <WasmDebugLevel>0</WasmDebugLevel>
+    <WasmEnableLegacyJsInterop>false</WasmEnableLegacyJsInterop>
+    <EmccCompileOptimizationFlag>-Oz</EmccCompileOptimizationFlag>
+    <EmccLinkOptimizationFlag>-Oz</EmccLinkOptimizationFlag>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantTimezone>true</InvariantTimezone>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableDiagnostics>false</EnableDiagnostics>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetricsSupport>false</MetricsSupport>
+    <UseSizeOptimizedLinq>true</UseSizeOptimizedLinq>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <Http3Support>false</Http3Support>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <StackTraceSupport>false</StackTraceSupport>
+    <XmlResolverIsNetworkingEnabledByDefault>false</XmlResolverIsNetworkingEnabledByDefault>
+    <AutoreleasePoolSupport>false</AutoreleasePoolSupport>
+    <StartupHookSupport>false</StartupHookSupport>
+    <CustomResourceTypesSupport>false</CustomResourceTypesSupport>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
+    <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
+  </ItemGroup>
 </Project>

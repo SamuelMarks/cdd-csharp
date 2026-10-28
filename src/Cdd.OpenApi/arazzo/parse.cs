@@ -21,7 +21,7 @@ namespace Cdd.OpenApi.Arazzo
         /// <summary>
         /// Regular expression pattern validating source description names.
         /// </summary>
-        private static readonly Regex SourceNameRegex = new Regex(@"^[A-Za-z0-9_\-]+$", RegexOptions.Compiled);
+        private static readonly Regex SourceNameRegex = new Regex(@"^[A-Za-z0-9_\-]+$");
 
         /// <summary>
         /// Parses a JSON or YAML string into a validated <see cref="ArazzoDocument"/> instance.

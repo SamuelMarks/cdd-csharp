@@ -1,0 +1,10 @@
+<linker>
+  <assembly fullname="cdd-csharp">
+    <type fullname="Cdd.OpenApi.Cli.HttpSpecServer">
+      <method signature="System.Int32 ServeJsonRpc(System.String[],System.Threading.CancellationToken)" body="stub" />
+    </type>
+    <type fullname="Cdd.OpenApi.Cli.CddCli">
+      <method signature="System.String FetchHttpContent(System.String)" body="stub" />
+    </type>
+  </assembly>
+</linker>
