@@ -40,6 +40,15 @@ namespace Cdd.OpenApi.Tests
             Assert.Contains("Attributes.cs", result);
         }
 
+        /// <summary>Verifies or exercises from open api sdk cli target with mcp flag returns mcp adapter.</summary>
+        [Fact]
+        public void FromOpenApi_SdkCliWithMcpFlag_ReturnsMcpFiles()
+        {
+            string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
+            var result = BrowserInterop.FromOpenApi(spec, "from_openapi --mcp", "to_sdk_cli");
+            Assert.Contains("Mcp", result);
+        }
+
         /// <summary>Verifies or exercises from open api server target returns json dictionary.</summary>
         [Fact]
         public void FromOpenApi_ServerTarget_ReturnsJsonDictionary()
@@ -137,6 +146,32 @@ namespace Cdd.OpenApi.Tests
             string spec = "{\"openapi\":\"3.2.0\",\"paths\":{\"/test\":{\"get\":{\"operationId\":\"getTest\"}}},\"info\":{\"title\":\"\",\"version\":\"\"}}";
             var result = BrowserInterop.FromOpenApi(spec, null!, "to_docs_json");
             Assert.Contains("getTest", result);
+        }
+
+        /// <summary>Verifies or exercises from open api target to openapi returns openapi json dictionary.</summary>
+        [Fact]
+        public void FromOpenApi_TargetToOpenApi_ReturnsOpenApiJson()
+        {
+            string code = "namespace Generated { public class PetsController { [HttpGet(\"/pets\")] public void ListPets() {} } }";
+            var result = BrowserInterop.FromOpenApi(code, "from_openapi", "to_openapi");
+            Assert.Contains("openapi.json", result);
+        }
+
+        /// <summary>Verifies or exercises from open api command to openapi returns openapi json dictionary.</summary>
+        [Fact]
+        public void FromOpenApi_CommandToOpenApi_ReturnsOpenApiJson()
+        {
+            string code = "namespace Generated { public class PetsController { [HttpGet(\"/pets\")] public void ListPets() {} } }";
+            var result = BrowserInterop.FromOpenApi(code, "to_openapi", "to_sdk");
+            Assert.Contains("openapi.json", result);
+        }
+
+        /// <summary>Verifies or exercises to open api with null input returns error json.</summary>
+        [Fact]
+        public void ToOpenApi_NullCode_ReturnsErrorJson()
+        {
+            var result = BrowserInterop.ToOpenApi(null!);
+            Assert.Contains("error", result);
         }
     }
 }
