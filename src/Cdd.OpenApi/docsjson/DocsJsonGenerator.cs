@@ -4,10 +4,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Cdd.OpenApi.Arazzo.Expressions;
+using Cdd.OpenApi.Common;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Models.Arazzo;
 
 namespace Cdd.OpenApi.DocsJson
 {
@@ -15,7 +16,7 @@ namespace Cdd.OpenApi.DocsJson
     public static class DocsJsonGenerator
     {
         /// <summary>
-        /// Generates the documentation JSON string containing C# code snippets for all operations in the OpenAPI document.
+        /// Generates the documentation JSON string containing C# code snippets for all operations, webhooks, and workflows in the OpenAPI document.
         /// </summary>
         /// <param name="doc">The OpenAPI document to generate documentation snippets for.</param>
         /// <param name="noImports">Whether to omit the <c>imports</c> field from generated code objects.</param>
@@ -33,121 +34,230 @@ namespace Cdd.OpenApi.DocsJson
             {
                 foreach (var pathKvp in doc.Paths)
                 {
-                    var routePath = pathKvp.Key;
-                    var pathItem = pathKvp.Value;
-
-                    var operations = new Dictionary<string, OpenApiOperation?>
-                    {
-                        { "get", pathItem.Get },
-                        { "put", pathItem.Put },
-                        { "post", pathItem.Post },
-                        { "delete", pathItem.Delete },
-                        { "options", pathItem.Options },
-                        { "head", pathItem.Head },
-                        { "patch", pathItem.Patch },
-                        { "trace", pathItem.Trace }
-                    };
-
-                    foreach (var opKvp in operations)
-                    {
-                        var method = opKvp.Key;
-                        var operation = opKvp.Value;
-                        if (operation == null) continue;
-
-                        var operationId = operation.OperationId;
-                        var methodName = operationId ?? $"{method.ToUpperInvariant()}{routePath.Replace("/", "").Replace("{", "").Replace("}", "")}";
-
-                        var opOut = new DocsJsonOperation
-                        {
-                            Method = method.ToUpperInvariant(),
-                            Path = routePath,
-                            OperationId = operation.OperationId,
-                            Code = new DocsJsonCode()
-                        };
-
-                        if (!noImports)
-                        {
-                            var importsLines = new List<string>
-                            {
-                                "using System;",
-                                "using System.Threading.Tasks;",
-                                "using Generated.Api;",
-                                "using Generated.Models;"
-                            };
-                            opOut.Code.Imports = string.Join("\n", importsLines);
-                        }
-
-                        if (!noWrapping)
-                        {
-                            var wrapStart = new List<string>
-                            {
-                                "public class Example",
-                                "{",
-                                "    public static async Task Main()",
-                                "    {"
-                            };
-                            opOut.Code.WrapperStart = string.Join("\n", wrapStart);
-
-                            var wrapEnd = new List<string>
-                            {
-                                "    }",
-                                "}"
-                            };
-                            opOut.Code.WrapperEnd = string.Join("\n", wrapEnd);
-                        }
-
-                        var snippetLines = new List<string>();
-                        string indent = noWrapping ? "" : "        ";
-
-                        var tag = "Default";
-                        if (operation.Tags != null && operation.Tags.Count > 0)
-                        {
-                            tag = operation.Tags[0];
-                        }
-                        if (tag.Length > 0)
-                        {
-                            tag = char.ToUpperInvariant(tag[0]) + tag.Substring(1);
-                        }
-                        var clientName = $"{tag}ApiClient";
-
-                        snippetLines.Add($"{indent}// Initialize the API client");
-                        snippetLines.Add($"{indent}var client = new {clientName}();");
-                        snippetLines.Add("");
-
-                        // Map parameters
-                        var parameters = new List<string>();
-                        if (operation.Parameters != null)
-                        {
-                            foreach (var param in operation.Parameters)
-                            {
-                                if (param == null) continue;
-                                if (string.IsNullOrEmpty(param.Name)) continue;
-                                var pName = param.Name;
-                                var pType = Cdd.OpenApi.Common.TypeMapper.MapOpenApiToCSharp(param.Schema?.Type, "object");
-                                var pValue = GetDefaultValueForType(pType);
-                                snippetLines.Add($"{indent}{pType} {pName} = {pValue};");
-                                parameters.Add(pName);
-                            }
-                        }
-
-                        if (operation.RequestBody != null)
-                        {
-                            snippetLines.Add($"{indent}var requestBody = new object(); // TODO: Initialize request body");
-                            parameters.Add("requestBody");
-                        }
-
-                        var paramsString = string.Join(", ", parameters);
-                        snippetLines.Add($"{indent}await client.{methodName}Async({paramsString});");
-
-                        opOut.Code.Snippet = string.Join("\n", snippetLines);
-
-                        output.Operations.Add(opOut);
-                    }
+                    AppendPathItemOperations(output.Operations, pathKvp.Key, pathKvp.Value, noImports, noWrapping);
                 }
+            }
+
+            if (doc.Webhooks != null)
+            {
+                foreach (var webhookKvp in doc.Webhooks)
+                {
+                    AppendPathItemOperations(output.Operations, webhookKvp.Key, webhookKvp.Value, noImports, noWrapping);
+                }
+            }
+
+            if (doc.Workflows != null)
+            {
+                AppendWorkflowOperations(output.Operations, doc.Workflows, noImports, noWrapping);
             }
 
             var resultList = new List<DocsJsonOutput> { output };
             return JsonSerializer.Serialize(resultList, DocsJsonContext.Default.ListDocsJsonOutput);
+        }
+
+        /// <summary>
+        /// Generates the documentation JSON string containing C# code snippets for all workflows in the Arazzo document.
+        /// </summary>
+        /// <param name="doc">The Arazzo document to generate documentation snippets for.</param>
+        /// <param name="noImports">Whether to omit the <c>imports</c> field from generated code objects.</param>
+        /// <param name="noWrapping">Whether to omit the <c>wrapper_start</c> and <c>wrapper_end</c> fields from generated code objects.</param>
+        /// <returns>The serialized documentation JSON string.</returns>
+        public static string Generate(ArazzoDocument doc, bool noImports, bool noWrapping)
+        {
+            var output = new DocsJsonOutput
+            {
+                Language = "csharp",
+                Operations = new List<DocsJsonOperation>()
+            };
+
+            AppendWorkflowOperations(output.Operations, doc.Workflows, noImports, noWrapping);
+
+            var resultList = new List<DocsJsonOutput> { output };
+            return JsonSerializer.Serialize(resultList, DocsJsonContext.Default.ListDocsJsonOutput);
+        }
+
+        /// <summary>
+        /// Appends documentation operation entries for all HTTP methods defined on an <see cref="OpenApiPathItem"/>.
+        /// </summary>
+        /// <param name="target">The target list of documentation operations.</param>
+        /// <param name="routePath">The route path or webhook name.</param>
+        /// <param name="pathItem">The OpenAPI path item containing the operations.</param>
+        /// <param name="noImports">Whether to omit the <c>imports</c> field.</param>
+        /// <param name="noWrapping">Whether to omit the <c>wrapper_start</c> and <c>wrapper_end</c> fields.</param>
+        private static void AppendPathItemOperations(
+            IList<DocsJsonOperation> target,
+            string routePath,
+            OpenApiPathItem pathItem,
+            bool noImports,
+            bool noWrapping)
+        {
+            var operations = OperationHelpers.GetOperationsByPascalVerb(pathItem);
+
+            foreach (var opKvp in operations)
+            {
+                var method = opKvp.Key.ToUpperInvariant();
+                var operation = opKvp.Value;
+                if (operation == null) continue;
+
+                var operationId = operation.OperationId;
+                var methodName = operationId ?? $"{method}{routePath.Replace("/", "").Replace("{", "").Replace("}", "")}";
+
+                var opOut = new DocsJsonOperation
+                {
+                    Method = method,
+                    Path = routePath,
+                    OperationId = operation.OperationId,
+                    Code = new DocsJsonCode()
+                };
+
+                if (!noImports)
+                {
+                    var importsLines = new List<string>
+                    {
+                        "using System;",
+                        "using System.Threading.Tasks;",
+                        "using Generated.Api;",
+                        "using Generated.Models;"
+                    };
+                    opOut.Code.Imports = string.Join("\n", importsLines);
+                }
+
+                var tag = "Default";
+                if (operation.Tags != null && operation.Tags.Count > 0 && !string.IsNullOrEmpty(operation.Tags[0]))
+                {
+                    tag = char.ToUpperInvariant(operation.Tags[0][0]) + operation.Tags[0].Substring(1);
+                }
+                var clientName = $"{tag}ApiClient";
+
+                if (!noWrapping)
+                {
+                    var wrapStart = new List<string>
+                    {
+                        "public class Example",
+                        "{",
+                        "    public static async Task Main()",
+                        "    {",
+                        $"        var client = new {clientName}();"
+                    };
+                    opOut.Code.WrapperStart = string.Join("\n", wrapStart);
+
+                    var wrapEnd = new List<string>
+                    {
+                        "    }",
+                        "}"
+                    };
+                    opOut.Code.WrapperEnd = string.Join("\n", wrapEnd);
+                }
+
+                var snippetLines = new List<string>();
+                string indent = noWrapping ? "" : "        ";
+
+                var parameters = new List<string>();
+                if (operation.Parameters != null)
+                {
+                    foreach (var param in operation.Parameters)
+                    {
+                        if (param == null) continue;
+                        if (string.IsNullOrEmpty(param.Name)) continue;
+                        var pName = param.Name;
+                        var pType = TypeMapper.MapOpenApiToCSharp(param.Schema?.Type, "object");
+                        var pValue = GetDefaultValueForType(pType);
+                        snippetLines.Add($"{indent}{pType} {pName} = {pValue};");
+                        parameters.Add(pName);
+                    }
+                }
+
+                if (operation.RequestBody != null)
+                {
+                    snippetLines.Add($"{indent}var requestBody = new object(); // TODO: Initialize request body");
+                    parameters.Add("requestBody");
+                }
+
+                var paramsString = string.Join(", ", parameters);
+                snippetLines.Add($"{indent}var response = await client.{methodName}Async({paramsString});");
+
+                opOut.Code.Snippet = string.Join("\n", snippetLines);
+
+                target.Add(opOut);
+            }
+        }
+
+        /// <summary>
+        /// Appends documentation operation entries for all Arazzo workflows.
+        /// </summary>
+        /// <param name="target">The target list of documentation operations.</param>
+        /// <param name="workflows">The list of Arazzo workflows.</param>
+        /// <param name="noImports">Whether to omit the <c>imports</c> field.</param>
+        /// <param name="noWrapping">Whether to omit the <c>wrapper_start</c> and <c>wrapper_end</c> fields.</param>
+        private static void AppendWorkflowOperations(
+            IList<DocsJsonOperation> target,
+            IList<ArazzoWorkflow> workflows,
+            bool noImports,
+            bool noWrapping)
+        {
+            foreach (var wf in workflows)
+            {
+                var wfPascal = RuntimeExpression.ToPascalIdentifier(wf.WorkflowId);
+                var opOut = new DocsJsonOperation
+                {
+                    Method = "WORKFLOW",
+                    Path = $"/workflows/{wf.WorkflowId}",
+                    OperationId = wf.WorkflowId,
+                    Code = new DocsJsonCode()
+                };
+
+                if (!noImports)
+                {
+                    var importsLines = new List<string>
+                    {
+                        "using System;",
+                        "using System.Threading.Tasks;",
+                        "using Generated.Workflows;",
+                        "using Generated.Workflows.Models;"
+                    };
+                    opOut.Code.Imports = string.Join("\n", importsLines);
+                }
+
+                if (!noWrapping)
+                {
+                    var wrapStart = new List<string>
+                    {
+                        "public class Example",
+                        "{",
+                        "    public static async Task Main()",
+                        "    {",
+                        "        var workflows = new WorkflowsOrchestrator();"
+                    };
+                    opOut.Code.WrapperStart = string.Join("\n", wrapStart);
+
+                    var wrapEnd = new List<string>
+                    {
+                        "    }",
+                        "}"
+                    };
+                    opOut.Code.WrapperEnd = string.Join("\n", wrapEnd);
+                }
+
+                var snippetLines = new List<string>();
+                string indent = noWrapping ? "" : "        ";
+
+                snippetLines.Add($"{indent}var input = new {wfPascal}Input();");
+                if (wf.Inputs?.Properties != null)
+                {
+                    foreach (var prop in wf.Inputs.Properties)
+                    {
+                        var propPascal = RuntimeExpression.ToPascalIdentifier(prop.Key);
+                        var pType = TypeMapper.MapOpenApiToCSharp(prop.Value.Type, "object");
+                        var pValue = GetDefaultValueForType(pType);
+                        snippetLines.Add($"{indent}input.{propPascal} = {pValue};");
+                    }
+                }
+
+                snippetLines.Add($"{indent}var response = await workflows.{wfPascal}Async(input);");
+
+                opOut.Code.Snippet = string.Join("\n", snippetLines);
+                target.Add(opOut);
+            }
         }
 
         /// <summary>

@@ -427,11 +427,22 @@ namespace Cdd.OpenApi.Cli.Tests
         {
             var tempInput = Path.GetTempFileName();
             var tempOutput = Path.GetTempFileName();
-            File.WriteAllText(tempInput, "{ \"openapi\": \"3.0.0\", \"paths\": {} }");
+            var tempExistingDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".dir");
+            var tempNewDir = Path.Combine(Path.GetTempPath(), "cdd_out_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempExistingDir);
+            File.WriteAllText(tempInput, "{ \"openapi\": \"3.2.0\", \"paths\": {}, \"webhooks\": { \"newPet\": { \"post\": { \"operationId\": \"newPetEvent\" } } } }");
             try
             {
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempOutput, "--no-imports", "--no-wrapping" }));
                 Assert.True(File.Exists(tempOutput));
+
+                // Existing directory path (including one with an extension) writes docs.json inside it
+                Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempExistingDir }));
+                Assert.True(File.Exists(Path.Combine(tempExistingDir, "docs.json")));
+
+                // Non-existent directory path (like /work/out) creates directory and writes docs.json inside it
+                Assert.Equal(0, Program.Main(new[] { "to_docs_json", "-i", tempInput, "-o", tempNewDir }));
+                Assert.True(File.Exists(Path.Combine(tempNewDir, "docs.json")));
 
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "--input", tempInput }));
                 Assert.Equal(0, Program.Main(new[] { "to_docs_json", "--output", tempOutput, "-i", tempInput }));
@@ -446,6 +457,8 @@ namespace Cdd.OpenApi.Cli.Tests
             {
                 File.Delete(tempInput);
                 File.Delete(tempOutput);
+                if (Directory.Exists(tempExistingDir)) Directory.Delete(tempExistingDir, true);
+                if (Directory.Exists(tempNewDir)) Directory.Delete(tempNewDir, true);
             }
         }
 

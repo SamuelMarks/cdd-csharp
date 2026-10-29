@@ -134,6 +134,12 @@ namespace Cdd.OpenApi.Cli
 
             if (!string.IsNullOrEmpty(outputPath))
             {
+                if (Directory.Exists(outputPath) || string.IsNullOrEmpty(Path.GetExtension(outputPath)))
+                {
+                    Directory.CreateDirectory(outputPath);
+                    outputPath = Path.Combine(outputPath, "docs.json");
+                }
+
                 File.WriteAllBytes(outputPath, System.Text.Encoding.UTF8.GetBytes(outputJson));
             }
             else

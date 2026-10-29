@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;
 using Cdd.OpenApi.Models;
+using Cdd.OpenApi.Models.Arazzo;
 using Cdd.OpenApi.DocsJson;
 
 namespace Cdd.OpenApi.Tests.DocsJson
@@ -65,7 +66,10 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(op.Code.WrapperEnd);
             Assert.NotNull(op.Code.Snippet);
 
+            Assert.Contains("var client = new MyDocsTagApiClient();", op.Code.WrapperStart);
+            Assert.DoesNotContain("var client = new", op.Code.Snippet);
             Assert.Contains("int limit = 0;", op.Code.Snippet);
+            Assert.Contains("var response = await client.getPetsAsync(limit);", op.Code.Snippet);
         }
 
         /// <summary>Verifies or exercises generate with no imports omits imports field.</summary>
@@ -95,6 +99,24 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(op.Code.Imports);
             Assert.Null(op.Code.WrapperStart);
             Assert.Null(op.Code.WrapperEnd);
+            Assert.DoesNotContain("var client = new", op.Code.Snippet);
+            Assert.Contains("var response = await client.getPetsAsync(limit);", op.Code.Snippet);
+        }
+
+        /// <summary>Verifies or exercises generate with both no imports and no wrapping.</summary>
+        [Fact]
+        public void Generate_WithNoImportsAndNoWrapping_OmitsBoth()
+        {
+            var doc = CreateSampleDocument();
+            var jsonStr = DocsJsonGenerator.Generate(doc, true, true);
+            var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
+
+            Assert.NotNull(parsed);
+            var op = Assert.Single(parsed[0].Operations);
+            Assert.Null(op.Code.Imports);
+            Assert.Null(op.Code.WrapperStart);
+            Assert.Null(op.Code.WrapperEnd);
+            Assert.Equal("int limit = 0;\nvar response = await client.getPetsAsync(limit);", op.Code.Snippet);
         }
 
         /// <summary>Verifies or exercises generate with request body adds dummy initialization.</summary>
@@ -112,7 +134,13 @@ namespace Cdd.OpenApi.Tests.DocsJson
                             Post = new OpenApiOperation
                             {
                                 OperationId = "createPet",
+                                Tags = new List<string>(),
                                 RequestBody = new OpenApiRequestBody()
+                            },
+                            Put = new OpenApiOperation
+                            {
+                                OperationId = "updatePet",
+                                Tags = new List<string> { string.Empty }
                             }
                         }
                     }
@@ -123,9 +151,111 @@ namespace Cdd.OpenApi.Tests.DocsJson
             var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
 
             Assert.NotNull(parsed);
-            var op = Assert.Single(parsed[0].Operations);
-            Assert.Contains("var requestBody = new object();", op.Code.Snippet);
-            Assert.Contains("createPetAsync(requestBody)", op.Code.Snippet);
+            Assert.Equal(2, parsed[0].Operations.Count);
+            var postOp = parsed[0].Operations.Find(o => o.Method == "POST")!;
+            Assert.Contains("var requestBody = new object();", postOp.Code.Snippet);
+            Assert.Contains("var response = await client.createPetAsync(requestBody);", postOp.Code.Snippet);
+            Assert.Contains("var client = new DefaultApiClient();", postOp.Code.WrapperStart);
+
+            var putOp = parsed[0].Operations.Find(o => o.Method == "PUT")!;
+            Assert.Contains("var client = new DefaultApiClient();", putOp.Code.WrapperStart);
+        }
+
+        /// <summary>Verifies or exercises generate with webhooks and workflows.</summary>
+        [Fact]
+        public void Generate_WithWebhooksAndWorkflows_EmitsWebhookAndWorkflowSnippets()
+        {
+            var doc = new OpenApiDocument
+            {
+                Webhooks = new Dictionary<string, OpenApiPathItem>
+                {
+                    ["newPet"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "onNewPet",
+                            Tags = new List<string> { "events" },
+                            RequestBody = new OpenApiRequestBody()
+                        }
+                    }
+                },
+                Workflows = new List<ArazzoWorkflow>
+                {
+                    new ArazzoWorkflow
+                    {
+                        WorkflowId = "adopt-pet",
+                        Inputs = new OpenApiSchema
+                        {
+                            Type = "object",
+                            Properties = new Dictionary<string, OpenApiSchema>
+                            {
+                                ["petId"] = new OpenApiSchema { Type = "string" }
+                            }
+                        }
+                    },
+                    new ArazzoWorkflow
+                    {
+                        WorkflowId = "ping-workflow",
+                        Inputs = new OpenApiSchema { Type = "object" }
+                    }
+                }
+            };
+
+            var jsonStr = DocsJsonGenerator.Generate(doc, false, false);
+            var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
+
+            Assert.NotNull(parsed);
+            Assert.Equal(3, parsed[0].Operations.Count);
+
+            var whOp = parsed[0].Operations[0];
+            Assert.Equal("POST", whOp.Method);
+            Assert.Equal("newPet", whOp.Path);
+            Assert.Equal("onNewPet", whOp.OperationId);
+            Assert.Contains("var client = new EventsApiClient();", whOp.Code.WrapperStart);
+            Assert.Contains("var response = await client.onNewPetAsync(requestBody);", whOp.Code.Snippet);
+
+            var wfOp = parsed[0].Operations[1];
+            Assert.Equal("WORKFLOW", wfOp.Method);
+            Assert.Equal("/workflows/adopt-pet", wfOp.Path);
+            Assert.Equal("adopt-pet", wfOp.OperationId);
+            Assert.NotNull(wfOp.Code.Imports);
+            Assert.Contains("var workflows = new WorkflowsOrchestrator();", wfOp.Code.WrapperStart);
+            Assert.Contains("var input = new AdoptPetInput();", wfOp.Code.Snippet);
+            Assert.Contains("input.PetId = \"example\";", wfOp.Code.Snippet);
+            Assert.Contains("var response = await workflows.AdoptPetAsync(input);", wfOp.Code.Snippet);
+        }
+
+        /// <summary>Verifies or exercises generate from arazzo document overload.</summary>
+        [Fact]
+        public void Generate_FromArazzoDocument_WithAndWithoutFlags()
+        {
+            var arazzoDoc = new ArazzoDocument
+            {
+                Workflows = new List<ArazzoWorkflow>
+                {
+                    new ArazzoWorkflow
+                    {
+                        WorkflowId = "checkoutOrder"
+                    }
+                }
+            };
+
+            var jsonWrapped = DocsJsonGenerator.Generate(arazzoDoc, false, false);
+            var parsedWrapped = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonWrapped);
+            Assert.NotNull(parsedWrapped);
+            var opWrapped = Assert.Single(parsedWrapped[0].Operations);
+            Assert.NotNull(opWrapped.Code.Imports);
+            Assert.NotNull(opWrapped.Code.WrapperStart);
+            Assert.NotNull(opWrapped.Code.WrapperEnd);
+
+            var jsonBare = DocsJsonGenerator.Generate(arazzoDoc, true, true);
+            var parsedBare = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonBare);
+            Assert.NotNull(parsedBare);
+            var opBare = Assert.Single(parsedBare[0].Operations);
+            Assert.Null(opBare.Code.Imports);
+            Assert.Null(opBare.Code.WrapperStart);
+            Assert.Null(opBare.Code.WrapperEnd);
+            Assert.Equal("var input = new CheckoutOrderInput();\nvar response = await workflows.CheckoutOrderAsync(input);", opBare.Code.Snippet);
         }
 
         /// <summary>Verifies or exercises generate without operation id uses fallback name.</summary>

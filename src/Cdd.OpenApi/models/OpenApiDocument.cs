@@ -157,5 +157,12 @@ namespace Cdd.OpenApi.Models
         [JsonPropertyName("externalDocs")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public OpenApiExternalDocs? ExternalDocs { get; set; }
+
+        /// <summary>
+        /// Arazzo workflows defined in or associated with the specification document.
+        /// </summary>
+        [JsonPropertyName("workflows")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IList<Cdd.OpenApi.Models.Arazzo.ArazzoWorkflow>? Workflows { get; set; }
     }
 }
