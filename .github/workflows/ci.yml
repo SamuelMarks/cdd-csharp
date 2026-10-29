@@ -5,7 +5,7 @@ on:
     branches:
       - '**'
     tags:
-      - '**'
+      - 'v*'
 
 jobs:
   test:
@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v7
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: |
           8.0.x
@@ -45,7 +45,7 @@ jobs:
 
   release:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -53,7 +53,7 @@ jobs:
     - uses: actions/checkout@v7
 
     - name: Setup .NET 8
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '8.0.x'
 
@@ -65,23 +65,3 @@ jobs:
       with:
         artifacts: "bin/cdd-csharp-wasm.zip,bin/cdd-csharp/cdd-csharp.wasm"
         makeLatest: true
-
-    - name: Update latest tag
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git push origin :refs/tags/latest || true
-        git tag -fa latest -m "Update latest tag"
-        git push origin refs/tags/latest
-
-    - name: Create latest Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: ncipollo/release-action@v1
-      with:
-        tag: latest
-        name: "Latest Release"
-        artifacts: "bin/cdd-csharp-wasm.zip,bin/cdd-csharp/cdd-csharp.wasm"
-        allowUpdates: true
-        replacesArtifacts: true
-        makeLatest: false
