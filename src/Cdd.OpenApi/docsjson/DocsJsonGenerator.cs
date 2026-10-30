@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using Cdd.OpenApi.Arazzo.Expressions;
 using Cdd.OpenApi.Common;
@@ -150,7 +151,6 @@ namespace Cdd.OpenApi.DocsJson
                 }
 
                 var snippetLines = new List<string>();
-                string indent = noWrapping ? "" : "        ";
 
                 var parameters = new List<string>();
                 if (operation.Parameters != null)
@@ -162,24 +162,79 @@ namespace Cdd.OpenApi.DocsJson
                         var pName = param.Name;
                         var pType = TypeMapper.MapOpenApiToCSharp(param.Schema?.Type, "object");
                         var pValue = GetDefaultValueForType(pType);
-                        snippetLines.Add($"{indent}{pType} {pName} = {pValue};");
+                        snippetLines.Add($"{pType} {pName} = {pValue};");
                         parameters.Add(pName);
                     }
                 }
 
                 if (operation.RequestBody != null)
                 {
-                    snippetLines.Add($"{indent}var requestBody = new object(); // TODO: Initialize request body");
+                    snippetLines.Add(BuildRequestBodySnippetLine(operation.RequestBody));
                     parameters.Add("requestBody");
                 }
 
                 var paramsString = string.Join(", ", parameters);
-                snippetLines.Add($"{indent}var response = await client.{methodName}Async({paramsString});");
+                snippetLines.Add($"var response = await client.{methodName}Async({paramsString});");
 
                 opOut.Code.Snippet = string.Join("\n", snippetLines);
 
                 target.Add(opOut);
             }
+        }
+
+        /// <summary>
+        /// Builds the C# declaration and initialization line for an operation's request body.
+        /// </summary>
+        /// <param name="requestBody">The OpenAPI request body definition.</param>
+        /// <returns>A C# statement initializing <c>requestBody</c>.</returns>
+        private static string BuildRequestBodySnippetLine(OpenApiRequestBody requestBody)
+        {
+            OpenApiSchema? bodySchema = null;
+            if (requestBody.Content != null)
+            {
+                if (requestBody.Content.TryGetValue("application/json", out var jsonMedia) && jsonMedia?.Schema != null)
+                {
+                    bodySchema = jsonMedia.Schema;
+                }
+                else
+                {
+                    bodySchema = requestBody.Content.Values.FirstOrDefault(m => m?.Schema != null)?.Schema;
+                }
+            }
+
+            if (bodySchema != null)
+            {
+                if (!string.IsNullOrEmpty(bodySchema.Ref))
+                {
+                    var modelName = bodySchema.Ref.Split('/').Last();
+                    return $"var requestBody = new {modelName}();";
+                }
+
+                if (bodySchema.Type == OpenApiDataType.Array)
+                {
+                    var itemType = TypeMapper.MapSchemaToCSharp(bodySchema.Items, "object");
+                    return $"var requestBody = new List<{itemType}>();";
+                }
+
+                if (bodySchema.Type == OpenApiDataType.Object)
+                {
+                    return "var requestBody = new object();";
+                }
+
+                if (!string.IsNullOrEmpty(bodySchema.Type))
+                {
+                    var csharpType = TypeMapper.MapOpenApiToCSharp(bodySchema.Type, "object");
+                    if (csharpType != "object")
+                    {
+                        var defaultValue = GetDefaultValueForType(csharpType);
+                        return $"{csharpType} requestBody = {defaultValue};";
+                    }
+
+                    return "var requestBody = new object();";
+                }
+            }
+
+            return "var requestBody = new object();";
         }
 
         /// <summary>
@@ -239,9 +294,8 @@ namespace Cdd.OpenApi.DocsJson
                 }
 
                 var snippetLines = new List<string>();
-                string indent = noWrapping ? "" : "        ";
 
-                snippetLines.Add($"{indent}var input = new {wfPascal}Input();");
+                snippetLines.Add($"var input = new {wfPascal}Input();");
                 if (wf.Inputs?.Properties != null)
                 {
                     foreach (var prop in wf.Inputs.Properties)
@@ -249,11 +303,11 @@ namespace Cdd.OpenApi.DocsJson
                         var propPascal = RuntimeExpression.ToPascalIdentifier(prop.Key);
                         var pType = TypeMapper.MapOpenApiToCSharp(prop.Value.Type, "object");
                         var pValue = GetDefaultValueForType(pType);
-                        snippetLines.Add($"{indent}input.{propPascal} = {pValue};");
+                        snippetLines.Add($"input.{propPascal} = {pValue};");
                     }
                 }
 
-                snippetLines.Add($"{indent}var response = await workflows.{wfPascal}Async(input);");
+                snippetLines.Add($"var response = await workflows.{wfPascal}Async(input);");
 
                 opOut.Code.Snippet = string.Join("\n", snippetLines);
                 target.Add(opOut);

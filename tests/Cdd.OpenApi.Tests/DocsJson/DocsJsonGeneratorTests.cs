@@ -68,8 +68,7 @@ namespace Cdd.OpenApi.Tests.DocsJson
 
             Assert.Contains("var client = new MyDocsTagApiClient();", op.Code.WrapperStart);
             Assert.DoesNotContain("var client = new", op.Code.Snippet);
-            Assert.Contains("int limit = 0;", op.Code.Snippet);
-            Assert.Contains("var response = await client.getPetsAsync(limit);", op.Code.Snippet);
+            Assert.Equal("int limit = 0;\nvar response = await client.getPetsAsync(limit);", op.Code.Snippet);
         }
 
         /// <summary>Verifies or exercises generate with no imports omits imports field.</summary>
@@ -153,12 +152,182 @@ namespace Cdd.OpenApi.Tests.DocsJson
             Assert.NotNull(parsed);
             Assert.Equal(2, parsed[0].Operations.Count);
             var postOp = parsed[0].Operations.Find(o => o.Method == "POST")!;
-            Assert.Contains("var requestBody = new object();", postOp.Code.Snippet);
-            Assert.Contains("var response = await client.createPetAsync(requestBody);", postOp.Code.Snippet);
+            Assert.Equal("var requestBody = new object();\nvar response = await client.createPetAsync(requestBody);", postOp.Code.Snippet);
             Assert.Contains("var client = new DefaultApiClient();", postOp.Code.WrapperStart);
 
             var putOp = parsed[0].Operations.Find(o => o.Method == "PUT")!;
             Assert.Contains("var client = new DefaultApiClient();", putOp.Code.WrapperStart);
+        }
+
+        /// <summary>Verifies or exercises generate with concrete ref and inline request body schemas.</summary>
+        [Fact]
+        public void Generate_WithConcreteRequestBodySchemas_EmitsModelAndInlineInitializers()
+        {
+            var doc = new OpenApiDocument
+            {
+                Paths = new OpenApiPaths
+                {
+                    ["/ref-pet"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "createPet",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Ref = "#/components/schemas/Pet" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/inline-array"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "uploadPets",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema
+                                        {
+                                            Type = "array",
+                                            Items = new OpenApiSchema { Ref = "#/components/schemas/Pet" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/inline-primitive"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "sendNote",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["text/plain"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/inline-object"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "sendObject",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "object" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/inline-unknown"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "sendUnknown",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema { Type = "custom" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/empty-schema"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "sendEmptySchema",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = new OpenApiMediaType
+                                    {
+                                        Schema = new OpenApiSchema()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    ["/null-media-or-content"] = new OpenApiPathItem
+                    {
+                        Post = new OpenApiOperation
+                        {
+                            OperationId = "sendNullContent",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = null!
+                            }
+                        },
+                        Put = new OpenApiOperation
+                        {
+                            OperationId = "sendNullJsonMedia",
+                            RequestBody = new OpenApiRequestBody
+                            {
+                                Content = new Dictionary<string, OpenApiMediaType>
+                                {
+                                    ["application/json"] = null!,
+                                    ["text/xml"] = new OpenApiMediaType()
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var jsonStr = DocsJsonGenerator.Generate(doc, true, true);
+            var parsed = JsonSerializer.Deserialize<List<DocsJsonOutput>>(jsonStr);
+
+            Assert.NotNull(parsed);
+            var ops = parsed[0].Operations;
+
+            var refOp = ops.Find(o => o.OperationId == "createPet")!;
+            Assert.Equal("var requestBody = new Pet();\nvar response = await client.createPetAsync(requestBody);", refOp.Code.Snippet);
+
+            var arrOp = ops.Find(o => o.OperationId == "uploadPets")!;
+            Assert.Equal("var requestBody = new List<Pet>();\nvar response = await client.uploadPetsAsync(requestBody);", arrOp.Code.Snippet);
+
+            var primOp = ops.Find(o => o.OperationId == "sendNote")!;
+            Assert.Equal("string requestBody = \"example\";\nvar response = await client.sendNoteAsync(requestBody);", primOp.Code.Snippet);
+
+            var objOp = ops.Find(o => o.OperationId == "sendObject")!;
+            Assert.Equal("var requestBody = new object();\nvar response = await client.sendObjectAsync(requestBody);", objOp.Code.Snippet);
+
+            var unkOp = ops.Find(o => o.OperationId == "sendUnknown")!;
+            Assert.Equal("var requestBody = new object();\nvar response = await client.sendUnknownAsync(requestBody);", unkOp.Code.Snippet);
+
+            var emptySchemaOp = ops.Find(o => o.OperationId == "sendEmptySchema")!;
+            Assert.Equal("var requestBody = new object();\nvar response = await client.sendEmptySchemaAsync(requestBody);", emptySchemaOp.Code.Snippet);
+
+            var nullContentOp = ops.Find(o => o.OperationId == "sendNullContent")!;
+            Assert.Equal("var requestBody = new object();\nvar response = await client.sendNullContentAsync(requestBody);", nullContentOp.Code.Snippet);
+
+            var nullJsonMediaOp = ops.Find(o => o.OperationId == "sendNullJsonMedia")!;
+            Assert.Equal("var requestBody = new object();\nvar response = await client.sendNullJsonMediaAsync(requestBody);", nullJsonMediaOp.Code.Snippet);
         }
 
         /// <summary>Verifies or exercises generate with webhooks and workflows.</summary>
